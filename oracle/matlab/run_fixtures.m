@@ -6,7 +6,10 @@
 %                       run('<repo>/oracle/matlab/run_fixtures.m')
 %
 % or from a shell with oracle/run_fixtures.sh, which starts Matlab in
-% batch mode. Fixtures go to <fixtures_root>/<spinach tag>/<case>/.
+% batch mode. Fixtures go to <fixtures_root>/<spinach tag>/<case>/. The
+% console output, including per-stage progress and any error, is also
+% written to <fixtures_root>/<spinach tag>/run_<UTC time>.log, and the
+% Spinach report output of each case to <case>/spinach.log.
 
 %% Settings - edit these
 worktrees_dir='/Users/alexej/Documents/PROG/spinpy/.worktrees/';
@@ -57,20 +60,32 @@ end
 % Create the output directory for this tag
 out_root=fullfile(fixtures_root,spinach_tag);
 if ~isfolder(out_root), mkdir(out_root); end
+
+% Log all console output to a file
+log_file=fullfile(out_root,['run_' char(datetime('now','TimeZone','UTC',...
+                  'Format','yyyyMMdd''T''HHmmss''Z''')) '.log']);
+diary(log_file); diary on;
+fprintf('Logging to %s\n',log_file);
 fprintf('Spinach %s, tag %s\nHarness %s\nWriting fixtures to %s\n',...
         spinach_dir,spinach_tag,repo_dir,out_root);
 
 % Run the dump scripts and protect their output
-for n=1:numel(dump_scripts)
-    fprintf('Running %s...\n',dump_scripts{n});
-    existing=dir(out_root); existing={existing([existing.isdir]).name};
-    feval(dump_scripts{n},out_root);
-    created=dir(out_root); created={created([created.isdir]).name};
-    new_dirs=setdiff(created,existing);
-    for k=1:numel(new_dirs)
-        fileattrib(fullfile(out_root,new_dirs{k}),'-w','a','s');
-        fprintf('  wrote %s (read-only)\n',new_dirs{k});
+try
+    for n=1:numel(dump_scripts)
+        fprintf('Running %s...\n',dump_scripts{n});
+        existing=dir(out_root); existing={existing([existing.isdir]).name};
+        feval(dump_scripts{n},out_root);
+        created=dir(out_root); created={created([created.isdir]).name};
+        new_dirs=setdiff(created,existing);
+        for k=1:numel(new_dirs)
+            fileattrib(fullfile(out_root,new_dirs{k}),'-w','a','s');
+            fprintf('  wrote %s (read-only)\n',new_dirs{k});
+        end
     end
+    fprintf('Done. Fixtures are in %s\n',out_root);
+catch run_error
+    fprintf(2,'FAILED: %s\n',getReport(run_error,'extended','hyperlinks','off'));
+    diary off; rethrow(run_error);
 end
-fprintf('Done. Fixtures are in %s\n',out_root);
+diary off;
 

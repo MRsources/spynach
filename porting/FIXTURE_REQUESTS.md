@@ -30,6 +30,12 @@ It puts Spinach (`kernel`, `etc`, `experiments`, `interfaces`) and the harness
 on the path, checks that `create()` resolves to that Spinach copy, writes to
 `<fixtures_root>/<spinach tag>/`, and makes the new case directories read-only.
 
+Progress: each stage of each case prints a timestamped line, e.g.
+`2026-10-09 14:02:11 [abx_3spin 2/4] propagator`. The full console output,
+including any error report, is saved as `<fixtures_root>/<tag>/run_<UTC time>.log`,
+and Spinach's own messages for each case go to `<case>/spinach.log`.
+To follow a batch run from another terminal: `tail -f <fixtures_root>/<tag>/run_*.log`.
+
 Then check on the Python side (with `/fixtures` mapped to `fixtures_root`):
 
 ```

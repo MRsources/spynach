@@ -21,7 +21,9 @@
 % Note: oracle/matlab/lib must be on the Matlab path, and Spinach must
 %       be on the path with no modifications. Each case also writes
 %       /probe variables with known content that verify the HDF5 lay-
-%       out conventions on the Python side.
+%       out conventions on the Python side. Progress is printed to the
+%       console with a timestamp per stage; the Spinach report output
+%       of each case goes to <case directory>/spinach.log.
 
 function dump_hilb_pa(out_root)
 
@@ -74,6 +76,8 @@ for n=1:numel(cases)
         error(['fixture directory ' case_dir ' already exists.']);
     end
     mkdir(case_dir); h5_file=fullfile(case_dir,'data.h5');
+    case_label=sprintf('%s %d/%d',cases(n).name,n,numel(cases));
+    progress(case_label,['started, writing to ' case_dir]);
 
     % Layout convention probes with known content
     oracle_write(h5_file,'/probe/dense',reshape(1:24,[2 3 4])+1i*reshape(101:124,[2 3 4]));
@@ -82,7 +86,8 @@ for n=1:numel(cases)
     oracle_write(h5_file,'/probe/cell',{[1 2],sparse(eye(2)); [],7});
 
     % Spin system and basis
-    sys=cases(n).sys; sys.magnet=14.1; sys.output='hush';
+    progress(case_label,'create and basis');
+    sys=cases(n).sys; sys.magnet=14.1; sys.output=fullfile(case_dir,'spinach.log');
     inter=cases(n).inter; pars=cases(n).pars;
     spin_system=create(sys,inter);
     spin_system=basis(spin_system,bas);
@@ -93,6 +98,7 @@ for n=1:numel(cases)
     oracle_write(h5_file,'/inter/coupling_matrix',spin_system.inter.coupling.matrix);
 
     % Single-spin operators
+    progress(case_label,'operators');
     op_names={'E','Lz','Lx','Ly','L+','L-'};
     op_keys={'E','Lz','Lx','Ly','Lp','Lm'};
     for k=1:numel(op_names)
@@ -109,6 +115,7 @@ for n=1:numel(cases)
     oracle_write(h5_file,'/ops/Lp_det',operator(spin_system,'L+',pars.spins{1}));
 
     % Hamiltonian and its Zeeman and coupling parts
+    progress(case_label,'Hamiltonian');
     H=hamiltonian(assume(spin_system,'nmr'));
     oracle_write(h5_file,'/ham/H',H);
     oracle_write(h5_file,'/ham/H_zeeman',hamiltonian(assume(spin_system,'nmr','zeeman')));
@@ -125,10 +132,12 @@ for n=1:numel(cases)
     oracle_write(h5_file,'/states/coil',coil);
 
     % Propagator over one dwell time
+    progress(case_label,'propagator');
     P=propagator(spin_system,H,1/pars.sweep);
     oracle_write(h5_file,'/prop/P',P);
 
     % Explicit time stepping with the propagator
+    progress(case_label,'FID by explicit stepping');
     fid=zeros([pars.npoints 1],'like',1i); rho=rho0;
     for k=1:pars.npoints
         fid(k)=hdot(coil,rho); rho=P*rho*P';
@@ -136,10 +145,12 @@ for n=1:numel(cases)
     oracle_write(h5_file,'/fid/explicit',fid);
 
     % Kernel evolution function
+    progress(case_label,'FID by evolution()');
     fid=evolution(spin_system,H,coil,rho0,1/pars.sweep,pars.npoints-1,'observable');
     oracle_write(h5_file,'/fid/evolution',fid);
 
     % End-to-end context and sequence
+    progress(case_label,'FID by liquid() and acquire()');
     seq_pars=pars; seq_pars.rho0=rho0; seq_pars.coil=coil; seq_pars.decouple={};
     fid=liquid(spin_system,@acquire,seq_pars,'nmr');
     oracle_write(h5_file,'/fid/liquid',fid);
@@ -153,8 +164,17 @@ for n=1:numel(cases)
                   'assumptions','nmr','timestep',1/pars.sweep);
     oracle_meta(case_dir,dump_file,spin_system,inputs);
 
+    % Close the Spinach log
+    fclose(spin_system.sys.output);
+    progress(case_label,'finished');
+
 end
 
+end
+
+% Timestamped progress line on the console
+function progress(case_label,stage)
+fprintf('%s [%s] %s\n',char(datetime('now','Format','yyyy-MM-dd HH:mm:ss')),case_label,stage);
 end
 
 % Consistency enforcement
