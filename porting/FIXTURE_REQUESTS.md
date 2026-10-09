@@ -12,16 +12,25 @@ read-only under `/fixtures/<spinach-tag>/`.
 - **Needs:** MATLAB R2024b or later. Parallel Computing Toolbox is used by `evolution.m` (Hilbert-space `spmd` split) if installed.
 - **Produces:** `hilb_pa_ab_2spin`, `hilb_pa_abx_3spin`, `hilb_pa_hc_2spin`, `hilb_pa_hd_2spin` (each a few MB at most)
 
-Run from MATLAB, with Spinach already on the path as usual on the host:
+Edit the settings block at the top of `oracle/matlab/run_fixtures.m` if the
+defaults do not match the host (repository worktree, Spinach directory, fixture
+output root), then either run it from a shell:
 
-```matlab
-addpath('<repo>/oracle/matlab/lib', '<repo>/oracle/matlab/dumps')
-[~, tag] = system('git -C /spinach describe --tags --always'); tag = strtrim(tag);
-out_root = fullfile('/fixtures', tag); mkdir(out_root)
-dump_hilb_pa(out_root)
+```
+oracle/run_fixtures.sh            # MATLAB=/path/to/matlab to override the executable
 ```
 
-Then make the case directories read-only, and check on the Python side:
+or from MATLAB:
+
+```matlab
+run('<repo>/oracle/matlab/run_fixtures.m')
+```
+
+It puts Spinach (`kernel`, `etc`, `experiments`, `interfaces`) and the harness
+on the path, checks that `create()` resolves to that Spinach copy, writes to
+`<fixtures_root>/<spinach tag>/`, and makes the new case directories read-only.
+
+Then check on the Python side (with `/fixtures` mapped to `fixtures_root`):
 
 ```
 SPINPY_FIXTURES=/fixtures pytest tests/oracle -rs

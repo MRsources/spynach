@@ -1,0 +1,76 @@
+% Start script for oracle fixture generation. Puts Spinach and the oracle
+% harness on the Matlab path, runs every dump script, and makes the new
+% fixtures read-only. Edit the settings block below, then run it from
+% Matlab with
+%
+%                       run('<repo>/oracle/matlab/run_fixtures.m')
+%
+% or from a shell with oracle/run_fixtures.sh, which starts Matlab in
+% batch mode. Fixtures go to <fixtures_root>/<spinach tag>/<case>/.
+
+%% Settings - edit these
+worktrees_dir='/Users/alexej/Documents/PROG/spinpy/.worktrees/';
+worktree_name='oracle-harness';
+spinach_dir='/Users/alexej/Documents/PROG/spinpy-spinach';
+fixtures_root='/Users/alexej/Documents/PROG/spinpy-fixtures';
+dump_scripts={'dump_hilb_pa'};
+
+%% Nothing below needs editing
+
+% Locate the harness inside the repository
+repo_dir=fullfile(worktrees_dir,worktree_name);
+oracle_dir=fullfile(repo_dir,'oracle','matlab');
+if ~isfolder(oracle_dir)
+    error(['oracle directory not found: ' oracle_dir ', check worktrees_dir and worktree_name.']);
+end
+if ~isfolder(fullfile(spinach_dir,'kernel'))
+    error(['Spinach kernel not found under ' spinach_dir ', check spinach_dir.']);
+end
+
+% Add Spinach directories, as fix_path.m does
+addpath(genpath(fullfile(spinach_dir,'etc')),'-begin');
+addpath(genpath(fullfile(spinach_dir,'experiments')),'-begin');
+addpath(genpath(fullfile(spinach_dir,'interfaces')),'-begin');
+addpath(genpath(fullfile(spinach_dir,'kernel')),'-begin');
+
+% Add the harness, with shadow files ahead of Spinach
+addpath(fullfile(oracle_dir,'lib'),fullfile(oracle_dir,'dumps'),'-begin');
+addpath(genpath(fullfile(oracle_dir,'shadow')),'-begin');
+
+% Make sure no other Spinach copy takes precedence
+create_path=which('create');
+if ~startsWith(create_path,fullfile(spinach_dir,'kernel'))
+    error(['create() resolves to ' create_path ', not to the Spinach copy in ' spinach_dir '.']);
+end
+
+% Determine the Spinach tag and warn about local modifications
+[status,spinach_tag]=system(['git -C "' spinach_dir '" describe --tags --always']);
+if status~=0
+    error(['Spinach at ' spinach_dir ' is not a git working tree: ' spinach_tag]);
+end
+spinach_tag=strtrim(spinach_tag);
+[~,porcelain]=system(['git -C "' spinach_dir '" status --porcelain']);
+if ~isempty(strtrim(porcelain))
+    warning('Spinach working tree has local modifications, fixtures will be flagged as dirty.');
+end
+
+% Create the output directory for this tag
+out_root=fullfile(fixtures_root,spinach_tag);
+if ~isfolder(out_root), mkdir(out_root); end
+fprintf('Spinach %s, tag %s\nHarness %s\nWriting fixtures to %s\n',...
+        spinach_dir,spinach_tag,repo_dir,out_root);
+
+% Run the dump scripts and protect their output
+for n=1:numel(dump_scripts)
+    fprintf('Running %s...\n',dump_scripts{n});
+    existing=dir(out_root); existing={existing([existing.isdir]).name};
+    feval(dump_scripts{n},out_root);
+    created=dir(out_root); created={created([created.isdir]).name};
+    new_dirs=setdiff(created,existing);
+    for k=1:numel(new_dirs)
+        fileattrib(fullfile(out_root,new_dirs{k}),'-w','a','s');
+        fprintf('  wrote %s (read-only)\n',new_dirs{k});
+    end
+end
+fprintf('Done. Fixtures are in %s\n',out_root);
+
