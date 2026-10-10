@@ -9,7 +9,8 @@ read-only under `/fixtures/<spinach-tag>/`.
 - **Status:** requested
 - **Requested:** 2026-10-08, branch `oracle-harness`
 - **Spinach:** clean checkout, expected `03a88b7e912ffbb3122dd24829cc5d216209c804` (no local modifications; `oracle_meta.m` records the dirty flag)
-- **Needs:** MATLAB R2024b or later. Parallel Computing Toolbox is used by `evolution.m` (Hilbert-space `spmd` split) if installed.
+- **Needs:** MATLAB R2024b or later with Parallel Computing Toolbox (`create()` starts a pool). The shadow `oracle/matlab/shadow/isworkernode.m` sends `evolution()` down its serial branch, because the Hilbert-space `spmd` split uses `distributed` arrays, which MATLAB does not support on local process pools on Apple silicon Macs (`distributedutil.errorIfUnsupportedPlatformOrEnvironment`; this is a MATLAB restriction, not a Spinach one). Spinach's startup check rejects the shadow, so the dump sets `sys.disable={'hygiene'}`.
+- **Before re-running:** delete the partial `hilb_pa_ab_2spin/` left by the failed run of 2026-10-10; the dump refuses to overwrite an existing case directory.
 - **Produces:** `hilb_pa_ab_2spin`, `hilb_pa_abx_3spin`, `hilb_pa_hc_2spin`, `hilb_pa_hd_2spin` (each a few MB at most)
 
 Edit the settings block at the top of `oracle/matlab/run_fixtures.m` if the

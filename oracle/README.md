@@ -22,7 +22,7 @@ oracle/matlab/lib/oracle_meta.m    writes meta.json (provenance)
 oracle/matlab/dumps/*.m            one dump script per vertical slice
 oracle/matlab/run_fixtures.m       start script: sets paths, runs all dumps (settings at top)
 oracle/run_fixtures.sh             runs run_fixtures.m in MATLAB batch mode
-oracle/matlab/shadow/              path-shadowing instrumentation (empty so far)
+oracle/matlab/shadow/              path-shadowing instrumentation (isworkernode.m: serial evolution())
 src/spinpy/oracle/                 Python loader (fixture.py) and comparison (compare.py)
 ```
 

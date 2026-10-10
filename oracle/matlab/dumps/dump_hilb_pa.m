@@ -88,6 +88,7 @@ for n=1:numel(cases)
     % Spin system and basis
     progress(case_label,'create and basis');
     sys=cases(n).sys; sys.magnet=14.1; sys.output=fullfile(case_dir,'spinach.log');
+    sys.disable={'hygiene'}; % existentials() would reject the isworkernode.m shadow
     inter=cases(n).inter; pars=cases(n).pars;
     spin_system=create(sys,inter);
     spin_system=basis(spin_system,bas);
