@@ -2,7 +2,7 @@
 
 A Python reimplementation of the [Spinach](https://spindynamics.org) spin
 dynamics kernel (MIT licence), verified stage by stage against the MATLAB
-original. See `HANDOFF.md` for goals and design decisions, and
+original. **Start with the [user guide](docs/user-guide.md).** See `HANDOFF.md` for goals and design decisions, and
 `oracle/README.md` for the reference-data ("fixture") harness.
 
 ## Status

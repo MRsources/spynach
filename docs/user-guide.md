@@ -1,0 +1,395 @@
+# spinpy user guide: liquid-state NMR in Hilbert space
+
+This guide covers what spinpy can do today: simulate free induction decays
+and spectra of small liquid-state NMR spin systems with isotropic chemical
+shifts and J-couplings, in the Zeeman Hilbert-space formalism
+(`zeeman-hilb`). Every stage reproduces Spinach 2.13 to rounding error; see
+[Checking results against Spinach](#checking-results-against-spinach).
+
+Every Python block in this guide is executed by
+`tests/docs/test_user_guide.py`, in order and in one namespace, so the
+examples stay correct as the code changes.
+
+## Contents
+
+1. [Setup](#setup)
+2. [Quick start](#quick-start)
+3. [The simulation pipeline](#the-simulation-pipeline)
+4. [Writing your own pulse sequence](#writing-your-own-pulse-sequence)
+5. [Tolerances](#tolerances)
+6. [Coming from Spinach](#coming-from-spinach)
+7. [What is not ported yet](#what-is-not-ported-yet)
+8. [Checking results against Spinach](#checking-results-against-spinach)
+
+## Setup
+
+spinpy needs Python 3.11 or later with NumPy, SciPy, and h5py. From the
+repository root:
+
+```
+python -m pip install -e ".[test]"
+OPENBLAS_NUM_THREADS=4 python -m pytest -q
+```
+
+Set `OPENBLAS_NUM_THREADS` to the number of CPUs you actually have. In
+containers with a CPU quota below the visible core count, OpenBLAS otherwise
+oversubscribes and dense linear algebra can run a thousand times slower.
+
+## Quick start
+
+A strongly coupled two-proton (AB) system at 14.1 T, simulated with a
+pulse-acquire experiment:
+
+```python
+import numpy as np
+import spinpy
+
+# Spin system: isotopes, field, chemical shifts (ppm), J-couplings (Hz)
+sys = {"isotopes": ["1H", "1H"], "magnet": 14.1}
+inter = {
+    "zeeman": {"scalar": [1.00, 1.20]},
+    "coupling": {"scalar": [[0, 12.0],
+                            [0, 0]]},
+}
+ss = spinpy.create(sys, inter)
+ss = spinpy.basis(ss, {"formalism": "zeeman-hilb", "approximation": "none"})
+
+# Experiment: transverse proton magnetisation, detected on the same channel
+parameters = {
+    "spins": ["1H"],      # isotope of the working channel
+    "offset": 660,        # transmitter offset, Hz
+    "sweep": 500,         # spectral width, Hz (dwell time 1/sweep)
+    "npoints": 1024,      # complex points in the FID
+    "rho0": spinpy.state(ss, "L+", "1H"),
+    "coil": spinpy.state(ss, "L+", "1H"),
+}
+fid = spinpy.liquid(ss, spinpy.acquire, parameters, "nmr")
+
+# Spectrum: apodise, zero-fill, Fourier transform
+zerofill = 4096
+fid = fid * np.exp(-np.arange(fid.size) / (0.25 * fid.size))
+spectrum = np.fft.fftshift(np.fft.fft(fid, zerofill))
+
+assert fid.shape == (1024,)
+assert spectrum.shape == (4096,)
+```
+
+The frequency axis, in the same convention as Spinach's `ft_axis` and
+`axis_1d`, runs from `offset - sweep/2` upwards; converting to ppm uses the
+carrier frequency of the channel isotope:
+
+```python
+from spinpy.isotopes import spin
+
+hz_axis = parameters["offset"] + np.fft.fftshift(np.fft.fftfreq(zerofill, 1 / parameters["sweep"]))
+gamma, _ = spin("1H")
+carrier_hz = -gamma * sys["magnet"] / (2 * np.pi)
+ppm_axis = -1e6 * hz_axis / carrier_hz
+
+# The AB quartet sits between the two chemical shifts
+strongest = ppm_axis[np.argmax(spectrum.real)]
+assert 0.9 < strongest < 1.3
+```
+
+Plot `spectrum.real` against `ppm_axis` with any plotting library; NMR
+convention draws the ppm axis decreasing from left to right.
+
+## The simulation pipeline
+
+A simulation runs through the same stages as in Spinach. Each function
+returns a new object; nothing is modified in place.
+
+```
+create -> basis -> operator / state -> assume -> hamiltonian -> frqoffset -> propagator / evolution
+                                       \__________________ liquid + acquire __________________/
+```
+
+### 1. `create`: describe the spin system
+
+`spinpy.create(sys, inter)` takes two dictionaries mirroring Spinach's `sys`
+and `inter` structures.
+
+| key | meaning | units |
+|---|---|---|
+| `sys["isotopes"]` | list of isotope names, e.g. `"1H"`, `"13C"`, `"2H"`, `"E"` | |
+| `sys["magnet"]` | magnetic induction | Tesla |
+| `sys["labels"]` | optional per-spin labels | |
+| `sys["tols"]` | optional tolerance overrides, see [Tolerances](#tolerances) | |
+| `inter["zeeman"]["scalar"]` | per-spin chemical shift (nuclei) or isotropic g-value (electrons); `None` for none | ppm / Bohr magneton |
+| `inter["zeeman"]["matrix"]` | per-spin 3x3 shift or g-tensor; `None` for none | ppm / Bohr magneton |
+| `inter["coupling"]["scalar"]` | nspins x nspins nested list of J-couplings; `None` or 0 for none | Hz |
+| `inter["coupling"]["matrix"]` | nspins x nspins nested list of 3x3 coupling tensors | Hz |
+
+Enter each coupling once per pair, above or below the diagonal; values given
+in both places are added together, as in Spinach. Any other key raises
+`NotImplementedError`.
+
+The result is a frozen `SpinSystem`. Internally everything is in angular
+frequency units (rad/s) in the laboratory frame:
+
+```python
+ss = spinpy.create(
+    {"isotopes": ["1H", "13C"], "magnet": 14.1},
+    {"zeeman": {"scalar": [2.00, 30.0]}, "coupling": {"scalar": [[0, 145.0], [0, 0]]}},
+)
+assert ss.nspins == 2
+assert list(ss.mults) == [2, 2]              # multiplicities, 2S+1
+carrier_mhz = ss.basefrqs / (2 * np.pi) / 1e6  # -gamma*B0, rad/s -> MHz
+assert round(abs(carrier_mhz[0])) == 600
+assert ss.coupling_matrix[1][0] is None        # absent couplings are None
+```
+
+Isotope data (multiplicity and magnetogyric ratio) come from Spinach's
+`spin.m`: `spinpy.isotopes.spin("15N")` returns `(gamma, multiplicity)`.
+
+### 2. `basis`: choose the formalism
+
+```python
+ss = spinpy.basis(ss, {"formalism": "zeeman-hilb", "approximation": "none"})
+assert ss.basis.levels.shape == (4, 2)   # dim x nspins Zeeman level table
+```
+
+`zeeman-hilb` works with the full Hilbert space of dimension
+`prod(mults)`; matrices are `dim x dim`. It suits systems up to roughly ten
+spin-1/2 particles. Basis states are Zeeman product states with the first
+spin varying slowest, matching `np.kron(op_spin0, op_spin1)`.
+
+### 3. `operator` and `state`: spin operators
+
+Operators are built from a label and a spin selection. **Spin indices are
+0-based.** There are three forms:
+
+```python
+Lz_H = spinpy.operator(ss, "Lz", "1H")          # sum over all 1H spins
+Lz_01 = spinpy.operator(ss, "Lz", [0, 1])       # sum over spins 0 and 1
+LzSp = spinpy.operator(ss, ["Lz", "L+"], [0, 1]) # product Lz(0) L+(1)
+
+assert Lz_H.shape == (4, 4)
+```
+
+A string as the first argument means a sum of single-spin operators; a list
+means a product operator with one label per listed spin. The spin selection
+in the sum form can also be `"all"`, `"nuclei"`, or `"electrons"`.
+
+| label | operator |
+|---|---|
+| `E` | unit operator |
+| `Lz`, `Lx`, `Ly` | Cartesian spin operators |
+| `L+`, `L-` | raising and lowering operators |
+| `Tl,m` | irreducible spherical tensor, e.g. `T2,-1` |
+
+`operator` returns a SciPy sparse matrix (`scipy.sparse.csr_array`, complex).
+`state` takes the same arguments and, in Hilbert space, returns the same
+matrix, used as an (unnormalised) density matrix:
+
+```python
+rho = spinpy.state(ss, "L+", "1H")
+assert (rho != spinpy.operator(ss, "L+", "1H")).nnz == 0
+```
+
+### 4. `assume` and `hamiltonian`: the Hamiltonian
+
+`assume` decides which terms of each interaction survive. The `"nmr"`
+assumption set is the usual high-field liquid-state approximation:
+
+- rotating frame for every isotope (carrier frequencies removed),
+- secular Zeeman terms,
+- full (strong) J-coupling between spins of the same isotope,
+- weak (LzSz) J-coupling between different isotopes.
+
+`hamiltonian` then returns the isotropic Hamiltonian in rad/s:
+
+```python
+H = spinpy.hamiltonian(spinpy.assume(ss, "nmr"))
+H_zeeman = spinpy.hamiltonian(spinpy.assume(ss, "nmr", "zeeman"))      # drop couplings
+H_coupling = spinpy.hamiltonian(spinpy.assume(ss, "nmr", "couplings")) # drop Zeeman terms
+
+assert np.allclose(H, H_zeeman + H_coupling)
+assert np.allclose(H, H.conj().T)
+```
+
+Small Hamiltonians come back as dense NumPy arrays, large sparse ones as
+`csr_array`, following Spinach's `clean_up` rules (dimension below
+`tols.small_matrix`, or density above `tols.dense_matrix`, means dense).
+Every element is rounded to a grid of `tols.liouv_zero` (1e-10 rad/s).
+
+### 5. `frqoffset`: transmitter offsets
+
+The rotating frame of `"nmr"` puts each isotope's carrier at zero frequency.
+`frqoffset` moves the frame by `parameters["offset"]` Hz on the channels in
+`parameters["spins"]`, so that the spectral window is centred where the
+signals are:
+
+```python
+H_off = spinpy.frqoffset(ss, H, {"spins": ["1H"], "offset": 1200})
+```
+
+`liquid` applies this for you.
+
+### 6. `propagator` and `evolution`: time propagation
+
+```python
+dt = 1 / 500
+P = spinpy.propagator(ss, H_off, dt)       # expm(-1j * H_off * dt)
+assert np.allclose(P @ P.conj().T, np.eye(4))
+
+rho0 = spinpy.state(ss, "L+", "1H")
+coil = spinpy.state(ss, "L+", "1H")
+fid_hc = spinpy.evolution(ss, H_off, coil, rho0, dt, 1023, "observable")
+assert fid_hc.shape == (1024,)                 # nsteps + 1 points, from t = 0
+assert np.isclose(fid_hc[0], spinpy.hdot(coil, rho0))
+```
+
+`evolution(..., "observable")` returns `hdot(coil, rho(t))` (the
+Hilbert-Schmidt product, `sum(conj(coil) * rho)`) at `nsteps + 1` time
+points. Below dimension `tols.small_matrix` (200) the propagator is a dense
+Pade exponential; above it, Spinach's scaled and squared Taylor series with
+rounding to `tols.prop_chop`, which keeps sparse propagators sparse.
+
+### 7. `liquid` and `acquire`: the high-level route
+
+`liquid(ss, sequence, parameters, "nmr")` runs `assume`, `hamiltonian`, and
+`frqoffset`, and then calls `sequence(ss, parameters, H, R, K)`. R and K are
+the relaxation and chemical kinetics superoperators; neither is ported yet,
+so both are zero matrices, which is what Spinach gives when a system
+specifies neither.
+
+`acquire` is the simplest sequence: it evolves `parameters["rho0"]` for
+`parameters["npoints"]` points at dwell time `1 / parameters["sweep"]` and
+detects `parameters["coil"]`. It reproduces the step-by-step route above:
+
+```python
+fid_liquid = spinpy.liquid(
+    ss, spinpy.acquire,
+    {"spins": ["1H"], "offset": 1200, "sweep": 500, "npoints": 1024, "rho0": rho0, "coil": coil},
+    "nmr",
+)
+assert np.allclose(fid_liquid, fid_hc)
+```
+
+## Writing your own pulse sequence
+
+A pulse sequence is any function with the signature
+`sequence(spin_system, parameters, H, R, K)`. This one starts from
+longitudinal magnetisation, applies an ideal 90-degree pulse about y, and
+acquires:
+
+```python
+def pulse_acquire(spin_system, parameters, H, R, K):
+    L = H + 1j * R + 1j * K
+    Ly = spinpy.operator(spin_system, "Ly", parameters["spins"][0])
+    pulse = spinpy.propagator(spin_system, Ly, np.pi / 2)   # rotation angle as "time"
+    rho = pulse @ parameters["rho0"] @ pulse.conj().T
+    return spinpy.evolution(
+        spin_system, L, parameters["coil"], rho,
+        1 / parameters["sweep"], parameters["npoints"] - 1, "observable",
+    )
+
+pars = {"spins": ["1H"], "offset": 1200, "sweep": 500, "npoints": 1024,
+        "rho0": spinpy.state(ss, "Lz", "1H"), "coil": spinpy.state(ss, "L+", "1H")}
+fid_pulse = spinpy.liquid(ss, pulse_acquire, pars, "nmr")
+
+# The pulse turns Lz into Lx = (L+ + L-)/2; only the L+ half is detected
+assert np.allclose(fid_pulse, 0.5 * fid_liquid)
+```
+
+`propagator(ss, A, angle)` with a Hermitian operator `A` returns
+`expm(-1j * angle * A)`, so a spin operator and a rotation angle give an
+ideal pulse.
+
+## Tolerances
+
+`ss.tols` holds Spinach's numerical thresholds with their "safe default"
+values. Override any of them at creation:
+
+```python
+ss_fine = spinpy.create({"isotopes": ["1H"], "magnet": 14.1, "tols": {"prop_chop": 1e-14}}, {})
+assert ss_fine.tols.prop_chop == 1e-14
+assert ss_fine.tols.small_matrix == 200
+```
+
+The ones that matter for the ported code:
+
+| tolerance | default | effect |
+|---|---|---|
+| `inter_cutoff` | 1e-10 | interactions weaker than this (Hz) are dropped |
+| `liouv_zero` | 1e-10 | Hamiltonian elements are rounded to this grid (rad/s) |
+| `prop_chop` | 1e-10 | Taylor-series terms and propagators are rounded to this grid |
+| `small_matrix` | 200 | below this dimension matrices are dense and `expm` is used |
+| `dense_matrix` | 0.15 | sparse matrices denser than this are made dense |
+
+For propagators above `small_matrix`, the rounding error grows with the
+number of squaring steps: about 1e-7 relative at the default `prop_chop`
+for a step of norm 100. Lower `prop_chop` if you need more.
+
+## Coming from Spinach
+
+| Spinach (MATLAB) | spinpy |
+|---|---|
+| `sys.isotopes={'1H','13C'};` | `sys = {"isotopes": ["1H", "13C"], ...}` |
+| `inter.coupling.scalar=cell(2,2); inter.coupling.scalar{1,2}=145;` | `"coupling": {"scalar": [[0, 145], [0, 0]]}` |
+| `spin_system=create(sys,inter);` | `ss = spinpy.create(sys, inter)` |
+| `spin_system=basis(spin_system,bas);` | `ss = spinpy.basis(ss, bas)` |
+| `operator(spin_system,'Lz','1H')` | `spinpy.operator(ss, "Lz", "1H")` |
+| `operator(spin_system,'Lz',[1 3])` | `spinpy.operator(ss, "Lz", [0, 2])` |
+| `operator(spin_system,{'Lz','L+'},{1,2})` | `spinpy.operator(ss, ["Lz", "L+"], [0, 1])` |
+| `H=hamiltonian(assume(spin_system,'nmr'));` | `H = spinpy.hamiltonian(spinpy.assume(ss, "nmr"))` |
+| `fid=liquid(spin_system,@acquire,parameters,'nmr');` | `fid = spinpy.liquid(ss, spinpy.acquire, parameters, "nmr")` |
+| `spectrum=fftshift(fft(fid,zerofill));` | `spectrum = np.fft.fftshift(np.fft.fft(fid, zerofill))` |
+
+Differences to keep in mind:
+
+- Spin indices are 0-based.
+- `parameters` is a dictionary; `liquid` copies it before adding defaults.
+- Time-domain results are 1-D arrays, not `n x 1` columns.
+- Spin systems are immutable. Spinach examples that edit
+  `spin_system.inter...` between runs should build a new system with
+  `create` instead.
+- Spinach prints a detailed log; spinpy logs warnings through the standard
+  `logging` module under the name `"spinpy"`.
+
+## What is not ported yet
+
+These raise `NotImplementedError` with a message naming the missing piece:
+
+- formalisms other than `zeeman-hilb` (`sphten-liouv`, `zeeman-liouv`),
+  permutation symmetry,
+- anisotropic interactions, coordinates, dipolar couplings, relaxation,
+  chemical kinetics, the rotating-frame and lab-frame assumption sets other
+  than `"nmr"`,
+- `evolution` outputs other than `"observable"`, and state stacks,
+- decoupling, dead time, and homodecoupling in `acquire`; extra rotating
+  frames and `needs` in `liquid`,
+- operator labels `CT*` and `ZL*`, and bosonic modes,
+- `step`, apodisation, and plotting helpers.
+
+## Checking results against Spinach
+
+`tests/slice/test_hilb_pa_parity.py` recomputes every intermediate result of
+four reference cases (AB, ABX, 1H-13C, 1H-2H) and compares them with the
+output of Spinach 2.13 stored as fixtures; see `oracle/README.md` for how
+fixtures are produced. Typical agreement:
+
+| stage | relative difference from Spinach |
+|---|---|
+| interaction tensors | 0 |
+| spin operators and states | 1 ulp |
+| Hamiltonians | 0 to 4e-15 |
+| propagators | 1e-15 to 1e-13 |
+| FIDs and spectra | 1e-12 to 8e-11 |
+
+The FID differences come from Spinach itself: it sums Hamiltonian terms in a
+random order before rounding each element to a 1e-10 rad/s grid, so
+repeated Spinach runs can differ by one grid step per element, which over
+an acquisition time T gives about 1e-10 x T in the FID. To compare your own
+results with a fixture:
+
+```python
+from spinpy.oracle import assert_matches, find_case, load_fixture
+
+path = find_case("hilb_pa_hc_2spin")
+if path is not None:   # fixtures are optional
+    fx = load_fixture(path)
+    result = assert_matches(H_off, fx["/ham/H_off"], rtol=1e-13, atol=0, name="H_off")
+    print(result)
+```
