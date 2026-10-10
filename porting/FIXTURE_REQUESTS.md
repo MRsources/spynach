@@ -6,11 +6,11 @@ read-only under `/fixtures/<spinach-tag>/`.
 
 ## FR-001: zeeman-hilb pulse-acquire slice (`dump_hilb_pa.m`)
 
-- **Status:** requested
+- **Status:** fulfilled 2026-10-10, `/fixtures/2.13/`, run log `run_20261010T184836Z.log`; MATLAB R2026b, Spinach `03a88b7e` (2.13), clean; `pytest tests/oracle`: 34 passed
 - **Requested:** 2026-10-08, branch `oracle-harness`
 - **Spinach:** clean checkout, expected `03a88b7e912ffbb3122dd24829cc5d216209c804` (no local modifications; `oracle_meta.m` records the dirty flag)
 - **Needs:** MATLAB R2024b or later with Parallel Computing Toolbox (`create()` starts a pool). The shadow `oracle/matlab/shadow/isworkernode.m` sends `evolution()` down its serial branch, because the Hilbert-space `spmd` split uses `distributed` arrays, which MATLAB does not support on local process pools on Apple silicon Macs (`distributedutil.errorIfUnsupportedPlatformOrEnvironment`; this is a MATLAB restriction, not a Spinach one). Spinach's startup check rejects the shadow, so the dump sets `sys.disable={'hygiene'}`.
-- **Before re-running:** delete the partial `hilb_pa_ab_2spin/` left by the failed run of 2026-10-10; the dump refuses to overwrite an existing case directory.
+- **Re-running:** delete the existing `hilb_pa_*` case directories first; the dump refuses to overwrite them.
 - **Produces:** `hilb_pa_ab_2spin`, `hilb_pa_abx_3spin`, `hilb_pa_hc_2spin`, `hilb_pa_hd_2spin` (each a few MB at most)
 
 Edit the settings block at the top of `oracle/matlab/run_fixtures.m` if the
