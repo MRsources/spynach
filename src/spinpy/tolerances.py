@@ -1,0 +1,46 @@
+"""Numerical tolerances and thresholds (port of the defaults in ``tolerances.m``).
+
+Spinach keeps these in ``spin_system.tols``. Only the "safe default" set is
+ported; the ``'paranoia'`` and ``'cowboy'`` presets are not. Individual
+values can be overridden through ``sys['tols']`` in :func:`spinpy.create`.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, fields, replace
+from typing import Any
+
+
+@dataclass(frozen=True)
+class Tolerances:
+    inter_cutoff: float = 1e-10   # interaction norm below which it is dropped (Hz)
+    liouv_zero: float = 1e-10     # rounding grid for Hamiltonian/Liouvillian elements
+    rlx_zero: float = 1e-10       # rounding grid for relaxation superoperators
+    prop_chop: float = 1e-10      # rounding grid for propagators and Taylor terms
+    subs_drop: float = 1e-10
+    irrep_drop: float = 1e-10
+    stst_tol: float = 1e-8
+    zte_nsteps: int = 32
+    zte_tol: float = 1e-24
+    zte_maxden: float = 0.5
+    prox_cutoff: float = 100
+    krylov_tol: int = 10000       # matrix dimension above which evolution() uses Krylov
+    basis_hush: int = 256
+    merge_dim: int = 1000
+    dense_matrix: float = 0.15    # density above which sparse matrices are made full
+    small_matrix: int = 200       # dimension below which matrices are kept full
+    rlx_integration: float = 1e-4
+    dP_method: str = "auxmat"
+    dd_ncells: int = 2
+    cache_mem: int = 365
+
+
+def tolerances(overrides: dict[str, Any] | None = None) -> Tolerances:
+    """Default tolerances, with user overrides (Spinach ``sys.tols``) applied."""
+    if not overrides:
+        return Tolerances()
+    known = {f.name for f in fields(Tolerances)}
+    unknown = set(overrides) - known
+    if unknown:
+        raise ValueError(f"unknown tolerance(s) in sys['tols']: {sorted(unknown)}")
+    return replace(Tolerances(), **overrides)
