@@ -6,9 +6,14 @@ shifts and J-couplings, in the Zeeman Hilbert-space formalism
 (`zeeman-hilb`). Every stage reproduces Spinach 2.13 to rounding error; see
 [Checking results against Spinach](#checking-results-against-spinach).
 
-Every Python block in this guide is executed by
-`tests/docs/test_user_guide.py`, in order and in one namespace, so the
-examples stay correct as the code changes.
+To run the examples interactively, open the companion notebook
+[`notebooks/user-guide.ipynb`](notebooks/user-guide.ipynb), generated from
+this page. If you know Spinach, read
+[Coming from Spinach](coming-from-spinach.md) next: it lists, topic by
+topic, what carries over unchanged and what is different.
+
+Every Python block in this guide is executed by `tests/docs/`, in order and
+in one namespace, so the examples stay correct as the code changes.
 
 ## Contents
 
@@ -27,8 +32,15 @@ spinpy needs Python 3.11 or later with NumPy, SciPy, and h5py. From the
 repository root:
 
 ```
-python -m pip install -e ".[test]"
+python -m pip install -e ".[test,docs]"
 OPENBLAS_NUM_THREADS=4 python -m pytest -q
+```
+
+The `docs` extra adds matplotlib and JupyterLab, needed only for the plots
+and the notebooks. Start JupyterLab with the same environment variable:
+
+```
+OPENBLAS_NUM_THREADS=4 jupyter lab docs/notebooks/
 ```
 
 Set `OPENBLAS_NUM_THREADS` to the number of CPUs you actually have. In
@@ -91,8 +103,22 @@ strongest = ppm_axis[np.argmax(spectrum.real)]
 assert 0.9 < strongest < 1.3
 ```
 
-Plot `spectrum.real` against `ppm_axis` with any plotting library; NMR
-convention draws the ppm axis decreasing from left to right.
+To plot it (NMR convention draws the ppm axis decreasing from left to
+right):
+
+```python
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots(figsize=(7, 3))
+ax.plot(ppm_axis, spectrum.real)
+ax.set_xlim(1.4, 0.8)
+ax.set_xlabel("1H chemical shift / ppm")
+ax.set_yticks([])
+plt.show()
+```
+
+Blocks that plot are the only ones that need matplotlib; they define no
+names that later blocks use.
 
 ## The simulation pipeline
 
@@ -324,29 +350,12 @@ for a step of norm 100. Lower `prop_chop` if you need more.
 
 ## Coming from Spinach
 
-| Spinach (MATLAB) | spinpy |
-|---|---|
-| `sys.isotopes={'1H','13C'};` | `sys = {"isotopes": ["1H", "13C"], ...}` |
-| `inter.coupling.scalar=cell(2,2); inter.coupling.scalar{1,2}=145;` | `"coupling": {"scalar": [[0, 145], [0, 0]]}` |
-| `spin_system=create(sys,inter);` | `ss = spinpy.create(sys, inter)` |
-| `spin_system=basis(spin_system,bas);` | `ss = spinpy.basis(ss, bas)` |
-| `operator(spin_system,'Lz','1H')` | `spinpy.operator(ss, "Lz", "1H")` |
-| `operator(spin_system,'Lz',[1 3])` | `spinpy.operator(ss, "Lz", [0, 2])` |
-| `operator(spin_system,{'Lz','L+'},{1,2})` | `spinpy.operator(ss, ["Lz", "L+"], [0, 1])` |
-| `H=hamiltonian(assume(spin_system,'nmr'));` | `H = spinpy.hamiltonian(spinpy.assume(ss, "nmr"))` |
-| `fid=liquid(spin_system,@acquire,parameters,'nmr');` | `fid = spinpy.liquid(ss, spinpy.acquire, parameters, "nmr")` |
-| `spectrum=fftshift(fft(fid,zerofill));` | `spectrum = np.fft.fftshift(np.fft.fft(fid, zerofill))` |
-
-Differences to keep in mind:
-
-- Spin indices are 0-based.
-- `parameters` is a dictionary; `liquid` copies it before adding defaults.
-- Time-domain results are 1-D arrays, not `n x 1` columns.
-- Spin systems are immutable. Spinach examples that edit
-  `spin_system.inter...` between runs should build a new system with
-  `create` instead.
-- Spinach prints a detailed log; spinpy logs warnings through the standard
-  `logging` module under the name `"spinpy"`.
+Function names, argument order, field names, and units are Spinach's. The
+main differences: spin indices are 0-based, `sys`, `inter`, `bas`, and
+`parameters` are dictionaries, spin systems are immutable, matrix products
+are written `A @ B`, and time-domain results are 1-D arrays.
+[Coming from Spinach](coming-from-spinach.md) covers each topic in detail,
+with a Spinach example script translated line by line.
 
 ## What is not ported yet
 

@@ -2,7 +2,9 @@
 
 A Python reimplementation of the [Spinach](https://spindynamics.org) spin
 dynamics kernel (MIT licence), verified stage by stage against the MATLAB
-original. **Start with the [user guide](docs/user-guide.md).** See `HANDOFF.md` for goals and design decisions, and
+original. **Start with the [user guide](docs/user-guide.md)**; if you use
+Spinach, also read [Coming from Spinach](docs/coming-from-spinach.md). Each
+guide has a runnable Jupyter notebook in [`docs/notebooks/`](docs/notebooks/). See `HANDOFF.md` for goals and design decisions, and
 `oracle/README.md` for the reference-data ("fixture") harness.
 
 ## Status
@@ -75,6 +77,11 @@ Parity tests skip when fixtures are absent (`$SPINPY_FIXTURES`, default
 is 4 CPUs; with the default thread count, dense LAPACK calls run ~1000x
 slower (a 256x256 `eigh` takes 10 s instead of 10 ms). Set
 `OPENBLAS_NUM_THREADS` to the quota for tests and especially for benchmarks.
+
+Every user-facing change comes with user documentation in the same
+commit; see [`docs/README.md`](docs/README.md) for the conventions. After
+editing a guide, regenerate its notebook with
+`python docs/build_notebooks.py`; `tests/docs/` fails if it is stale.
 
 `src/spinpy/_isotope_data.py` is generated from Spinach's `spin.m` by
 `porting/tools/gen_isotopes.py`; do not edit it by hand.

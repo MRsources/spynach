@@ -12,6 +12,7 @@ dependencies = ["numpy>=1.26", "scipy>=1.11", "h5py>=3.10"]
 
 [project.optional-dependencies]
 test = ["pytest>=8"]
+docs = ["matplotlib>=3.8", "jupyterlab>=4"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
