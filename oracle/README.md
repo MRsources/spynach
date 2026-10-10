@@ -46,7 +46,9 @@ Every dump also writes `/probe/*` variables with known contents;
 confirms the MATLAB-side layout on real output.
 
 **meta.json.** `schema_version`, `created_utc`, `spinach_root`,
-`spinach_commit`, `spinach_describe`, `spinach_dirty`, `matlab_version`,
+`spinach_commit`, `spinach_describe`, `spinach_dirty` (modified tracked files
+or untracked `.m` files; other untracked files such as `.DS_Store` are ignored),
+`spinach_status` (raw `git status --porcelain` lines), `matlab_version`,
 `formalism`, `approximation`, `tols` (the full `spin_system.tols`),
 `sys_enable`, `sys_disable`, `dump_script` (path, sha256), `harness`
 (sha256 of `oracle_write.m` and `oracle_meta.m`), `shadows`, and `inputs`

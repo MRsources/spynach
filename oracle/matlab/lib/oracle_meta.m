@@ -44,6 +44,12 @@ end
 [~,describe]=system(['git -C "' spinach_root '" describe --tags --always --dirty']);
 [~,porcelain]=system(['git -C "' spinach_root '" status --porcelain']);
 
+% Dirty means modified tracked files or untracked .m files; untracked
+% non-code files such as Finder's .DS_Store cannot change results
+status_lines=splitlines(strtrim(porcelain)); status_lines(cellfun(@isempty,status_lines))=[];
+untracked=startsWith(status_lines,'??');
+relevant=(~untracked)|endsWith(strtrim(status_lines),'.m');
+
 % Identify active shadow files
 shadow_files=dir(fullfile(shadow_dir,'**','*.m'));
 shadows=struct('name',{},'path',{},'sha256',{});
@@ -63,7 +69,8 @@ meta.created_utc=char(datetime('now','TimeZone','UTC',...
 meta.spinach_root=spinach_root;
 meta.spinach_commit=strtrim(commit);
 meta.spinach_describe=strtrim(describe);
-meta.spinach_dirty=~isempty(strtrim(porcelain));
+meta.spinach_dirty=any(relevant);
+meta.spinach_status=status_lines;
 meta.matlab_version=version();
 meta.formalism=spin_system.bas.formalism;
 meta.approximation=spin_system.bas.approximation;

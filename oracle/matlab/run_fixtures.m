@@ -53,7 +53,8 @@ if status~=0
 end
 spinach_tag=strtrim(spinach_tag);
 [~,porcelain]=system(['git -C "' spinach_dir '" status --porcelain']);
-if ~isempty(strtrim(porcelain))
+status_lines=splitlines(strtrim(porcelain)); status_lines(cellfun(@isempty,status_lines))=[];
+if any((~startsWith(status_lines,'??'))|endsWith(strtrim(status_lines),'.m'))
     warning('Spinach working tree has local modifications, fixtures will be flagged as dirty.');
 end
 
