@@ -4,12 +4,15 @@ The Markdown guides are the source of truth: they render on any Git host and
 their Python blocks are executed by tests/docs/. Each guide docs/<name>.md
 becomes docs/notebooks/<name>.ipynb, with every ```python block as a code
 cell and the prose in between as Markdown cells split at section headings.
-Notebooks are written without outputs, so they diff cleanly.
+Each notebook is then run in a fresh kernel and saved with its outputs, so
+the plots and results are there as soon as it is opened.
 
-    python docs/build_notebooks.py          # rewrite the notebooks
-    python docs/build_notebooks.py --check  # exit 1 if any is out of date
+    python docs/build_notebooks.py               # rebuild and run every notebook
+    python docs/build_notebooks.py --no-execute  # rebuild without outputs (quick)
+    python docs/build_notebooks.py --check       # exit 1 if any is stale or not run
 
-Uses only the standard library, so it runs without Jupyter installed.
+Running needs the "docs" extra (Plotly, nbclient, ipykernel); building and
+checking use only the standard library.
 """
 
 from __future__ import annotations
@@ -17,6 +20,7 @@ from __future__ import annotations
 import argparse
 import functools
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -35,8 +39,19 @@ INTRO = (
     "*Generated from [`docs/{name}.md`](../{name}.md) by `docs/build_notebooks.py`;"
     " edit the Markdown guide, not this notebook.*\n\n"
     "Run the cells in order: later cells use names defined by earlier ones."
-    " Plotting cells need matplotlib (`pip install -e \".[docs]\"`)."
+    " The saved outputs come from running the notebook top to bottom;"
+    " plotting cells need Plotly (`pip install -e \".[docs]\"`)."
 )
+
+# Run before the first cell when executing, and not saved: store Plotly figures
+# as JSON that JupyterLab and VS Code render interactively, without embedding
+# plotly.js in every notebook
+SETUP = "import plotly.io as _pio\n_pio.renderers.default = 'plotly_mimetype'"
+
+METADATA = {
+    "kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
+    "language_info": {"name": "python"},
+}
 
 
 def guides() -> list[Path]:
@@ -48,7 +63,12 @@ def notebook_path(guide: Path) -> Path:
 
 
 def build(guide: Path) -> str:
-    """Notebook JSON text for one guide."""
+    """Notebook JSON text for one guide, without outputs."""
+    return dumps(build_notebook(guide))
+
+
+def build_notebook(guide: Path) -> dict:
+    """Notebook for one guide, as a dictionary, without outputs."""
     text = guide.read_text(encoding="utf-8")
     cells: list[tuple[str, str]] = []
     position = 0
@@ -62,16 +82,63 @@ def build(guide: Path) -> str:
     intro = ("markdown", INTRO.format(name=guide.stem))
     cells.insert(1 if cells and cells[0][1].startswith("# ") else 0, intro)
 
-    notebook = {
+    return {
         "cells": [_cell(kind, source, n) for n, (kind, source) in enumerate(cells)],
-        "metadata": {
-            "kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
-            "language_info": {"name": "python"},
-        },
+        "metadata": METADATA,
         "nbformat": 4,
         "nbformat_minor": 5,
     }
+
+
+def dumps(notebook: dict) -> str:
     return json.dumps(notebook, indent=1, ensure_ascii=False) + "\n"
+
+
+def strip_outputs(text: str) -> str:
+    """Notebook JSON text with outputs and execution counts removed."""
+    notebook = json.loads(text)
+    for cell in notebook["cells"]:
+        if cell["cell_type"] == "code":
+            cell["execution_count"] = None
+            cell["outputs"] = []
+    return dumps(notebook)
+
+
+def is_executed(text: str) -> bool:
+    """True if every code cell of the notebook has been run."""
+    return all(c["execution_count"] is not None for c in json.loads(text)["cells"] if c["cell_type"] == "code")
+
+
+def execute(notebook: dict) -> dict:
+    """Run a notebook top to bottom in a fresh kernel and return it with outputs.
+
+    The kernel imports spinpy from this checkout's src/, whatever is
+    installed, and runs in docs/notebooks/ as it would when opened there.
+    """
+    import nbclient
+    import nbformat
+
+    env_path = os.environ.get("PYTHONPATH", "")
+    os.environ["PYTHONPATH"] = os.pathsep.join(p for p in (str(DOCS.parent / "src"), env_path) if p)
+    os.environ.setdefault("OPENBLAS_NUM_THREADS", "4")
+
+    setup = {"cell_type": "code", "id": "setup", "metadata": {}, "source": SETUP,
+             "execution_count": None, "outputs": []}
+    node = nbformat.reads(json.dumps({**notebook, "cells": [setup, *notebook["cells"]]}), as_version=4)
+    nbclient.NotebookClient(
+        node, timeout=600, kernel_name="python3", record_timing=False,
+        resources={"metadata": {"path": str(NOTEBOOKS)}},
+    ).execute()
+
+    # Keep the cells as built and add the outputs, without the setup cell;
+    # execution counts then start at 1
+    cells = []
+    for cell, run in zip(notebook["cells"], node["cells"][1:], strict=True):
+        if cell["cell_type"] == "code":
+            outputs = json.loads(json.dumps(run["outputs"]))
+            cell = {**cell, "execution_count": run["execution_count"] - 1, "outputs": outputs}
+        cells.append(cell)
+    return {**notebook, "cells": cells}
 
 
 def _split_prose(prose: str) -> list[str]:
@@ -134,20 +201,28 @@ def _cell(kind: str, source: str, n: int) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--check", action="store_true", help="report stale notebooks instead of writing them")
+    parser.add_argument("--no-execute", action="store_true", help="write notebooks without running them")
     args = parser.parse_args()
-    stale = []
     NOTEBOOKS.mkdir(exist_ok=True)
+    status = 0
     for guide in guides():
         path = notebook_path(guide)
-        text = build(guide)
-        if path.exists() and path.read_text(encoding="utf-8") == text:
+        name = path.relative_to(DOCS.parent)
+        current = path.read_text(encoding="utf-8") if path.exists() else None
+        if args.check:
+            if current is None or strip_outputs(current) != build(guide):
+                print(f"stale: {name}")
+                status = 1
+            elif not is_executed(current):
+                print(f"not run: {name}")
+                status = 1
             continue
-        stale.append(path)
-        if not args.check:
+        notebook = build_notebook(guide)
+        text = dumps(notebook if args.no_execute else execute(notebook))
+        if text != current:
             path.write_text(text, encoding="utf-8")
-    for path in stale:
-        print(f"{'stale' if args.check else 'wrote'}: {path.relative_to(DOCS.parent)}")
-    return 1 if args.check and stale else 0
+            print(f"wrote: {name}")
+    return status
 
 
 if __name__ == "__main__":

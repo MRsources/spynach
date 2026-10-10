@@ -5,8 +5,11 @@
 | [User guide](user-guide.md) | [user-guide.ipynb](notebooks/user-guide.ipynb) | liquid-state NMR in Hilbert space (`zeeman-hilb`): setup, the simulation pipeline, pulse sequences, tolerances, parity with Spinach |
 | [Coming from Spinach](coming-from-spinach.md) | [coming-from-spinach.ipynb](notebooks/coming-from-spinach.ipynb) | what carries over from Spinach and what differs: spin systems, basis, operators, Hamiltonians, parameters, calculation modalities, processing |
 
-Open the notebooks with `OPENBLAS_NUM_THREADS=4 jupyter lab docs/notebooks/`
-after `pip install -e ".[docs]"`.
+The notebooks are saved with their outputs, plots included. Open them
+with `OPENBLAS_NUM_THREADS=4 jupyter lab docs/notebooks/` after
+`pip install -e ".[docs]"`, or in VS Code with the Python and Jupyter
+extensions; the plots are interactive in both. (GitHub's notebook viewer
+does not show Plotly figures.)
 
 ## Conventions for contributors
 
@@ -19,10 +22,14 @@ option, or behaviour change is not done until the guides describe it.
    order and in one namespace per guide, so examples must run as written
    and should assert what they claim.
 2. **Notebooks are generated.** `python docs/build_notebooks.py` writes
-   `docs/notebooks/<name>.ipynb` for every guide, without outputs. Never edit
-   a notebook by hand; the tests fail if one is stale or has no guide.
-3. **Plots** go in their own blocks, use matplotlib, and define no names that
-   later blocks need: without matplotlib installed, the tests skip them.
+   `docs/notebooks/<name>.ipynb` for every guide, runs it in a fresh kernel,
+   and saves it with its outputs. Never edit a notebook by hand; the tests
+   fail if one is stale, was saved without outputs, or has no guide.
+3. **Plots** go in their own blocks, use `spinpy.plotting` (or Plotly
+   directly), end with the figure as the last expression so the notebook
+   shows it, and define no names that later blocks need: without Plotly
+   installed, the tests skip them. Show the results a section computes:
+   spectra, FIDs, and comparisons between them.
 4. **Keep examples fast** (a few seconds per guide). If a faithful
    translation of a Spinach example is slow, reduce its size and say what
    was changed and how to restore it.

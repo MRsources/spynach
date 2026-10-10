@@ -38,6 +38,7 @@ spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))
 | `propagator.m` | `spinpy.propagator` | dense Pade below `small_matrix`, scaled-squared Taylor above |
 | `evolution.m` | `spinpy.evolution` | `zeeman-hilb`, `observable` |
 | `liquid.m`, `acquire.m` | `spinpy.liquid`, `spinpy.acquire` | no decoupling, relaxation, or kinetics |
+| `ft_axis.m`, `axis_1d.m`, `plot_1d.m` | `spinpy.plotting` | all axis units; interactive Plotly figures; no `derivative` |
 
 Anything not ported raises `NotImplementedError`; inputs are never silently
 ignored.

@@ -21,10 +21,11 @@ in one namespace, so the examples stay correct as the code changes.
 2. [Quick start](#quick-start)
 3. [The simulation pipeline](#the-simulation-pipeline)
 4. [Writing your own pulse sequence](#writing-your-own-pulse-sequence)
-5. [Tolerances](#tolerances)
-6. [Coming from Spinach](#coming-from-spinach)
-7. [What is not ported yet](#what-is-not-ported-yet)
-8. [Checking results against Spinach](#checking-results-against-spinach)
+5. [Plotting results](#plotting-results)
+6. [Tolerances](#tolerances)
+7. [Coming from Spinach](#coming-from-spinach)
+8. [What is not ported yet](#what-is-not-ported-yet)
+9. [Checking results against Spinach](#checking-results-against-spinach)
 
 ## Setup
 
@@ -36,8 +37,9 @@ python -m pip install -e ".[test,docs]"
 OPENBLAS_NUM_THREADS=4 python -m pytest -q
 ```
 
-The `docs` extra adds matplotlib and JupyterLab, needed only for the plots
-and the notebooks. Start JupyterLab with the same environment variable:
+The `docs` extra adds Plotly, JupyterLab, and what is needed to run the
+notebooks; only plots and notebooks need it (`.[plot]` installs Plotly
+alone). Start JupyterLab with the same environment variable:
 
 ```
 OPENBLAS_NUM_THREADS=4 jupyter lab docs/notebooks/
@@ -86,39 +88,44 @@ assert fid.shape == (1024,)
 assert spectrum.shape == (4096,)
 ```
 
-The frequency axis, in the same convention as Spinach's `ft_axis` and
-`axis_1d`, runs from `offset - sweep/2` upwards; converting to ppm uses the
-carrier frequency of the channel isotope:
+The frequency axis comes from `axis_1d`, a port of Spinach's function of
+the same name: it runs from `offset - sweep/2` upwards in steps of
+`sweep / zerofill`, and `axis_units` converts it to ppm with the carrier
+frequency of the channel isotope:
 
 ```python
-from spinpy.isotopes import spin
+from spinpy.plotting import axis_1d
 
-hz_axis = parameters["offset"] + np.fft.fftshift(np.fft.fftfreq(zerofill, 1 / parameters["sweep"]))
-gamma, _ = spin("1H")
-carrier_hz = -gamma * sys["magnet"] / (2 * np.pi)
-ppm_axis = -1e6 * hz_axis / carrier_hz
+ppm_axis, label = axis_1d(ss, {**parameters, "zerofill": zerofill, "axis_units": "ppm"})
+assert label == "1H chemical shift / ppm"
 
 # The AB quartet sits between the two chemical shifts
 strongest = ppm_axis[np.argmax(spectrum.real)]
 assert 0.9 < strongest < 1.3
 ```
 
-To plot it (NMR convention draws the ppm axis decreasing from left to
-right):
+`plot_1d` draws the spectrum on that axis, decreasing from left to right as
+is usual in NMR. The figure is interactive: hover to read off shifts and
+intensities, drag to zoom in, double-click to zoom out.
 
 ```python
-import matplotlib.pyplot as plt
+from spinpy.plotting import plot_1d
 
-fig, ax = plt.subplots(figsize=(7, 3))
-ax.plot(ppm_axis, spectrum.real)
-ax.set_xlim(1.4, 0.8)
-ax.set_xlabel("1H chemical shift / ppm")
-ax.set_yticks([])
-plt.show()
+fig = plot_1d(ss, spectrum.real, parameters, title="AB quartet at 14.1 T")
+fig.update_xaxes(range=[1.4, 0.8])   # start zoomed in on the quartet
+fig
 ```
 
-Blocks that plot are the only ones that need matplotlib; they define no
-names that later blocks use.
+`plot_fid` shows the time domain, real and imaginary parts:
+
+```python
+from spinpy.plotting import plot_fid
+
+plot_fid(fid, parameters, title="Apodised free induction decay")
+```
+
+Blocks that plot are the only ones that need Plotly; they define no names
+that later blocks use. [Plotting results](#plotting-results) has more.
 
 ## The simulation pipeline
 
@@ -323,6 +330,52 @@ assert np.allclose(fid_pulse, 0.5 * fid_liquid)
 `expm(-1j * angle * A)`, so a spin operator and a rotation angle give an
 ideal pulse.
 
+## Plotting results
+
+`spinpy.plotting` draws interactive [Plotly](https://plotly.com/python/)
+figures that render in JupyterLab, VS Code, and exported HTML:
+
+| function | draws | Spinach |
+|---|---|---|
+| `plot_1d(spin_system, spectrum, parameters)` | one or more 1D spectra | `plot_1d` |
+| `plot_fid(fid, parameters)` | one or more FIDs against time | (none) |
+| `axis_1d(spin_system, parameters)` | the frequency axis and its label, no plot | `axis_1d` |
+| `ft_axis(offset, sweep, npoints)` | the Hz axis of an FFT | `ft_axis` |
+
+`plot_1d` reads the same `parameters` as Spinach's: `spins`, `offset`,
+`sweep`, `axis_units` (default `"ppm"`; also `"Hz"`, `"kHz"`, `"MHz"`,
+`"points"`, and the EPR units), and `invert_axis` (default 1, frequency
+decreasing to the right). `zerofill` defaults to the length of the spectrum.
+Pass several spectra as a list, or as a 2-D array with one per column, to
+overlay them; complex data are drawn as real and imaginary parts.
+
+Both plotting functions return a `plotly.graph_objects.Figure`. A figure
+that is the last expression of a notebook cell is displayed;
+`fig.update_xaxes(range=...)` and the other Plotly methods adjust it,
+`fig.write_html("spectrum.html")` saves an interactive copy, and
+`theme="dark"` suits dark notebook themes.
+
+Back to the 1H-13C pair: the spectra from the two sequences above, on a Hz
+axis, show the 145 Hz one-bond coupling and the factor of two between them:
+
+```python
+window = np.exp(-np.arange(1024) / 256)
+spectra = [np.fft.fftshift(np.fft.fft(f * window, 4096)).real for f in (fid_liquid, fid_pulse)]
+pars_hc = {"spins": ["1H"], "offset": 1200, "sweep": 500, "axis_units": "Hz"}
+
+hz, _ = axis_1d(ss, {**pars_hc, "zerofill": 4096})
+low, high = hz[hz < 1200][np.argmax(spectra[0][hz < 1200])], hz[hz > 1200][np.argmax(spectra[0][hz > 1200])]
+assert abs(high - low - 145) < 0.5                          # 1J(CH) doublet
+assert np.isclose(spectra[1].max(), 0.5 * spectra[0].max())
+```
+
+```python
+from spinpy.plotting import plot_1d
+
+plot_1d(ss, spectra, pars_hc, names=["acquire from L+", "90° pulse from Lz"],
+        title="1H spectrum of a 1H-13C pair")
+```
+
 ## Tolerances
 
 `ss.tols` holds Spinach's numerical thresholds with their "safe default"
@@ -370,7 +423,8 @@ These raise `NotImplementedError` with a message naming the missing piece:
 - decoupling, dead time, and homodecoupling in `acquire`; extra rotating
   frames and `needs` in `liquid`,
 - operator labels `CT*` and `ZL*`, and bosonic modes,
-- `step`, apodisation, and plotting helpers.
+- `step` and apodisation; plotting functions other than `plot_1d`
+  (`plot_2d`, `plot_3d`, ...) and its `derivative` option.
 
 ## Checking results against Spinach
 

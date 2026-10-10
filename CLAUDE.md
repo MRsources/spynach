@@ -9,7 +9,8 @@ Read `HANDOFF.md` for goals and design decisions, `README.md` for status.
   `docs/README.md`.
 - Guides are `docs/*.md`; their `python` blocks are executed by
   `tests/docs/`. Run `python docs/build_notebooks.py` after editing a guide:
-  notebooks in `docs/notebooks/` are generated, never hand-edited.
+  notebooks in `docs/notebooks/` are generated and saved with their outputs
+  (plots included), never hand-edited. Plot with `spinpy.plotting`.
 - For each ported feature, update `docs/coming-from-spinach.md` with what is
   the same as in Spinach, what differs, and what is still not ported.
 - Split a guide by theme when it passes ~500 lines or a new formalism,

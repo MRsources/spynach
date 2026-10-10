@@ -1,7 +1,7 @@
 """Run the Python blocks of every guide in docs/ and check its notebook is current.
 
-Blocks run in order and in one namespace per guide. Blocks that use
-matplotlib run only when it is installed (the "docs" extra); they must not
+Blocks run in order and in one namespace per guide. Blocks that plot run
+only when Plotly is installed (the "plot" or "docs" extra); they must not
 define names that later blocks use.
 """
 
@@ -17,17 +17,24 @@ sys.path.insert(0, str(DOCS))
 import build_notebooks  # noqa: E402
 
 GUIDES = build_notebooks.guides()
-HAS_MATPLOTLIB = importlib.util.find_spec("matplotlib") is not None
+HAS_PLOTLY = importlib.util.find_spec("plotly") is not None
+
+# A block plots if it calls a plotting function or uses Plotly directly
+PLOTS = re.compile(r"\bplot_\w+\(|\bplotly\b")
 
 
 def python_blocks(guide: Path) -> list[str]:
     return build_notebooks.FENCE.findall(guide.read_text(encoding="utf-8"))
 
 
+def plots(block: str) -> bool:
+    return bool(PLOTS.search(block))
+
+
 def run_blocks(guide: Path, with_plots: bool) -> None:
     namespace: dict = {}
     for n, block in enumerate(python_blocks(guide)):
-        if "matplotlib" in block and not with_plots:
+        if plots(block) and not with_plots:
             continue
         exec(compile(block, f"{guide.name} block {n}", "exec"), namespace)
 
@@ -38,24 +45,21 @@ def test_examples_run(guide):
     run_blocks(guide, with_plots=False)
 
 
-@pytest.mark.skipif(not HAS_MATPLOTLIB, reason="matplotlib not installed")
-@pytest.mark.parametrize("guide", [g for g in GUIDES if "matplotlib" in g.read_text(encoding="utf-8")],
-                         ids=lambda p: p.name)
-def test_examples_run_with_plots(guide, monkeypatch):
-    monkeypatch.setenv("MPLBACKEND", "Agg")
-    import matplotlib.pyplot as plt
-
-    try:
-        run_blocks(guide, with_plots=True)
-    finally:
-        plt.close("all")
+@pytest.mark.skipif(not HAS_PLOTLY, reason="plotly not installed")
+@pytest.mark.parametrize("guide", [g for g in GUIDES if any(map(plots, python_blocks(g)))], ids=lambda p: p.name)
+def test_examples_run_with_plots(guide):
+    run_blocks(guide, with_plots=True)
 
 
 @pytest.mark.parametrize("guide", GUIDES, ids=lambda p: p.name)
 def test_notebook_is_current(guide):
     path = build_notebooks.notebook_path(guide)
-    assert path.exists() and path.read_text(encoding="utf-8") == build_notebooks.build(guide), (
+    text = path.read_text(encoding="utf-8") if path.exists() else ""
+    assert text and build_notebooks.strip_outputs(text) == build_notebooks.build(guide), (
         f"{path.name} is out of date; run: python docs/build_notebooks.py"
+    )
+    assert build_notebooks.is_executed(text), (
+        f"{path.name} was saved without outputs; run: python docs/build_notebooks.py"
     )
 
 

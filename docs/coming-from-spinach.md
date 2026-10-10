@@ -94,6 +94,8 @@ parameters = {
     "sweep": 1000,
     "npoints": 2048,     # Spinach example: 16384, see below
     "zerofill": 8192,    # Spinach example: 65536
+    "axis_units": "ppm",
+    "invert_axis": 1,
 }
 fid = spinpy.liquid(spin_system, spinpy.acquire, parameters, "nmr")
 
@@ -110,26 +112,17 @@ eight spins the Hilbert space has dimension 256, and the full-length run
 takes about 30 s on four CPU cores. Set `"npoints": 16384` and
 `"zerofill": 65536` to reproduce the Spinach example exactly.
 
-`plot_1d` is not ported; the ppm axis and the plot take a few lines (see
-[Processing and plotting](#processing-and-plotting)):
+`kfigure(); plot_1d(spin_system,real(spectrum),parameters)` becomes a
+call to `spinpy.plotting.plot_1d`, which reads the same parameters and
+returns an interactive figure (see
+[Processing and plotting](#processing-and-plotting)). Hover over a line to
+read its shift, and drag across the aromatic region to zoom in on the
+multiplets:
 
 ```python
-import matplotlib.pyplot as plt
-from spinpy.isotopes import spin
+from spinpy.plotting import plot_1d
 
-def ppm_axis(spin_system, parameters, isotope="1H"):
-    """Spinach's axis_1d with axis_units='ppm', for one channel."""
-    npts = parameters["zerofill"]
-    hz = parameters["offset"] + np.fft.fftshift(np.fft.fftfreq(npts, 1 / parameters["sweep"]))
-    carrier = -spin(isotope)[0] * spin_system.magnet / (2 * np.pi)
-    return -1e6 * hz / carrier
-
-fig, ax = plt.subplots(figsize=(7, 3))
-ax.plot(ppm_axis(spin_system, parameters), spectrum.real)
-ax.invert_xaxis()                      # parameters.invert_axis=1
-ax.set_xlabel("1H chemical shift / ppm")
-ax.set_yticks([])
-plt.show()
+plot_1d(spin_system, spectrum.real, parameters, title="Styrene, 1H, 7.046 T")
 ```
 
 ## General differences
@@ -302,10 +295,10 @@ as with MATLAB's value semantics.
 | `decouple` | isotopes to decouple | only empty |
 | `rframes`, `needs` | extra rotating frames, context requests | only empty |
 | `homodec_oper`, `homodec_pwr`, `dead_time` | `acquire` options | no |
-| `zerofill`, `axis_units`, `invert_axis` | read by Spinach's plotting functions | stored, unused |
+| `zerofill`, `axis_units`, `invert_axis` | read by the plotting functions | yes, by `spinpy.plotting` |
 
-Fields that only Spinach's processing and plotting functions read are
-accepted and ignored by the simulation, as in Spinach.
+Fields that only processing and plotting functions read are accepted and
+ignored by the simulation, as in Spinach.
 
 ## Calculation modalities
 
@@ -335,22 +328,37 @@ stored Spinach 2.13 output; see
 
 ## Processing and plotting
 
-Spinach's processing and plotting helpers are not ported; NumPy and
-matplotlib do the same in a line or two.
+`axis_1d`, `ft_axis`, and `plot_1d` are in `spinpy.plotting`, with
+Spinach's arguments; the other processing helpers are a line of NumPy.
 
-| Spinach | NumPy / matplotlib |
+| Spinach | spinpy / NumPy |
 |---|---|
 | `fftshift(fft(fid,zerofill))` | `np.fft.fftshift(np.fft.fft(fid, zerofill))` |
 | `apodisation(spin_system,fid,{{'exp',k}})` | `fid[0] /= 2; fid *= np.exp(-k * np.linspace(0, 1, fid.size))` |
 | `apodisation(spin_system,fid,{{'gauss',k}})` | `fid[0] /= 2; fid *= np.exp(-k * np.linspace(0, 1, fid.size) ** 2)` |
-| `axis_1d`, `ft_axis` | `offset + np.fft.fftshift(np.fft.fftfreq(zerofill, 1 / sweep))` |
-| `plot_1d(...)` with `axis_units='ppm'`, `invert_axis=1` | `ax.plot(ppm, spectrum.real); ax.invert_xaxis()` |
-| `kfigure()` | `plt.subplots()` |
+| `[ax,ax_label]=axis_1d(spin_system,parameters)` | `ax, ax_label = axis_1d(spin_system, parameters)` |
+| `ft_axis(offset,sweep,npoints)` | `ft_axis(offset, sweep, npoints)` |
+| `kfigure(); plot_1d(spin_system,spectrum,parameters)` | `plot_1d(spin_system, spectrum, parameters)` |
+| `plot(fid)` of a time-domain signal | `plot_fid(fid, parameters)` |
+
+How `plot_1d` differs from Spinach's:
+
+- It returns a Plotly figure instead of drawing into the current MATLAB
+  axes. Display it as the last expression of a notebook cell, change it
+  with Plotly's methods (`fig.update_xaxes(range=[7, 6])` for `xlim`), and
+  save it with `fig.write_html(...)`. There is no `kfigure`, `hold on`, or
+  `varargin` of line options; to overlay spectra, pass them together as a
+  list, with `names=[...]` for the legend.
+- `zerofill` defaults to the length of the spectrum (Spinach: to
+  `npoints`), and a `zerofill` that disagrees with the spectrum length is
+  an error.
+- Spinach's defaults (`axis_units='ppm'`, `invert_axis=1`, `offset=0`)
+  apply without the log messages; `derivative` is not ported.
+- `axis_1d` labels axes in plain text (`1H chemical shift / ppm`) rather
+  than LaTeX; `plot_1d` typesets the mass number as a superscript.
 
 Spinach's `apodisation` halves the first point of the FID by default;
-apply that step yourself when comparing spectra with Spinach's. The
-`ppm_axis` function in the [translated script](#a-spinach-script-translated)
-converts Hz to ppm the way `axis_1d` does.
+apply that step yourself when comparing spectra with Spinach's.
 
 ## Messages and errors
 
