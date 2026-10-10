@@ -11,6 +11,12 @@ with `OPENBLAS_NUM_THREADS=4 jupyter lab docs/notebooks/` after
 extensions; the plots are interactive in both. (GitHub's notebook viewer
 does not show Plotly figures.)
 
+To experiment, copy a notebook into `scratch/` at the repository root
+(ignored by git) and work on the copy; it uses the same `spinpy` code. The
+notebooks in `docs/notebooks/` are rebuilt from the guides, so edits to them
+are overwritten; if you run one there, `git restore docs/notebooks/` discards
+the changed outputs.
+
 ## Conventions for contributors
 
 **Every user-facing change ships with user documentation in the same
