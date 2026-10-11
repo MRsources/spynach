@@ -189,7 +189,8 @@ both mixing modes), `hsqc` (echo-antiecho) as in `experiments/nmr_liquids`;
 `homospoil`, `dilute`/`kill_spin`; `evolution` `refocus`; `needs=['rho_eq']`;
 `apodisation`; `plot_2d` with `contspacing`. Verified by COSY/NOESY/HSQC
 peak positions and signs, decoupled singlets, refocus against explicit
-propagation; FR-007 fixtures requested. Not ported: the other sequences
+propagation; FR-007 fulfilled, 3 parity tests pass (1e-13 or better,
+table in `docs/pulse-sequences.md`). Not ported: the other sequences
 (`dqf_cosy`, `tocsy`, `hmqc`, ...), soft/shaped pulses.
 
 ## Later

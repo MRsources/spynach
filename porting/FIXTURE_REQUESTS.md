@@ -106,10 +106,11 @@ before going further.
 
 ## FR-007: pulse sequence library (`dump_seq.m`)
 
-- **Status:** requested 2026-10-11, branch `main`
+- **Status:** fulfilled 2026-10-11, `/fixtures/2.13/`, run log `run_20261011T225412Z.log`; MATLAB R2026b, Spinach `03a88b7e` (2.13), clean; `pytest tests/slice/test_seq_parity.py`: 3 passed
+- **Requested:** 2026-10-11, branch `main`
 - **Spinach:** clean checkout, 2.13 (`03a88b7e`), as before
 - **Needs:** the same host setup (`asyredf` disabled for the NOESY case). Three cases, 32-64 points per dimension: seconds to a minute each.
 - **Run:** `oracle/run_fixtures.sh` from the `main` checkout (`dump_seq` is in `dump_scripts`; existing cases are skipped).
 - **Produces:** `seq_cosy_derome`, `seq_noesy_pair`, `seq_hsqc_dilute`
 - **Check:** `SPINPY_FIXTURES=/fixtures pytest tests/slice/test_seq_parity.py -rs`; nothing should skip.
-- **Result:** _(human: fixture path, MATLAB version, any errors or warnings)_
+- **Result:** done (host, 2026-10-11); three cases written, earlier cases skipped.

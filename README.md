@@ -30,8 +30,8 @@ Magic angle spinning in Fokker-Planck form (`singlerot`) is ported and
 verified against Spinach 2.13 fixtures (`tests/slice/test_mas_parity.py`),
 rotor echoes and the fast-spinning limit.
 The pulse sequence library (COSY, NOESY, HSQC with isotopomer dilution,
-analytical decoupling, apodisation and 2D plotting) is ported; its Spinach
-fixtures are requested (FR-007).
+analytical decoupling, apodisation and 2D plotting) is ported and
+verified against Spinach 2.13 fixtures (`tests/slice/test_seq_parity.py`).
 
 ```python
 import numpy as np
