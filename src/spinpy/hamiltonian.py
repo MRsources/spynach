@@ -1,5 +1,9 @@
 """Isotropic Hamiltonian (ports of the isotropic part of ``hamiltonian.m`` and ``frqoffset.m``).
 
+As in Spinach, the same term table serves both formalisms: in
+``zeeman-hilb`` the terms are Hilbert-space operators, in ``sphten-liouv``
+they are superoperators of the requested ``operator_type`` (``'comm'`` by
+default, giving the Hamiltonian commutation superoperator ``[H, .]``).
 The anisotropic components (Spinach's second output ``Q``) are not ported yet.
 """
 
@@ -16,12 +20,17 @@ from spinpy.system import SpinSystem
 from spinpy.utilities import Matrix, clean_up
 
 
-def hamiltonian(spin_system: SpinSystem) -> Matrix:
-    """Isotropic part of the Hamiltonian in rad/s, truncated as set by :func:`spinpy.assume`."""
+def hamiltonian(spin_system: SpinSystem, operator_type: str = "comm") -> Matrix:
+    """Isotropic part of the Hamiltonian in rad/s, truncated as set by :func:`spinpy.assume`.
+
+    In ``sphten-liouv`` the result is the superoperator of ``operator_type``
+    (``'left'``, ``'right'``, ``'comm'``, ``'acomm'``); in ``zeeman-hilb`` it
+    is the Hamiltonian matrix and ``operator_type`` is ignored.
+    """
     if spin_system.assumptions is None:
         raise ValueError("assumption information is missing, run assume() before calling this function.")
-    if spin_system.basis is None or spin_system.basis.formalism != "zeeman-hilb":
-        raise NotImplementedError("hamiltonian() is only ported for the zeeman-hilb formalism so far.")
+    if spin_system.basis is None:
+        raise ValueError("basis set information is missing, run basis() before calling this function.")
     tols = spin_system.tols
     terms: list[tuple[complex, Sequence[str], Sequence[int]]] = []
 
@@ -52,11 +61,11 @@ def hamiltonian(spin_system: SpinSystem) -> Matrix:
         elif strength not in ("ignore", "z+", "z-", "+z", "-z", "T(L,+1)", "T(L,-1)"):
             raise ValueError(f"unknown strength specification for the bilinear coupling between spins {n} and {k}")
 
-    dim = int(np.prod(spin_system.mults))
+    dim = spin_system.basis.nstates if spin_system.basis.formalism == "sphten-liouv" else int(np.prod(spin_system.mults))
     total = sps.csr_array((dim, dim), dtype=complex)
     for coeff, ops, spins in terms:
         if abs(coeff) > tols.liouv_zero:
-            total = total + coeff * operator(spin_system, ops, spins)
+            total = total + coeff * operator(spin_system, ops, spins, operator_type)
     return clean_up(tols, total, tols.liouv_zero)
 
 

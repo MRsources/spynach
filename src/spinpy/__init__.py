@@ -3,7 +3,9 @@
 from spinpy.assume import assume
 from spinpy.basis import basis
 from spinpy.contexts import liquid
+from spinpy.filters import coherence, correlation
 from spinpy.hamiltonian import frqoffset, hamiltonian
+from spinpy.kinetics import kinetics
 from spinpy.operators import operator
 from spinpy.propagation import evolution, propagator
 from spinpy.sequences import acquire
@@ -17,11 +19,14 @@ __all__ = [
     "acquire",
     "assume",
     "basis",
+    "coherence",
+    "correlation",
     "create",
     "evolution",
     "frqoffset",
     "hamiltonian",
     "hdot",
+    "kinetics",
     "liquid",
     "operator",
     "propagator",

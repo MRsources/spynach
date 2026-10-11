@@ -11,8 +11,10 @@ guide has a runnable Jupyter notebook in [`docs/notebooks/`](docs/notebooks/). S
 
 Ported and verified against Spinach 2.13 fixtures (`tests/slice/`): the
 `zeeman-hilb` pulse-acquire chain for liquid-state NMR with isotropic
-interactions. In progress: the `sphten-liouv` Liouville-space setup (basis
-with state-space restriction, operators and states; Hamiltonians follow).
+interactions. The `sphten-liouv` Liouville-space setup (basis with state-space
+restriction, operators, states, Hamiltonian and kinetics superoperators)
+is ported and checked against Hilbert-space algebra; its Spinach fixtures
+and propagation are next.
 
 ```python
 import numpy as np
@@ -35,7 +37,9 @@ spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))
 | `basis.m` | `spinpy.basis` | `zeeman-hilb`; `sphten-liouv` with `none`, `IK-0`, `IK-1`, `IK-2`, the `projections`/`longitudinal`/`zero_quantum`/`manual` filters, and chemical subsystems (no symmetry, no coordinates) |
 | `operator.m`, `state.m` | `spinpy.operator`, `spinpy.state` | Hilbert space and `sphten-liouv` superoperators (`left`, `right`, `comm`, `acomm`); states by the `exact`, `cheap` and `chem` methods; `E`, `Lx`, `Ly`, `Lz`, `L+`, `L-`, `Tl,m` |
 | `assume.m` | `spinpy.assume` | `nmr`, with `zeeman`/`couplings` retention |
-| `hamiltonian.m`, `frqoffset.m` | `spinpy.hamiltonian`, `spinpy.frqoffset` | isotropic part |
+| `hamiltonian.m`, `frqoffset.m` | `spinpy.hamiltonian`, `spinpy.frqoffset` | isotropic part; in `sphten-liouv` as `left`/`right`/`comm`/`acomm` superoperators |
+| `kinetics.m` | `spinpy.kinetics` | first-order exchange between chemical subsystems |
+| `correlation.m`, `coherence.m` | `spinpy.correlation`, `spinpy.coherence` | `sphten-liouv` |
 | `propagator.m` | `spinpy.propagator` | dense Pade below `small_matrix`, scaled-squared Taylor above |
 | `evolution.m` | `spinpy.evolution` | `zeeman-hilb`, `observable` |
 | `liquid.m`, `acquire.m` | `spinpy.liquid`, `spinpy.acquire` | no decoupling, relaxation, or kinetics |

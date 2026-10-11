@@ -8,10 +8,10 @@ that lets Spinach simulate large spin systems. Read
 companion notebook is
 [`notebooks/liouville-space.ipynb`](notebooks/liouville-space.ipynb).
 
-Ported so far: the basis set with its restrictions and filters, operators
-(superoperators) and states. The Liouvillian and propagation in this
-formalism follow in the next steps; until then `hamiltonian` raises
-`NotImplementedError` for a `sphten-liouv` system.
+Ported so far: the basis set with its restrictions, operators
+(superoperators), states, the Hamiltonian and kinetics superoperators and
+the analytical filters. Propagation in this formalism (`evolution`,
+`liquid`) follows in the next step.
 
 Every Python block is executed by `tests/docs/`, in order and in one
 namespace.
@@ -25,7 +25,9 @@ namespace.
 5. [Chemical subsystems](#chemical-subsystems)
 6. [Operators: superoperators in the restricted basis](#operators-superoperators-in-the-restricted-basis)
 7. [States](#states)
-8. [What is not ported yet](#what-is-not-ported-yet)
+8. [The Liouvillian: Hamiltonian and kinetics superoperators](#the-liouvillian-hamiltonian-and-kinetics-superoperators)
+9. [Analytical filters](#analytical-filters)
+10. [What is not ported yet](#what-is-not-ported-yet)
 
 ## Why Liouville space
 
@@ -279,10 +281,80 @@ the observable of a `'exact'` state against a `'exact'` coil carries a
 factor `1/dim` relative to the Hilbert-space trace; Spinach has the same
 convention, and only ratios of observables matter in practice.
 
+## The Liouvillian: Hamiltonian and kinetics superoperators
+
+`hamiltonian(ss, operator_type)` uses the same term table as in Hilbert
+space (`assume` first) and returns, by default, the commutation
+superoperator `[H, .]`, the generator of coherent evolution. The
+rotating-frame offsets of `frqoffset` are added as `2 pi offset [Lz, .]`:
+
+```python
+hc_nmr = spinpy.assume(spinpy.basis(hc, {"formalism": "sphten-liouv", "approximation": "none"}), "nmr")
+H = spinpy.hamiltonian(hc_nmr)
+assert H.shape == (16, 16)
+H_off = spinpy.frqoffset(hc_nmr, H, {"spins": ["1H"], "offset": [1200.0]})
+Lz_comm_H = spinpy.operator(hc_nmr, "Lz", "1H")
+assert abs(H_off - H - 2 * np.pi * 1200.0 * Lz_comm_H).max() < 1e-9
+```
+
+A commutation superoperator is traceless and its eigenvalues are
+differences of Hamiltonian eigenvalues, so the coherence frequencies of
+the spectrum can be read off directly; as a check against the Hilbert-space
+Hamiltonian:
+
+```python
+hc_hilb = spinpy.assume(spinpy.basis(hc, {"formalism": "zeeman-hilb", "approximation": "none"}), "nmr")
+E = np.linalg.eigvalsh(np.asarray(spinpy.hamiltonian(hc_hilb)))
+differences = np.sort((E[:, None] - E[None, :]).ravel())
+assert np.allclose(np.sort(np.linalg.eigvals(np.asarray(H)).real), differences, atol=1e-6)
+```
+
+In a restricted basis the Liouvillian is the projection of the complete
+one onto the kept states; Karabanov et al. (2011) show that the error this
+makes decays as a Gaussian in the correlation order for liquid-state NMR.
+
+`kinetics(ss)` builds the first-order exchange superoperator from
+`inter["chem"]["rates"]`: every state of one molecule is mapped onto the
+identical state of the other at the given rate, the diagonal rates drain
+the source states, and the unit state is untouched. It enters the
+Liouvillian as `L = H + 1j * R + 1j * K`, Spinach's convention for
+dissipative superoperators:
+
+```python
+exch_nmr = spinpy.assume(two_sites, "nmr")
+K = spinpy.kinetics(exch_nmr)
+assert K.shape == (7, 7)
+assert np.allclose(np.asarray(K.sum(axis=0)), 0)          # conservation of matter
+assert K[0, 0] == 0                                        # the unit state is untouched
+L = spinpy.hamiltonian(exch_nmr) + 1j * K
+```
+
+## Analytical filters
+
+In this basis the correlation order and the coherence order of every
+state are labels of the descriptor, so selecting coherences (what phase
+cycles do in the spectrometer) is a matter of zeroing coefficients.
+`correlation(ss, rho, orders, spins)` keeps the states whose number of
+correlated spins (among `spins`) is in `orders`; `coherence(ss, rho,
+spec)` keeps the states whose total coherence order over each spin set in
+`spec` is in the listed orders. Both accept arrays with the spin state
+space on the last axis, so they work on stacks of state vectors too.
+
+```python
+rho = spinpy.state(hc_nmr, "L+", "all") + spinpy.state(hc_nmr, ["Lz", "L+"], [0, 1])
+single = spinpy.correlation(hc_nmr, rho, [1])
+assert np.count_nonzero(single) == 2                      # L+ on 1H and on 13C
+proton = spinpy.coherence(hc_nmr, rho, [("1H", [1]), ("13C", [0])])
+assert np.count_nonzero(proton) == 1                      # only L+ on the proton
+stack = np.stack([rho, 2 * rho])
+assert spinpy.correlation(hc_nmr, stack, [2]).shape == (2, 16)
+```
+
 ## What is not ported yet
 
-- `hamiltonian`, `frqoffset` and everything after them for `sphten-liouv`
-  systems (next steps of the port), and the `kinetics` superoperator;
+- `evolution`, `liquid` and propagation in general for `sphten-liouv`
+  systems (next step of the port), relaxation, magnetisation flux and
+  radical-pair kinetics;
 - permutation symmetry (`sym_group`, `sym_spins`);
 - the `zeeman-liouv` formalism, and the `IK-DNP` and `IK-SBS` basis sets;
 - proximity-based correlations, which need `inter.coordinates`.

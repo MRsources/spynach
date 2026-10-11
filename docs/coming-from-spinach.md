@@ -347,13 +347,32 @@ assert np.allclose(H - H_zeeman, 2 * np.pi * 145.0 * LzSz.toarray())  # weak 1H-
   coupling within an isotope, weak `LzSz` coupling between isotopes);
   rounding of every element to `tols.liouv_zero`; the dense-or-sparse
   choice by `tols.small_matrix` and `tols.dense_matrix`.
+- **Same in Liouville space:** `hamiltonian(ss, operator_type)` with
+  `'left'`, `'right'`, `'comm'` (default) or `'acomm'` returns the
+  superoperator built from the same term table; `frqoffset` adds
+  `2*pi*offset*[Lz, .]`; `kinetics(ss)` is the exchange superoperator of
+  `kinetics.m` with the `L = H + 1i*R + 1i*K` convention; `correlation`
+  and `coherence` zero the same states.
 - **Different:** Spinach's `[H,Q]=hamiltonian(...)` also returns the
   anisotropic components `Q`; spinpy returns `H` alone. Spinach sums the
   Hamiltonian terms in a random order, so its last digits change from run
-  to run; spinpy sums in a fixed order and is reproducible.
+  to run; spinpy sums in a fixed order and is reproducible. `coherence`
+  takes a list of `(spins, orders)` pairs instead of nested cell arrays,
+  and both filters expect the spin state space on the *last* axis of a
+  stacked state array.
+
+```python
+hc_liouv = spinpy.assume(hc_none, "nmr")
+H_comm = spinpy.hamiltonian(hc_liouv)                  # [H, .] in Liouville space
+H_left = spinpy.hamiltonian(hc_liouv, "left")
+H_right = spinpy.hamiltonian(hc_liouv, "right")
+assert abs(H_comm - (H_left - H_right)).max() < 1e-9   # each is rounded to liouv_zero separately
+```
+
 - **Not ported yet:** the other assumption sets (`'esr'`, `'deer'`,
-  `'labframe'`, `'qnmr'`, the DNP sets, ...), `operator_type` (`'left'`,
-  `'right'`, `'comm'`), and anisotropic interactions.
+  `'labframe'`, `'qnmr'`, the DNP sets, ...), anisotropic interactions,
+  magnetisation flux and radical-pair kinetics, and the Hilbert-space
+  branches of `correlation` and `coherence`.
 
 ## Experiment parameters
 
@@ -386,7 +405,8 @@ ignored by the simulation, as in Spinach.
 | `evolution(...,destination)` destination state screening | not ported |
 | `step`, `krylov`, `pulse`, `shaped_pulse_*` | not ported; use `propagator` for ideal pulses |
 | `propagator`: Pade `expm` below `small_matrix`, scaled and squared Taylor series above | the same |
-| relaxation (`relaxation`), chemical kinetics (`kinetics`) | not ported; `R` and `K` are zero |
+| relaxation (`relaxation`) | not ported; `R` is zero |
+| chemical kinetics (`kinetics`) | first-order exchange; `liquid` passes it as `K` (Liouville-space propagation itself is not ported yet) |
 | parallel `evolution` (Kuprov-Edwards split), `parfor` | serial; the same numbers |
 | GPU via `sys.enable={'gpu'}` | CPU only; CuPy backend planned |
 
