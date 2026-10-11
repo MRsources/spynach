@@ -12,9 +12,10 @@ guide has a runnable Jupyter notebook in [`docs/notebooks/`](docs/notebooks/). S
 Ported and verified against Spinach 2.13 fixtures (`tests/slice/`): the
 `zeeman-hilb` pulse-acquire chain for liquid-state NMR with isotropic
 interactions. The `sphten-liouv` Liouville-space setup (basis with state-space
-restriction, operators, states, Hamiltonian and kinetics superoperators)
-is ported and checked against Hilbert-space algebra; its Spinach fixtures
-and propagation are next.
+restriction, operators, states, Hamiltonian and kinetics superoperators,
+analytical filters) is ported and verified against Spinach 2.13 fixtures
+(`tests/slice/test_liouv_setup_parity.py`, twelve cases); propagation in
+Liouville space is next.
 
 ```python
 import numpy as np

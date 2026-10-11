@@ -371,6 +371,20 @@ basis descriptors, product tables, superoperators, states, Hamiltonians,
 kinetics and filters of twelve reference cases with the output of Spinach
 2.13 stored as fixtures (`oracle/README.md`, request FR-002 in
 `porting/FIXTURE_REQUESTS.md`); those tests skip while the fixtures are
-absent. The expected agreement is exact for the descriptors, kinetics and
-filters, a few ulp for superoperators and states, and about 1e-10 rad/s
-per element for Hamiltonians, as in Hilbert space.
+absent. Measured agreement over the twelve cases (largest elementwise
+difference relative to the largest element):
+
+| stage | difference from Spinach |
+|---|---|
+| basis descriptors, coherence and correlation orders | 0 |
+| product tables: spin-1/2 | 0 |
+| product tables: spin-1 | 2e-16 |
+| superoperators (all four types, 5 to 11 441 states) | 2e-16, identical sparsity |
+| states (`exact`, `cheap`, `chem`) | 0 |
+| Hamiltonian superoperators and offsets | 2e-14 |
+| kinetics superoperators | 0 |
+| `correlation` and `coherence` | 0 |
+
+The Hamiltonian figure is the same `liouv_zero` grid effect as in Hilbert
+space: Spinach sums the terms in random order before rounding, so single
+elements can land one grid step (1e-10 rad/s) away.
