@@ -18,7 +18,7 @@
 repo_dir='/Users/alexej/Documents/PROG/spinpy';          % spinpy checkout holding the dump scripts to run
 spinach_dir='/Users/alexej/Documents/PROG/spinpy-spinach';
 fixtures_root='/Users/alexej/Documents/PROG/spinpy-fixtures';
-dump_scripts={'dump_hilb_pa','dump_liouv_setup'};       % cases that already exist are skipped
+dump_scripts={'dump_hilb_pa','dump_liouv_setup','dump_liouv_pa'};       % cases that already exist are skipped
 
 %% Nothing below needs editing
 

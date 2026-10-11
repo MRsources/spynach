@@ -125,6 +125,13 @@ the parity tests in `tests/slice/test_liouv_setup_parity.py`.
 
 ## Step 4: propagation in Liouville space
 
+Status (2026-10-11): `step`, `krylov`, `evolution` ('observable', 'final',
+'trajectory', destination state screening), `reduce`/`zte`/`path_trace`,
+`liquid` with kinetics are on `main` (commit `3fd6f81`), verified against
+Hilbert space and the McConnell equations; FR-003 fixtures requested.
+Deferred: the CuPy backend (no GPU in the development container; needs a
+host with CUDA to test) and the benchmarks that depend on it.
+
 `step` (Krylov-style Taylor action on a vector), `evolution` for the
 Liouville formalisms with `reduce` (ZTE, path tracing, DSS; symmetry still
 refused), `krylov`, Taylor propagator with thresholding and the

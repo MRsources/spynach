@@ -117,3 +117,21 @@ filters. Nothing is propagated. Variables:
 | `/ham/H_left`, `/ham/H_right`, `/ham/H_off` | `hamiltonian(...,'left'/'right')`, `H` after `frqoffset` |
 | `/kin/K` | `kinetics(spin_system)` (zero without exchange) |
 | `/filters/input`, `/filters/corr_12`, `/filters/corr_1_det`, `/filters/coh_det_p1`, `/filters/coh_all_0` | a dense test vector and `correlation`/`coherence` applied to it |
+
+### `dump_liouv_pa.m`: sphten-liouv propagation
+
+Nine cases `liouv_pa_<name>` (FR-003): the complete-basis and restricted
+systems of FR-002, two-site exchange, one case with the Krylov path forced
+(`tols.krylov_tol=1`) and one with path tracing forced (`tols.merge_dim=2`).
+Variables:
+
+| path | content |
+|------|---------|
+| `/bas/basis` | basis descriptor |
+| `/ham/L` | `frqoffset(hamiltonian(assume(...,'nmr')))+1i*kinetics(...)` |
+| `/states/rho0`, `/states/coil` | `state(...,'L+',det,'chem')` and `state(...,'L+',det)` |
+| `/prop/P` | `propagator(L, 1/sweep)` |
+| `/step/rho_dt`, `/step/rho_long`, `/step/stack` | `step` over one dwell time, over 7.3 dwell times, and on the stack `[rho0 0.5*coil]` |
+| `/reduce/zte_projector`, `/reduce/projectors` | `zte(L',coil)` and `reduce(L',coil)` (destination state screening as `evolution` applies it) |
+| `/fid/evolution`, `/fid/final`, `/fid/trajectory` | `evolution` outputs `'observable'` (npoints), `'final'` (after npoints-1 steps), `'trajectory'` (32 points) |
+| `/fid/liquid`, `/spectrum/raw` | `liquid(spin_system,@acquire,pars,'nmr')` and its unapodised spectrum |
