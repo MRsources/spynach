@@ -30,7 +30,7 @@ spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))
 
 | Spinach | spinpy | ported |
 |---|---|---|
-| `create.m` | `spinpy.create` | isotopes, magnet, tolerances, Zeeman scalars/tensors, scalar/tensor couplings |
+| `create.m` | `spinpy.create` | isotopes, magnet, tolerances, Zeeman scalars/tensors, scalar/tensor couplings, chemical subsystems (`inter.chem` parts, concentrations, exchange rates) |
 | `basis.m` | `spinpy.basis` | `zeeman-hilb` |
 | `operator.m`, `state.m` | `spinpy.operator`, `spinpy.state` | Hilbert space; `E`, `Lx`, `Ly`, `Lz`, `L+`, `L-`, `Tl,m` |
 | `assume.m` | `spinpy.assume` | `nmr`, with `zeeman`/`couplings` retention |

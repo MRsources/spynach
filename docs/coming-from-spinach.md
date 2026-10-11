@@ -197,14 +197,35 @@ for J in (140.0, 145.0, 150.0):
     assert np.isclose(scanned.coupling_matrix[0][1][0, 0], 2 * np.pi * J)
 ```
 
+- **Chemical subsystems:** `inter.chem.parts`, `inter.chem.concs`, and
+  `inter.chem.rates` carry over with 0-based spin indices in `parts`; the
+  validation is Spinach's (every spin in one part, no couplings between
+  parts, `rates` square with zero column sums, equal isotope sequences in
+  exchange mode). They are kept in `ss.chem` (`parts`, `concs`, `rates`).
+
+```matlab
+inter.chem.parts={1,2};
+inter.chem.rates=[-2e3 2e3; 2e3 -2e3];
+inter.chem.concs=[1.0 1.0];
+```
+
+```python
+inter_exch = {"zeeman": {"scalar": [0.0, 3.0]},
+              "chem": {"parts": [[0], [1]], "rates": [[-2e3, 2e3], [2e3, -2e3]], "concs": [1.0, 1.0]}}
+exch = spinpy.create({"isotopes": ["1H", "1H"], "magnet": 14.1}, inter_exch)
+assert exch.chem.parts == ((0,), (1,))
+```
+
 **Not ported yet** (each raises `NotImplementedError` naming the field):
 `sys.output`, `sys.enable` (GPU and other options), `sys.disable`,
 `sys.parallel`, `sys.scratch`, `inter.coordinates` and `inter.pbc`
 (dipolar couplings), `inter.zeeman.eigs`/`euler`,
 `inter.coupling.eigs`/`euler`, `inter.giant`, `inter.suscept`,
 `inter.order_matrix`, `inter.relaxation` and all relaxation fields,
-`inter.chem` (kinetics), `inter.temperature`, and bosonic modes
-(cavities, phonons, transmons).
+`inter.chem.flux_rate`/`flux_type` (magnetisation flux), `inter.chem.rp_*`
+(radical pair kinetics), `inter.temperature`, and bosonic modes
+(cavities, phonons, transmons). The `kinetics` superoperator itself is
+not ported yet either; see [Calculation modalities](#calculation-modalities).
 
 ## Basis: `bas`
 

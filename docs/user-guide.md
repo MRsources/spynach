@@ -152,10 +152,32 @@ and `inter` structures.
 | `inter["zeeman"]["matrix"]` | per-spin 3x3 shift or g-tensor; `None` for none | ppm / Bohr magneton |
 | `inter["coupling"]["scalar"]` | nspins x nspins nested list of J-couplings; `None` or 0 for none | Hz |
 | `inter["coupling"]["matrix"]` | nspins x nspins nested list of 3x3 coupling tensors | Hz |
+| `inter["chem"]["parts"]` | chemical subsystems: one list of spin indices per molecule | |
+| `inter["chem"]["concs"]` | their initial concentrations (required for more than one part) | any, consistent |
+| `inter["chem"]["rates"]` | first-order exchange rate matrix between the parts, `dc/dt = rates @ c` | Hz |
 
 Enter each coupling once per pair, above or below the diagonal; values given
 in both places are added together, as in Spinach. Any other key raises
 `NotImplementedError`.
+
+Chemical subsystems describe several molecules in one spin system: every
+spin belongs to exactly one part, couplings never cross parts, and the
+default is a single part holding all spins at unit concentration. The
+exchange matrix must conserve matter (columns sum to zero) and, since
+exchange moves spin states between molecules, the parts must list the same
+isotopes in the same order. The information is kept in `ss.chem`; the
+kinetics superoperator and exchanging systems need the Liouville-space
+formalism, which is not ported yet.
+
+```python
+exchanging = spinpy.create(
+    {"isotopes": ["1H", "1H"], "magnet": 14.1},
+    {"zeeman": {"scalar": [0.0, 3.0]},
+     "chem": {"parts": [[0], [1]], "rates": [[-2e3, 2e3], [2e3, -2e3]], "concs": [1.0, 1.0]}},
+)
+assert exchanging.chem.parts == ((0,), (1,))
+assert exchanging.chem.rates.sum(axis=0).tolist() == [0.0, 0.0]
+```
 
 The result is a frozen `SpinSystem`. Internally everything is in angular
 frequency units (rad/s) in the laboratory frame:

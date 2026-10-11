@@ -8,10 +8,11 @@ from spinpy.operators import operator
 from spinpy.propagation import evolution, propagator
 from spinpy.sequences import acquire
 from spinpy.states import state
-from spinpy.system import SpinSystem, create
+from spinpy.system import Chemistry, SpinSystem, create
 from spinpy.utilities import hdot
 
 __all__ = [
+    "Chemistry",
     "SpinSystem",
     "acquire",
     "assume",

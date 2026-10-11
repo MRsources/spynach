@@ -8,8 +8,10 @@ dataclasses: :func:`create` builds a :class:`SpinSystem`, and later stages
 Spin indices are 0-based throughout spinpy (Spinach uses 1-based indices).
 
 Ported so far: isotopes, magnet, user tolerances, isotropic and tensor
-Zeeman interactions, and scalar and tensor couplings. Every other ``sys`` or
-``inter`` field raises ``NotImplementedError`` rather than being ignored.
+Zeeman interactions, scalar and tensor couplings, and the chemical
+subsystem description (``inter['chem']``: parts, concentrations, first-order
+exchange rates). Every other ``sys`` or ``inter`` field raises
+``NotImplementedError`` rather than being ignored.
 """
 
 from __future__ import annotations
@@ -26,9 +28,10 @@ from spinpy.tolerances import Tolerances, tolerances
 FREE_ELECTRON_G = 2.00231930436092  # Spinach tols.freeg
 
 SYS_FIELDS = {"isotopes", "magnet", "tols", "labels"}
-INTER_FIELDS = {"zeeman", "coupling"}
+INTER_FIELDS = {"zeeman", "coupling", "chem"}
 ZEEMAN_FIELDS = {"scalar", "matrix"}
 COUPLING_FIELDS = {"scalar", "matrix"}
+CHEM_FIELDS = {"parts", "concs", "rates"}
 
 
 @dataclass(frozen=True, eq=False)
@@ -50,6 +53,25 @@ class Assumptions:
 
 
 @dataclass(frozen=True, eq=False)
+class Chemistry:
+    """Chemical subsystems (Spinach ``spin_system.chem``).
+
+    Every spin belongs to exactly one part; a system without ``inter['chem']``
+    is one part holding all spins at unit concentration. ``rates`` is the
+    first-order exchange matrix in Hz, ``dc/dt = rates @ c``: ``rates[i, j]``
+    is the flow from part ``j`` into part ``i`` and every column sums to zero.
+    """
+
+    parts: tuple[tuple[int, ...], ...]   # 0-based spin indices of each part, ascending
+    concs: np.ndarray                    # (nparts,) initial concentrations
+    rates: np.ndarray | None             # (nparts, nparts) exchange rates, or None
+
+    @property
+    def nparts(self) -> int:
+        return len(self.parts)
+
+
+@dataclass(frozen=True, eq=False)
 class SpinSystem:
     isotopes: tuple[str, ...]
     labels: tuple[str | None, ...]
@@ -61,6 +83,7 @@ class SpinSystem:
     zeeman_matrix: tuple[np.ndarray, ...]                        # 3x3 lab-frame Zeeman tensors, rad/s
     coupling_matrix: tuple[tuple[np.ndarray | None, ...], ...]   # 3x3 coupling tensors, rad/s; None if absent
     tols: Tolerances
+    chem: Chemistry
     basis: Basis | None = None
     assumptions: Assumptions | None = None
 
@@ -101,6 +124,8 @@ def create(sys: dict[str, Any], inter: dict[str, Any]) -> SpinSystem:
 
     zeeman = _zeeman_tensors(isotopes, basefrqs, inter.get("zeeman"))
     coupling = _coupling_tensors(mults, tols, inter.get("coupling"))
+    chem = _chemistry(isotopes, inter.get("chem"))
+    _check_no_couplings_between_parts(chem, coupling)
 
     return SpinSystem(
         isotopes=isotopes,
@@ -113,7 +138,72 @@ def create(sys: dict[str, Any], inter: dict[str, Any]) -> SpinSystem:
         zeeman_matrix=zeeman,
         coupling_matrix=coupling,
         tols=tols,
+        chem=chem,
     )
+
+
+def _chemistry(isotopes: tuple[str, ...], chem: dict[str, Any] | None) -> Chemistry:
+    """Chemical subsystems, validated as in the chemistry section of create.m."""
+    nspins = len(isotopes)
+    if chem is None:
+        return Chemistry(parts=(tuple(range(nspins)),), concs=np.ones(1), rates=None)
+    _reject_unported(chem, CHEM_FIELDS, "inter['chem']")
+    if "rates" in chem and "parts" not in chem:
+        raise ValueError("subsystem identifiers (inter['chem']['parts']) must be provided.")
+    if "rates" in chem and "concs" not in chem:
+        raise ValueError("initial concentrations (inter['chem']['concs']) must be provided.")
+
+    if "parts" in chem:
+        parts = tuple(tuple(sorted(int(n) for n in part)) for part in chem["parts"])
+        for part in parts:
+            if not part or len(set(part)) != len(part) or min(part) < 0 or max(part) >= nspins:
+                raise ValueError(
+                    f"elements of inter['chem']['parts'] must be non-empty lists of unique spin indices between 0 and {nspins - 1}."
+                )
+        assigned = [n for part in parts for n in part]
+        if len(set(assigned)) != len(assigned):
+            raise ValueError("a given spin can only belong to one chemical subsystem in inter['chem']['parts'].")
+        if set(assigned) != set(range(nspins)):
+            raise ValueError("every spin must belong to one of the chemical subsystems in inter['chem']['parts'].")
+    else:
+        parts = (tuple(range(nspins)),)
+
+    if "concs" in chem:
+        concs = np.atleast_1d(np.asarray(chem["concs"], dtype=float))
+        if concs.ndim != 1 or np.any(concs < 0):
+            raise ValueError("inter['chem']['concs'] must be a vector of non-negative real numbers.")
+        if concs.size != len(parts):
+            raise ValueError("the number of initial concentrations must be equal to the number of chemical species.")
+    elif len(parts) == 1:
+        concs = np.ones(1)
+    else:
+        raise ValueError("concentrations (inter['chem']['concs']) must be provided.")
+
+    rates = None
+    if "rates" in chem:
+        rates = np.asarray(chem["rates"], dtype=float)
+        if rates.ndim != 2 or rates.shape[0] != rates.shape[1]:
+            raise ValueError("inter['chem']['rates'] must be a real square matrix.")
+        if rates.shape[0] != len(parts):
+            raise ValueError("both dimensions of inter['chem']['rates'] must be equal to the number of chemical subsystems.")
+        if np.any(np.abs(rates.sum(axis=0)) > 10 * np.finfo(float).eps * np.linalg.norm(rates, 1)):
+            raise ValueError("inter['chem']['rates'] violates conservation of matter: column sums must be negligible.")
+        # First-order exchange moves spin states between parts, so the parts must match spin for spin
+        sequences = {tuple(isotopes[n] for n in part) for part in parts}
+        if len({len(part) for part in parts}) != 1:
+            raise ValueError("exchange mode: all chemical subsystems must have the same number of spins.")
+        if len(sequences) != 1:
+            raise ValueError("exchange mode: isotope sequences in all chemical subsystems must be the same.")
+    return Chemistry(parts=parts, concs=concs, rates=rates)
+
+
+def _check_no_couplings_between_parts(
+    chem: Chemistry, coupling: tuple[tuple[np.ndarray | None, ...], ...]
+) -> None:
+    for a, part_a in enumerate(chem.parts):
+        for b, part_b in enumerate(chem.parts):
+            if a != b and any(coupling[n][k] is not None for n in part_a for k in part_b):
+                raise ValueError("couplings detected between spins in different chemical species.")
 
 
 def _reject_unported(spec: dict[str, Any], supported: set[str], name: str) -> None:

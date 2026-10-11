@@ -142,3 +142,45 @@ def test_unported_inputs_are_refused():
     hs = spinpy.basis(ss, HILB)
     with pytest.raises(NotImplementedError, match="final"):
         spinpy.evolution(hs, np.zeros((2, 2)), np.eye(2), np.eye(2), 1.0, 1, "final")
+
+
+def test_chemistry_defaults_and_exchange():
+    ss = spinpy.create({"isotopes": ["1H", "13C"], "magnet": 14.1}, {})
+    assert ss.chem.parts == ((0, 1),)
+    assert ss.chem.rates is None and list(ss.chem.concs) == [1.0]
+    rates = [[-2e3, 2e3], [2e3, -2e3]]
+    ss = spinpy.create(
+        {"isotopes": ["1H", "1H"], "magnet": 14.1},
+        {"zeeman": {"scalar": [0.0, 3.0]}, "chem": {"parts": [[1], [0]], "rates": rates, "concs": [1, 1]}},
+    )
+    assert ss.chem.parts == ((1,), (0,))      # parts keep their order, spins inside are sorted
+    np.testing.assert_array_equal(ss.chem.rates, rates)
+
+
+@pytest.mark.parametrize(
+    "inter, message",
+    [
+        ({"chem": {"parts": [[0], [1]]}}, "concentrations"),
+        ({"chem": {"parts": [[0], [0, 1]], "concs": [1, 1]}}, "only belong to one"),
+        ({"chem": {"parts": [[0]], "concs": [1]}}, "every spin must belong"),
+        ({"chem": {"parts": [[0], [1]], "concs": [1]}}, "number of initial concentrations"),
+        ({"chem": {"parts": [[0], [1]], "concs": [1, 1], "rates": [[-1, 1], [2, -1]]}}, "conservation of matter"),
+        ({"chem": {"rates": [[-1, 1], [1, -1]], "concs": [1, 1]}}, "parts"),
+        ({"chem": {"parts": [[0], [1]], "concs": [1, 1], "flux_rate": [[0, 1], [0, 0]]}}, "not ported"),
+        (
+            {"coupling": {"scalar": [[0, 10.0], [0, 0]]}, "chem": {"parts": [[0], [1]], "concs": [1, 1]}},
+            "different chemical species",
+        ),
+    ],
+)
+def test_chemistry_refusals(inter, message):
+    with pytest.raises((ValueError, NotImplementedError), match=message):
+        spinpy.create({"isotopes": ["1H", "1H"], "magnet": 14.1}, inter)
+
+
+def test_exchange_needs_matching_isotope_sequences():
+    with pytest.raises(ValueError, match="isotope sequences"):
+        spinpy.create(
+            {"isotopes": ["1H", "13C"], "magnet": 14.1},
+            {"chem": {"parts": [[0], [1]], "concs": [1, 1], "rates": [[-1, 1], [1, -1]]}},
+        )
