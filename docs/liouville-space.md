@@ -8,9 +8,9 @@ that lets Spinach simulate large spin systems. Read
 companion notebook is
 [`notebooks/liouville-space.ipynb`](notebooks/liouville-space.ipynb).
 
-Ported so far: the basis set with its restrictions and filters. Operators,
-states, the Liouvillian and propagation in this formalism follow in the
-next steps; until then `operator`, `state` and `hamiltonian` raise
+Ported so far: the basis set with its restrictions and filters, operators
+(superoperators) and states. The Liouvillian and propagation in this
+formalism follow in the next steps; until then `hamiltonian` raises
 `NotImplementedError` for a `sphten-liouv` system.
 
 Every Python block is executed by `tests/docs/`, in order and in one
@@ -23,7 +23,9 @@ namespace.
 3. [State-space restriction](#state-space-restriction)
 4. [Filters](#filters)
 5. [Chemical subsystems](#chemical-subsystems)
-6. [What is not ported yet](#what-is-not-ported-yet)
+6. [Operators: superoperators in the restricted basis](#operators-superoperators-in-the-restricted-basis)
+7. [States](#states)
+8. [What is not ported yet](#what-is-not-ported-yet)
 
 ## Why Liouville space
 
@@ -199,11 +201,88 @@ print(two_sites.basis.basis.T)
 Filters are specified per molecule: `projections=[[1], [1]]` keeps the
 `+1` coherences of both sites.
 
+## Operators: superoperators in the restricted basis
+
+In Liouville space an operator `Q` acts on the density matrix from the
+left (`Q rho`), from the right (`rho Q`), as a commutator (`[Q, rho]`, what
+Hamiltonians do) or as an anticommutator. `operator(ss, ops, spins,
+operator_type)` returns the chosen superoperator as a sparse
+`nstates x nstates` matrix; `operator_type` is `'left'`, `'right'`,
+`'comm'` (the default, as in Spinach) or `'acomm'`. The operator
+descriptions are the same as in Hilbert space:
+
+```python
+ab_hilb = spinpy.basis(spin_system(["1H", "1H"]), {"formalism": "zeeman-hilb", "approximation": "none"})
+Lz_comm = spinpy.operator(ab, "Lz", "1H")                   # [Lz, .] on both protons
+Lz_left = spinpy.operator(ab, "Lz", "1H", "left")
+Lz_right = spinpy.operator(ab, "Lz", "1H", "right")
+assert Lz_comm.shape == (16, 16)
+assert abs(Lz_comm - (Lz_left - Lz_right)).max() == 0
+```
+
+Nothing is ever expanded into the full `dim^2 x dim^2` space: the product
+of two spherical tensors on one spin is a fixed linear combination of
+spherical tensors on that spin (`spinpy.operators.ist_product_table`), so
+the action on a product state factorises over the spins and the matrix
+elements are looked up directly in the basis descriptor. In a restricted
+basis the result is the exact superoperator projected onto the kept
+states; states that an operator would create outside the basis are simply
+dropped. The matrix elements themselves can be checked against the
+Hilbert-space definition, `A[k, j] = <B_k | Q B_j>` for the orthonormal
+basis operators `B_k`:
+
+```python
+from spinpy.operators import irr_sph_ten, lin2lm
+
+def basis_operator(ss, row):
+    t = np.array([[1.0 + 0j]])
+    for mult, index in zip(ss.mults, row):
+        rank, proj = lin2lm(int(index))
+        t = np.kron(t, irr_sph_ten(int(mult), rank)[rank - proj].toarray())
+    return t / np.sqrt(np.vdot(t, t).real)
+
+B = [basis_operator(ab, row) for row in ab.basis.basis]
+Q = spinpy.operator(ab_hilb, "Lz", "1H").toarray()
+reference = np.array([[np.vdot(bk, Q @ bj) for bj in B] for bk in B])
+assert abs(Lz_left.toarray() - reference).max() < 1e-15
+```
+
+## States
+
+`state(ss, ops, spins, method)` returns a dense complex vector of
+coefficients in the orthonormal basis; its first element is the
+coefficient of the unit state. Spinach's three methods are available:
+
+- `'exact'` (default): the operator applied to the unit state, which is
+  the expansion of `Op / sqrt(dim)`. A spin-1/2 `Lz` has coefficient 1/2 on
+  its `T(1,0)` state, `L+` has `-1/sqrt(2)` on `T(1,+1)`.
+- `'cheap'`: the coefficients placed directly on the basis states (`Lz`
+  gives 1, `L+` gives `-sqrt(2)`); an error if the state is not in the
+  basis. For products of `p` spin-1/2 operators the two differ by `2^p`.
+- `'chem'`: `'exact'` weighted by the concentration of the molecule each
+  term belongs to, for exchanging systems.
+
+```python
+rho_exact = spinpy.state(ab, "Lz", "1H")
+rho_cheap = spinpy.state(ab, "Lz", "1H", "cheap")
+assert rho_exact.shape == (16,)
+assert np.count_nonzero(rho_exact) == 2 and set(rho_exact[rho_exact != 0]) == {0.5}
+assert set(rho_cheap[rho_cheap != 0]) == {1.0}
+coil = spinpy.state(ab, "L+", "1H")
+assert np.isclose(np.vdot(coil, rho_exact), 0)      # Lz and L+ are orthogonal
+weighted = spinpy.state(two_sites, "L+", "1H", "chem")
+assert np.count_nonzero(weighted) == 2             # one T(1,+1) state per site
+```
+
+Expectation values are Frobenius products, `spinpy.hdot(coil, rho)`, so
+the observable of a `'exact'` state against a `'exact'` coil carries a
+factor `1/dim` relative to the Hilbert-space trace; Spinach has the same
+convention, and only ratios of observables matter in practice.
+
 ## What is not ported yet
 
-- `operator`, `state`, `hamiltonian`, `frqoffset` and everything after them
-  for `sphten-liouv` systems (next steps of the port), and the `kinetics`
-  superoperator;
+- `hamiltonian`, `frqoffset` and everything after them for `sphten-liouv`
+  systems (next steps of the port), and the `kinetics` superoperator;
 - permutation symmetry (`sym_group`, `sym_spins`);
 - the `zeeman-liouv` formalism, and the `IK-DNP` and `IK-SBS` basis sets;
 - proximity-based correlations, which need `inter.coordinates`.

@@ -1,10 +1,18 @@
-"""Spin operators in the Zeeman product basis.
+"""Spin operators and superoperators.
 
-Ports ``pauli.m``, ``irr_sph_ten.m``, ``human2opspec.m``, and the Hilbert-space
-branch of ``operator.m``. As in Spinach, every operator is assembled from
-single-spin irreducible spherical tensors T(l,m), which keeps one code path
-for any multiplicity; an operator specification ("opspec") lists the linear
-tensor index ``l*l + l - m`` for each spin, 0 meaning the unit operator.
+Ports ``pauli.m``, ``irr_sph_ten.m``, ``human2opspec.m``, ``operator.m``,
+``ist_product_table.m`` and ``superop.m``. As in Spinach, every operator is
+assembled from single-spin irreducible spherical tensors T(l,m), which keeps
+one code path for any multiplicity; an operator specification ("opspec")
+lists the linear tensor index ``l*l + l - m`` for each spin, 0 meaning the
+unit operator.
+
+In ``zeeman-hilb`` an opspec becomes a Kronecker product of tensors. In
+``sphten-liouv`` it becomes a superoperator in the restricted basis: the
+product of two spherical tensors on one spin is a known linear combination
+of spherical tensors on that spin (the structure coefficients in
+:func:`ist_product_table`), so the action of an operator on a product basis
+state factorises over spins and never needs the full Liouville space.
 """
 
 from __future__ import annotations
@@ -139,28 +147,176 @@ def human2opspec(
     return list(stack), coeffs_arr
 
 
+OPERATOR_TYPES = ("left", "right", "comm", "acomm")
+
+
 def operator(
-    spin_system: SpinSystem, operators: str | Sequence[str], spins: str | int | Sequence[int]
+    spin_system: SpinSystem,
+    operators: str | Sequence[str],
+    spins: str | int | Sequence[int],
+    operator_type: str = "comm",
 ) -> sps.csr_array:
-    """Hilbert-space operator from a human-readable description; see :func:`human2opspec`."""
-    _require_hilbert(spin_system)
-    opspecs, coeffs = human2opspec(spin_system, operators, spins)
-    dim = int(np.prod(spin_system.mults))
-    total = sps.csr_array((dim, dim), dtype=complex)
-    for spec, coeff in zip(opspecs, coeffs):
-        term = sps.csr_array(np.array([[coeff]], dtype=complex))
-        for mult, index in zip(spin_system.mults, spec):
-            rank, proj = lin2lm(int(index))
-            term = sps.kron(term, irr_sph_ten(int(mult), rank)[rank - proj], format="csr")
-        total = total + term
-    return total
+    """Operator from a human-readable description; see :func:`human2opspec`.
 
-
-def _require_hilbert(spin_system: SpinSystem) -> None:
+    In ``zeeman-hilb`` the result is the Hilbert-space matrix and
+    ``operator_type`` is ignored, as in Spinach. In ``sphten-liouv`` it is a
+    superoperator in the restricted basis: ``'left'`` (``Q rho``),
+    ``'right'`` (``rho Q``), ``'comm'`` (``[Q, rho]``, the default) or
+    ``'acomm'`` (``{Q, rho}``).
+    """
     if spin_system.basis is None:
         raise ValueError("basis set information is missing, run basis() before calling this function.")
-    if spin_system.basis.formalism != "zeeman-hilb":
-        raise NotImplementedError(f"formalism {spin_system.basis.formalism!r} not ported yet.")
+    if operator_type not in OPERATOR_TYPES:
+        raise ValueError(f"operator_type must be one of {OPERATOR_TYPES}.")
+    opspecs, coeffs = human2opspec(spin_system, operators, spins)
+    formalism = spin_system.basis.formalism
+    if formalism == "zeeman-hilb":
+        dim = int(np.prod(spin_system.mults))
+        total = sps.csr_array((dim, dim), dtype=complex)
+        for spec, coeff in zip(opspecs, coeffs):
+            term = sps.csr_array(np.array([[coeff]], dtype=complex))
+            for mult, index in zip(spin_system.mults, spec):
+                rank, proj = lin2lm(int(index))
+                term = sps.kron(term, irr_sph_ten(int(mult), rank)[rank - proj], format="csr")
+            total = total + term
+        return total
+    if formalism != "sphten-liouv":
+        raise NotImplementedError(f"formalism {formalism!r} not ported yet.")
+    rows, cols, vals = [], [], []
+    for spec, coeff in zip(opspecs, coeffs):
+        r, c, v = superop(spin_system, spec, operator_type)
+        rows.append(r)
+        cols.append(c)
+        vals.append(coeff * v)
+    nstates = spin_system.basis.nstates
+    # Duplicate entries are summed, as MATLAB's sparse() does
+    return sps.csr_array(
+        sps.coo_array((np.concatenate(vals), (np.concatenate(rows), np.concatenate(cols))), shape=(nstates, nstates))
+    )
+
+
+@cache
+def ist_product_table(mult: int) -> tuple[np.ndarray, np.ndarray]:
+    """Structure coefficients of the spherical tensors of one spin (port of ``ist_product_table.m``).
+
+    With ``Tn`` the tensor of linear index ``n`` and ``Bn = Tn / ||Tn||`` the
+    normalised basis state, ``left[n, m, k] = <Bk, Tn Bm>`` and
+    ``right[n, m, k] = <Bk, Bm Tn>`` (Frobenius products): the expansion of
+    the unnormalised operator acting on a basis state in basis states.
+    Elements below 1e-14 are rounding residue and are set to zero. The
+    spin-1/2 tables are hard-coded, as in Spinach, so that they are exact.
+    """
+    if mult < 2:
+        raise ValueError("mult must be a real integer greater than 1.")
+    if mult == 2:
+        return _SPIN_HALF_LEFT, _SPIN_HALF_RIGHT
+    tensors = np.array([t.toarray() for rank in range(mult) for t in irr_sph_ten(mult, rank)])
+    norms = np.sqrt(np.einsum("nij,nij->n", tensors.conj(), tensors).real)
+    normalised = tensors / norms[:, None, None]
+    left = np.empty((mult * mult,) * 3, dtype=complex)
+    right = np.empty_like(left)
+    for n in range(mult * mult):
+        left[n] = norms[n] * np.einsum("kij,mij->mk", normalised.conj(), normalised[n] @ normalised)
+        right[n] = norms[n] * np.einsum("kij,mij->mk", normalised.conj(), normalised @ normalised[n])
+    for table in (left, right):
+        table[np.abs(table) < 1e-14] = 0
+    return np.real_if_close(left), np.real_if_close(right)
+
+
+# ist_product_table.m, spin-1/2: [n, m, k] with pages k; index order E, T(1,+1), T(1,0), T(1,-1)
+_SPIN_HALF_LEFT = np.transpose(np.array([
+    [[1.0, 0, 0, 0], [0, 0, 0, -0.5], [0, 0, 0.5, 0], [0, -0.5, 0, 0]],
+    [[0, 1.0, 0, 0], [0.5, 0, -0.5, 0], [0, 0.5, 0, 0], [0, 0, 0, 0]],
+    [[0, 0, 1.0, 0], [0, 0, 0, -0.5], [0.5, 0, 0, 0], [0, 0.5, 0, 0]],
+    [[0, 0, 0, 1.0], [0, 0, 0, 0], [0, 0, 0, -0.5], [0.5, 0, 0.5, 0]],
+]), (1, 2, 0))
+_SPIN_HALF_RIGHT = np.transpose(np.array([
+    [[1.0, 0, 0, 0], [0, 0, 0, -0.5], [0, 0, 0.5, 0], [0, -0.5, 0, 0]],
+    [[0, 1.0, 0, 0], [0.5, 0, 0.5, 0], [0, -0.5, 0, 0], [0, 0, 0, 0]],
+    [[0, 0, 1.0, 0], [0, 0, 0, 0.5], [0.5, 0, 0, 0], [0, -0.5, 0, 0]],
+    [[0, 0, 0, 1.0], [0, 0, 0, 0], [0, 0, 0, 0.5], [0.5, 0, -0.5, 0]],
+]), (1, 2, 0))
+_SPIN_HALF_LEFT.flags.writeable = _SPIN_HALF_RIGHT.flags.writeable = False
+
+
+def superop(spin_system: SpinSystem, opspec: np.ndarray, side: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Superoperator of one opspec in the ``sphten-liouv`` basis as COO triplets (port of ``superop.m``).
+
+    ``side`` is ``'left'``, ``'right'``, ``'comm'`` or ``'acomm'``. Returns
+    ``(rows, cols, vals)`` with ``A[row, col] = val`` for ``A`` acting on
+    column vectors; duplicates may occur and are to be summed.
+    """
+    if side == "comm":
+        rows_l, cols_l, vals_l = _superop_side(spin_system, opspec, "left", commutator=True)
+        rows_r, cols_r, vals_r = _superop_side(spin_system, opspec, "right", commutator=True)
+        return np.concatenate([rows_l, rows_r]), np.concatenate([cols_l, cols_r]), np.concatenate([vals_l, -vals_r])
+    if side == "acomm":
+        rows_l, cols_l, vals_l = _superop_side(spin_system, opspec, "left")
+        rows_r, cols_r, vals_r = _superop_side(spin_system, opspec, "right")
+        return np.concatenate([rows_l, rows_r]), np.concatenate([cols_l, cols_r]), np.concatenate([vals_l, vals_r])
+    if side not in ("left", "right"):
+        raise ValueError("invalid side specification.")
+    return _superop_side(spin_system, opspec, side)
+
+
+def _superop_side(
+    spin_system: SpinSystem, opspec: np.ndarray, side: str, commutator: bool = False
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    basis = spin_system.basis.basis
+    nstates = basis.shape[0]
+    opspec = np.asarray(opspec)
+    if np.any(opspec + 1 > spin_system.mults**2):
+        raise ValueError("physically impossible state requested in opspec.")
+    active = np.flatnonzero(opspec)
+    if active.size == 0:
+        idx = np.arange(nstates)
+        return idx, idx, np.ones(nstates, dtype=complex)
+
+    # Paths on each active spin: (input tensor, output tensor, coefficient), then all combinations
+    ins, outs, coeffs = [], [], []
+    for n in active:
+        table = ist_product_table(int(spin_system.mults[n]))[0 if side == "left" else 1]
+        page = table[opspec[n]]                       # page[m, k]: input state m goes to output state k
+        m, k = np.nonzero(page)
+        ins.append(m)
+        outs.append(k)
+        coeffs.append(page[m, k])
+    grids = np.meshgrid(*(np.arange(len(x)) for x in ins), indexing="ij")
+    choice = [g.ravel() for g in grids]
+    path_in = np.stack([ins[i][c] for i, c in enumerate(choice)], axis=1)
+    path_out = np.stack([outs[i][c] for i, c in enumerate(choice)], axis=1)
+    path_coeff = np.prod(np.stack([coeffs[i][c] for i, c in enumerate(choice)], axis=1), axis=1)
+    if commutator:
+        # Paths from or into the all-unit pattern on the active spins cancel between the two sides
+        keep = (path_in.sum(axis=1) != 0) & (path_out.sum(axis=1) != 0)
+        path_in, path_out, path_coeff = path_in[keep], path_out[keep], path_coeff[keep]
+
+    # Label every basis row by its pattern on the active spins and on the passive spins
+    passive = np.setdiff1d(np.arange(basis.shape[1]), active)
+    active_patterns, active_id = np.unique(basis[:, active], axis=0, return_inverse=True)
+    _, passive_id = np.unique(basis[:, passive], axis=0, return_inverse=True)
+    active_id, passive_id = active_id.ravel(), passive_id.ravel()
+    lookup = {tuple(p): i for i, p in enumerate(active_patterns)}
+    order = np.argsort(active_id, kind="stable")
+    sorted_ids = active_id[order]
+    starts = np.searchsorted(sorted_ids, np.arange(len(active_patterns)))
+    stops = np.searchsorted(sorted_ids, np.arange(len(active_patterns)), side="right")
+
+    rows, cols, vals = [], [], []
+    for pin, pout, coeff in zip(path_in, path_out, path_coeff):
+        i_in, i_out = lookup.get(tuple(pin)), lookup.get(tuple(pout))
+        if i_in is None or i_out is None:
+            continue   # the pattern is not in the restricted basis
+        src = order[starts[i_in]:stops[i_in]]
+        dst = order[starts[i_out]:stops[i_out]]
+        # Identity on the passive spins: match rows with the same passive pattern
+        _, src_pos, dst_pos = np.intersect1d(passive_id[src], passive_id[dst], assume_unique=True, return_indices=True)
+        rows.append(dst[dst_pos])
+        cols.append(src[src_pos])
+        vals.append(np.full(len(src_pos), coeff, dtype=complex))
+    if not rows:
+        return np.zeros(0, dtype=np.int64), np.zeros(0, dtype=np.int64), np.zeros(0, dtype=complex)
+    return np.concatenate(rows), np.concatenate(cols), np.concatenate(vals)
 
 
 def _spin_numbers(spin_system: SpinSystem, spins: str | int | Sequence[int]) -> list[int]:

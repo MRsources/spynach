@@ -20,6 +20,8 @@ def hamiltonian(spin_system: SpinSystem) -> Matrix:
     """Isotropic part of the Hamiltonian in rad/s, truncated as set by :func:`spinpy.assume`."""
     if spin_system.assumptions is None:
         raise ValueError("assumption information is missing, run assume() before calling this function.")
+    if spin_system.basis is None or spin_system.basis.formalism != "zeeman-hilb":
+        raise NotImplementedError("hamiltonian() is only ported for the zeeman-hilb formalism so far.")
     tols = spin_system.tols
     terms: list[tuple[complex, Sequence[str], Sequence[int]]] = []
 

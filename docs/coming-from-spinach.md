@@ -302,11 +302,37 @@ assert np.allclose((LzSz @ LzSz).toarray(), np.eye(4) / 16)
   matrix elements (Spinach's `Lz` for spin-1/2 is `0.4999999999999999`,
   one ulp below 0.5, and spinpy reproduces it); in Hilbert space a state
   is the operator itself, unnormalised.
-- **Different:** `operator` has no `operator_type` or `format` arguments,
-  and `state` has no `method` argument. Spinach ignores all three in
-  Hilbert space.
+- **Same in Liouville space:** `operator(ss, ops, spins, operator_type)`
+  takes Spinach's `'left'`, `'right'`, `'comm'` (default) and `'acomm'`
+  and builds the superoperator in the restricted basis by the same
+  structure-coefficient algorithm (`superop.m`), so matrix elements and
+  the basis order match Spinach's. `state(ss, ops, spins, method)` has the
+  `'exact'` (default), `'cheap'` and `'chem'` methods with the same
+  normalisation: in `sphten-liouv` the `'exact'` coefficient of a spin-1/2
+  `Lz` is 1/2, of `L+` it is `-1/sqrt(2)`.
+- **Different:** `operator` has no `format` argument (`'xyz'` triplets are
+  internal); `operator_type` and `method` are ignored in Hilbert space, as
+  in Spinach. Liouville-space states are dense 1-D NumPy vectors rather
+  than sparse `n x 1` columns.
+
+```matlab
+bas.formalism='sphten-liouv'; bas.approximation='none';
+spin_system=basis(spin_system,bas);
+Lz_L=operator(spin_system,'Lz','1H','left');
+rho=state(spin_system,'L+','1H','cheap');
+```
+
+```python
+hc_none = spinpy.basis(hc, {"formalism": "sphten-liouv", "approximation": "none"})
+Lz_L = spinpy.operator(hc_none, "Lz", "1H", "left")
+rho_cheap = spinpy.state(hc_none, "L+", "1H", "cheap")
+assert Lz_L.shape == (16, 16) and rho_cheap.shape == (16,)
+assert np.isclose(rho_cheap[np.flatnonzero(rho_cheap)[0]], -np.sqrt(2))
+```
+
 - **Not ported yet:** labels `CT*` (central transition) and `ZL*`
-  (Zeeman energy level projectors), and operators on bosonic modes.
+  (Zeeman energy level projectors), operators on bosonic modes, and the
+  `zeeman-liouv` formalism (`hilb2liouv`).
 
 ## Assumptions and the Hamiltonian
 
