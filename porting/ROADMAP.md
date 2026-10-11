@@ -12,6 +12,11 @@ fixtures. Propagation becomes step 4.
 Scope: everything up to and including the Liouvillian, nothing that
 propagates. Each sub-step is a commit with tests and docs.
 
+Status (2026-10-11): 3a–3f implemented on `main` (commits `68b0626` to
+the one adding this line). Open: the FR-002 fixture run on the host and
+the parity results it produces; `IK-2`/`IK-1` with proximity graphs
+remain untestable until coordinates are ported.
+
 ### 3a. Spin system: chemistry fields and the generalised `Basis`
 
 - `create()`: accept `inter['chem']` with `parts` (0-based spin index

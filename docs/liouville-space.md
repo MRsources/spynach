@@ -28,6 +28,7 @@ namespace.
 8. [The Liouvillian: Hamiltonian and kinetics superoperators](#the-liouvillian-hamiltonian-and-kinetics-superoperators)
 9. [Analytical filters](#analytical-filters)
 10. [What is not ported yet](#what-is-not-ported-yet)
+11. [Checking results against Spinach](#checking-results-against-spinach)
 
 ## Why Liouville space
 
@@ -358,3 +359,18 @@ assert spinpy.correlation(hc_nmr, stack, [2]).shape == (2, 16)
 - permutation symmetry (`sym_group`, `sym_spins`);
 - the `zeeman-liouv` formalism, and the `IK-DNP` and `IK-SBS` basis sets;
 - proximity-based correlations, which need `inter.coordinates`.
+
+## Checking results against Spinach
+
+Everything on this page is checked in two ways. `tests/unit/` compares
+the superoperators with direct Frobenius products of the Hilbert-space
+operators (`<B_k | Q B_j>`), which needs no reference data and holds to
+1e-15 for operators and to the `liouv_zero` rounding grid (1e-10 rad/s)
+for Hamiltonians. `tests/slice/test_liouv_setup_parity.py` compares the
+basis descriptors, product tables, superoperators, states, Hamiltonians,
+kinetics and filters of twelve reference cases with the output of Spinach
+2.13 stored as fixtures (`oracle/README.md`, request FR-002 in
+`porting/FIXTURE_REQUESTS.md`); those tests skip while the fixtures are
+absent. The expected agreement is exact for the descriptors, kinetics and
+filters, a few ulp for superoperators and states, and about 1e-10 rad/s
+per element for Hamiltonians, as in Hilbert space.
