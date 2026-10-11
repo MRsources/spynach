@@ -203,8 +203,14 @@ path), a bounded per-basis operator cache (`Basis.op_cache`, Spinach's
 `op_cache`), and triplet-based assembly of `H` and the 34 `Q` blocks.
 Hamiltonian 1.3 s -> 0.1 s on 7459 states; strychnine relaxation 4.9 ->
 2.4 s, pulse-acquire 5.3 -> 2.1 s, COSY 6.1 -> 3.3 s. Parity unchanged
-(498 tests). Open: `evolution` device sessions (`porting/gpu-notes.md`),
-Hamiltonian/propagator caches, API review notes below.
+(498 tests). The guides' "not ported" lists were reconciled with the
+current state. API review (38 public names, Spinach signatures with
+0-based spins and dict parameters): consistent; two conventions to keep
+in mind when adding functions: Liouville states are dense 1-D arrays and
+stacks are `(nstates, k)`, filters take the spin index on the last axis
+(hence the transposes around `coherence` in the 2-D sequences). Open:
+`evolution` device sessions (`porting/gpu-notes.md`), Hamiltonian and
+propagator caches.
 
 ## Later
 

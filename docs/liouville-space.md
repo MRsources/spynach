@@ -452,14 +452,14 @@ exponential.
 
 ## What is not ported yet
 
-- `evolution` outputs `'total'`, `'refocus'` and `'multichannel'`,
-  Lie-group quadratures in Hilbert space, relaxation, magnetisation flux
-  and radical-pair kinetics, `decouple`, `homodec_*` and `dead_time` in
-  `acquire`;
+- the `evolution` output `'total'`, Lie-group quadratures in Hilbert
+  space, magnetisation flux and radical-pair kinetics, homodecoupling
+  operators other than through `acquire`;
 - permutation symmetry (`sym_group`, `sym_spins`);
-- the `zeeman-liouv` formalism, and the `IK-DNP` and `IK-SBS` basis sets;
-- proximity-based correlations, which need `inter.coordinates`.
+- the `zeeman-liouv` formalism, and the `IK-DNP` and `IK-SBS` basis sets.
 
+Relaxation, anisotropic interactions with coordinates, magic angle
+spinning and the 2-D sequences have their own guides.
 ## Checking results against Spinach
 
 Everything on this page is checked in two ways. `tests/unit/` compares

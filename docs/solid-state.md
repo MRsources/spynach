@@ -220,14 +220,15 @@ assert np.isclose(abs(fid_esr[0]), 0.5)
 
 ## What is not ported yet
 
-- relaxation (`R` is zero in every context), magic angle spinning and
-  the Fokker-Planck contexts (`singlerot`, `doublerot`, `floquet`,
-  `gridfree`), `parameters["needs"]` (`zeeman_op`, `aniso_eq`,
-  `iso_eq`), orientation-dependent initial states, additional rotating
-  frames (`rframes`);
+- the `doublerot`, `floquet` and `gridfree` contexts (`singlerot` has
+  [its own guide](magic-angle-spinning.md)), `parameters["needs"]` other
+  than `rho_eq`/`iso_eq` (`zeeman_op`, `aniso_eq`), orientation-dependent
+  initial states, additional rotating frames (`rframes`);
 - periodic boundary conditions (`inter.pbc`), giant spin, susceptibility
   and order-matrix inputs, and the `'qnmr'`/DNP assumption sets.
 
+Relaxation at a given orientation is covered in the
+[relaxation guide](relaxation.md).
 ## Checking results against Spinach
 
 `tests/unit/test_aniso.py` checks the conventions (rotation matrices,

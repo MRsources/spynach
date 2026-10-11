@@ -254,8 +254,8 @@ hc = spinpy.basis(hc, bas)
 - **Different:** spin numbers in `longitudinal`, `zero_quantum` and
   `manual` are 0-based; the per-substance cell arrays become lists with one
   entry per chemical subsystem (`projections=[[1]]` for one substance,
-  `longitudinal=[["13C"], []]` for two). Without `inter.coordinates` the
-  proximity graph is empty, so `prox_level` has no effect yet.
+  `longitudinal=[["13C"], []]` for two). The proximity graph comes from
+  `inter.coordinates` and `tols.prox_cutoff`, as in Spinach.
 
 ```matlab
 bas.formalism='sphten-liouv';
@@ -274,8 +274,7 @@ assert set(hc_liouv.basis.tot_proj[1:]) == {1}        # coherence order +1 only
 ```
 
 - **Not ported yet:** `zeeman-liouv`, the `IK-DNP` and `IK-SBS`
-  approximations, permutation symmetry (`sym_group`, `sym_spins`), and
-  proximity-based correlations (they need `inter.coordinates`). In
+  approximations, and permutation symmetry (`sym_group`, `sym_spins`). In
   Spinach, switching a script from Hilbert to Liouville space changes only
   `bas`, and states become vectors instead of matrices; spinpy keeps that
   behaviour.

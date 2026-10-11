@@ -437,19 +437,16 @@ with a Spinach example script translated line by line.
 
 These raise `NotImplementedError` with a message naming the missing piece:
 
-- the `zeeman-liouv` formalism and permutation symmetry (`sphten-liouv`
-  has [its own guide](liouville-space.md)),
-- anisotropic interactions, coordinates, dipolar couplings, relaxation,
-  chemical kinetics, the rotating-frame and lab-frame assumption sets other
-  than `"nmr"`,
-- `evolution` outputs other than `"observable"` and state stacks in
-  Hilbert space (Liouville space has `"final"` and `"trajectory"` too),
-- decoupling, dead time, and homodecoupling in `acquire`; extra rotating
-  frames and `needs` in `liquid`,
-- operator labels `CT*` and `ZL*`, and bosonic modes,
-- apodisation; plotting functions other than `plot_1d`
-  (`plot_2d`, `plot_3d`, ...) and its `derivative` option.
-
+- in Hilbert space: `evolution` outputs other than `"observable"`, state
+  stacks, relaxation other than `damp`, chemical kinetics, analytical
+  decoupling, and the `singlerot` context. All of these exist in Liouville
+  space: see the [Liouville-space](liouville-space.md),
+  [relaxation](relaxation.md), [magic angle spinning](magic-angle-spinning.md)
+  and [pulse sequence](pulse-sequences.md) guides;
+- the `zeeman-liouv` formalism and permutation symmetry;
+- operator labels `CT*` and `ZL*`, bosonic modes, periodic boundary
+  conditions, extra rotating frames (`rframes`) in the contexts;
+- `plot_1d`'s `derivative` option and `plot_3d`.
 ## Checking results against Spinach
 
 `tests/slice/test_hilb_pa_parity.py` recomputes every intermediate result of
