@@ -172,3 +172,18 @@ anisotropic damping (`diagonal`). Variables:
 | `/states/rho_eq`, `/states/rho_eq_oriented` | `equilibrium(spin_system,HL)` and with `QL` at the orientation |
 | `/rlx/R_zero`, `/rlx/R_ime`, `/rlx/R_dibari` | the superoperator with `equilibrium='zero'` and its two thermalisations |
 | `/states/rho_inverted`, `/noe/multichannel` | spin 1 inverted, and `evolution(...,1i*R,coil,rho,dt,nsteps,'multichannel')` with `Lz` of every spin as coils |
+
+### `dump_mas.m`: magic angle spinning (`singlerot`)
+
+Four cases `mas_<name>` (FR-006): the CSA, dipolar and 2H quadrupolar MAS
+examples at reduced rotor rank and grid, and a single crystal spinning
+about an axis off the magic angle with a transmitter offset. Variables:
+
+| path | content |
+|------|---------|
+| `/bas/basis` | basis descriptor |
+| `/fp/rotor_phases`, `/fp/d_dphi` | `fourdif(2*max_rank+1,1)` |
+| `/fp/rotor_angles`, `/fp/first_orientation` | rotor polar angles from `parameters.axis`; first grid orientation |
+| `/fp/G_first_orientation` | the Fokker-Planck generator `blkdiag(H(phi))+1i*M` at the first orientation, as `singlerot` builds it |
+| `/states/rho0_fp_crystal`, `/states/coil_fp` | the expanded states handed to the sequence (`single_crystal` grid for `rho0`) |
+| `/fid/singlerot`, `/spectrum/raw` | `singlerot(spin_system,@acquire,pars,'nmr')` and its unapodised spectrum |

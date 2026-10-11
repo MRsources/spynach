@@ -92,3 +92,13 @@ before going further.
 - **Produces:** `relax_noe_het`, `relax_noe_hom`, `relax_csa_dd_secular`, `relax_axial_dfs`, `relax_t1t2_damp`
 - **Check:** `SPINPY_FIXTURES=/fixtures pytest tests/slice/test_relax_parity.py -rs`; nothing should skip.
 - **Result:** done (host, 2026-10-11); five cases written, earlier cases skipped.
+
+## FR-006: magic angle spinning, Fokker-Planck form (`dump_mas.m`)
+
+- **Status:** requested 2026-10-11, branch `main`
+- **Spinach:** clean checkout, 2.13 (`03a88b7e`), as before
+- **Needs:** the same host setup; `parameters.serial=1` keeps the powder loop serial. Four cases (CSA pair, dipolar pair, 2H quadrupole, single crystal off the magic angle), rotor rank 5-7 and 50-point grids, 128 points: seconds each.
+- **Run:** `oracle/run_fixtures.sh` from the `main` checkout (`dump_mas` is in `dump_scripts`; existing cases are skipped).
+- **Produces:** `mas_csa`, `mas_dip`, `mas_nqi`, `mas_crystal_offaxis`
+- **Check:** `SPINPY_FIXTURES=/fixtures pytest tests/slice/test_mas_parity.py -rs`; nothing should skip.
+- **Result:** _(human: fixture path, MATLAB version, any errors or warnings)_

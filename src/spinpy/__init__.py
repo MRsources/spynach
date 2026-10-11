@@ -2,7 +2,7 @@
 
 from spinpy.assume import assume
 from spinpy.basis import basis
-from spinpy.contexts import crystal, liquid, load_grid, powder
+from spinpy.contexts import crystal, liquid, load_grid, powder, singlerot
 from spinpy.filters import coherence, correlation
 from spinpy.hamiltonian import frqoffset, hamiltonian, orientation
 from spinpy.kinetics import kinetics
@@ -41,6 +41,7 @@ __all__ = [
     "propagator",
     "reduce",
     "relaxation",
+    "singlerot",
     "state",
     "step",
     "thermalize",

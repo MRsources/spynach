@@ -375,7 +375,24 @@ These are propagation-time reductions and belong with the propagation step.
   transient NOE against the 2×2 Solomon solution; equilibrium against the
   Boltzmann matrix; both thermalisations leave ρeq stationary.
 
-## 7. Open points to settle with fixtures
+## 7. Magic angle spinning (ported 2026-10-11)
+
+`singlerot.m` does not use the polyadic class: it builds the Fokker-Planck
+generator explicitly. Per powder orientation `(α,β,γ)` and rotor phase
+`φ_n` (`fourdif(2·max_rank+1, 1)` grid), `H_n = I + Σ_r Σ_km D_comp(k,m)
+Q{r}{k,m}` with `D_comp = D(rotor_φ, rotor_θ, 0) · D(0,0,φ_n) · D(α,β,γ)`
+(no Hermitisation unless `rframes` are present), `G = clean_up(blkdiag(H_n)
++ i·2π·rate·kron(D_φ, 1), liouv_zero)`; `R`, `K` are `kron(1_φ, ·)`; `ρ0` is
+`kron(1/N, ρ0)` for powders and `kron(e_1, ρ0)` for `single_crystal`; the
+coil is `kron(1, coil)`. The rotor axis polar angles come from `cart2sph`
+with `θ = π/2 − elevation`. `evolution`, `reduce` and `acquire` are
+dimension-agnostic, so nothing else changes. The rotor-phase grid is
+exact for band-limited states: with the initial state averaged over the
+phase, single-spin echoes are exact to 1e-9 at rank ≥ anisotropy/rate + a
+few; a single-crystal `ρ0` is a delta in `φ` and is only approximate
+between echoes (Spinach shares this).
+
+## 8. Open points to settle with fixtures
 
 - Whether `operator()` in `sphten-liouv` reproduces Spinach's sparsity pattern
   exactly (the `kill_mask` in `superop.m`) — compare `nnz` as well as values.

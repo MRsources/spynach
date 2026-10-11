@@ -407,7 +407,7 @@ ignored by the simulation, as in Spinach.
 
 | Spinach | spinpy |
 |---|---|
-| contexts: `liquid`, `powder`, `crystal`, `singlerot`, `doublerot`, `floquet`, `gridfree`, `imaging`, ... | `liquid`, `crystal`, `powder` (serial over the grid, same weighted sum; grids by their Spinach names) |
+| contexts: `liquid`, `powder`, `crystal`, `singlerot`, `doublerot`, `floquet`, `gridfree`, `imaging`, ... | `liquid`, `crystal`, `powder`, `singlerot` (serial over the grid, same weighted sum; grids by their Spinach names; `singlerot` in Liouville space with the same `rate`, `axis`, `max_rank` parameters and the same Fokker-Planck layout) |
 | pulse sequences in `experiments/`: `acquire`, `hsqc`, `cosy`, `noesy`, ... | `acquire`; write others yourself |
 | `evolution` outputs `'observable'`, `'final'`, `'total'`, `'trajectory'`, `'refocus'`, `'multichannel'` | `'observable'` in Hilbert space; `'observable'`, `'final'`, `'trajectory'`, `'multichannel'` in Liouville space |
 | `evolution(...,destination)` destination state screening | the same, Liouville space (`destination=` keyword) |
