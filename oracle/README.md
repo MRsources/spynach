@@ -91,3 +91,27 @@ Variables:
 | `/fid/evolution` | `evolution(...,'observable')` |
 | `/fid/liquid` | `liquid(spin_system,@acquire,pars,'nmr')` |
 | `/spectrum/raw` | `fftshift(fft(fid_liquid,zerofill))` |
+
+### `dump_liouv_setup.m`: sphten-liouv setup
+
+Twelve cases `liouv_<name>` (see `porting/FIXTURE_REQUESTS.md`, FR-002)
+covering complete bases (including a spin-1), `IK-0` at three levels,
+`IK-1` and `IK-2` on styrene, a twelve-spin chain, two-site exchange with
+equal and unequal concentrations, and the longitudinal/zero-quantum
+filters. Nothing is propagated. Variables:
+
+| path | content |
+|------|---------|
+| `/comp/mults` | spin multiplicities |
+| `/bas/basis`, `/bas/tot_proj`, `/bas/tot_cord` | basis descriptor (sparse double), coherence and correlation orders |
+| `/bas/lpst_<mult>`, `/bas/rpst_<mult>` | spherical tensor product tables of every multiplicity present |
+| `/ops/<op>_<type>` | 1×nspins cells of single-spin superoperators, `op` in `E, Lz, Lx, Ly, Lp, Lm`, `type` in `left, right, comm, acomm` |
+| `/ops/LzLp_12_<type>` | product superoperator Lz(1)L+(2) |
+| `/ops/Lz_det_comm`, `/ops/Lp_det_left` | sums over the detected isotope |
+| `/states/Lz_exact`, `/states/Lp_exact`, `/states/Lz_chem`, `/states/Lp_chem` | `state(...,method)` on the detected isotope |
+| `/states/Lz_cheap`, `/states/Lp_cheap` | where the state is in the basis (`inputs.cheap` in `meta.json`) |
+| `/states/LzLp_12_exact` | product state |
+| `/ham/H`, `/ham/H_zeeman`, `/ham/H_coupling` | commutation superoperators of the isotropic Hamiltonian and its parts |
+| `/ham/H_left`, `/ham/H_right`, `/ham/H_off` | `hamiltonian(...,'left'/'right')`, `H` after `frqoffset` |
+| `/kin/K` | `kinetics(spin_system)` (zero without exchange) |
+| `/filters/input`, `/filters/corr_12`, `/filters/corr_1_det`, `/filters/coh_det_p1`, `/filters/coh_all_0` | a dense test vector and `correlation`/`coherence` applied to it |

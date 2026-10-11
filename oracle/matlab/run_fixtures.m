@@ -16,7 +16,7 @@ worktrees_dir='/Users/alexej/Documents/PROG/spinpy/.worktrees/';
 worktree_name='oracle-harness';
 spinach_dir='/Users/alexej/Documents/PROG/spinpy-spinach';
 fixtures_root='/Users/alexej/Documents/PROG/spinpy-fixtures';
-dump_scripts={'dump_hilb_pa'};
+dump_scripts={'dump_hilb_pa','dump_liouv_setup'};
 
 %% Nothing below needs editing
 

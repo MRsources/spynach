@@ -48,3 +48,13 @@ All tests in `test_hilb_pa_fixtures.py` should pass, not skip. A failure in
 before going further.
 
 - **Result:** _(human: fixture path, MATLAB version, any errors or warnings)_
+
+## FR-002: sphten-liouv setup slice (`dump_liouv_setup.m`)
+
+- **Status:** requested 2026-10-11, branch `main` (commit with this entry)
+- **Spinach:** clean checkout, 2.13 (`03a88b7e`), as for FR-001
+- **Needs:** the same host setup as FR-001 (shadow `isworkernode.m`, `sys.disable={'hygiene'}`). No propagation: every case runs in seconds, the twelve-spin chain is the largest (a few thousand states).
+- **Run:** add `'dump_liouv_setup'` to `dump_scripts` in `oracle/matlab/run_fixtures.m` (already done in the repository) and run as for FR-001; the new cases are written next to the existing `hilb_pa_*` ones.
+- **Produces:** `liouv_ab_none`, `liouv_hd_none`, `liouv_inad_none`, `liouv_styrene_ik0_1`, `liouv_styrene_ik0_2`, `liouv_styrene_ik0_4`, `liouv_styrene_ik1`, `liouv_styrene_ik2_proj`, `liouv_chain12_ik2`, `liouv_exch_sym`, `liouv_exch_asym`, `liouv_hcn_filters` (each a few MB at most)
+- **Check:** `SPINPY_FIXTURES=/fixtures pytest tests/slice/test_liouv_setup_parity.py tests/oracle -rs`; nothing should skip.
+- **Result:** _(human: fixture path, MATLAB version, any errors or warnings)_
