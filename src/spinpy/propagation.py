@@ -197,6 +197,11 @@ def krylov(
             rho = step(spin_system, L, rho, timestep)
             answer[:, n + 1, :] = coil.conj().T @ rho
         return answer
+    if output == "refocus":
+        rho = rho.copy()
+        for n in range(1, rho.shape[1]):
+            rho[:, n:] = step(spin_system, L, rho[:, n:], timestep)
+        return rho
     raise NotImplementedError(f"krylov output {output!r} not ported yet.")
 
 
@@ -227,7 +232,9 @@ def evolution(
     ``'final'`` (the state after ``nsteps`` steps), ``'trajectory'``
     (``(nstates, nsteps + 1)``, single vector only), ``'multichannel'``
     (several coils stacked as the columns of ``coil``: ``(ncoils, nsteps + 1,
-    k)``, as in Spinach).
+    k)``, as in Spinach), ``'refocus'`` (column ``k`` of the stack propagated
+    for ``k`` steps, the second half of a constant-time or refocused
+    indirect dimension; ``nsteps`` is ignored).
     """
     if spin_system.basis is None:
         raise ValueError("basis set information is missing, run basis() before calling this function.")
@@ -247,7 +254,7 @@ def evolution(
         return answer
     if spin_system.basis.formalism != "sphten-liouv":
         raise NotImplementedError(f"formalism {spin_system.basis.formalism!r} not ported yet.")
-    if output not in ("observable", "final", "trajectory", "multichannel"):
+    if output not in ("observable", "final", "trajectory", "multichannel", "refocus"):
         raise NotImplementedError(f"evolution output {output!r} not ported yet.")
 
     from spinpy.reduction import reduce  # noqa: PLC0415  (reduction imports step from this module)
@@ -277,7 +284,7 @@ def evolution(
         answer = np.zeros((nsteps + 1, rho.shape[1]), dtype=complex)
     elif output == "multichannel":
         answer = np.zeros((coil.shape[1], nsteps + 1, rho.shape[1]), dtype=complex)
-    elif output == "final":
+    elif output in ("final", "refocus"):
         answer = np.zeros_like(rho)
     else:
         answer = np.zeros((rho.shape[0], nsteps + 1), dtype=complex)
@@ -307,6 +314,15 @@ def evolution(
                 for n in range(nsteps + 1):
                     answer[:, n, :] += coil_loc.conj().T @ rho_loc
                     rho_loc = prop @ rho_loc
+        elif output == "refocus":
+            if krylov_path:
+                rho_loc = krylov(spin_system, L_loc, None, rho_loc, timestep, nsteps, "refocus")
+            else:
+                prop = propagator(spin_system, L_loc, timestep)
+                rho_loc = rho_loc.copy()
+                for n in range(1, rho_loc.shape[1]):
+                    rho_loc[:, n:] = prop @ rho_loc[:, n:]
+            answer += P @ _chop(rho_loc, tols.zte_tol)
         elif output == "final":
             if krylov_path:
                 rho_loc = krylov(spin_system, L_loc, None, rho_loc, timestep, nsteps, "final")
@@ -327,9 +343,9 @@ def evolution(
                     traj[:, n] = rho_loc[:, 0]
                     rho_loc = prop @ rho_loc
             answer += P @ _chop(traj, tols.zte_tol)
-    if output == "final":
+    if output in ("final", "refocus"):
         answer = _chop(answer, tols.zte_tol)
-    if single and output in ("observable", "final"):
+    if single and output in ("observable", "final", "refocus"):
         answer = answer[:, 0]
     elif single and output == "multichannel":
         answer = answer[:, :, 0]

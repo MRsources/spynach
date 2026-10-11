@@ -4,7 +4,9 @@
 and ``kernel/utilities/axis_1d.m``. ``plot_1d`` follows Spinach's
 ``plot_1d.m`` (same parameters, defaults, and axis conventions) but draws an
 interactive Plotly figure and returns it instead of drawing into the current
-MATLAB axes. ``plot_fid`` has no Spinach counterpart.
+MATLAB axes. ``plot_2d`` follows ``plot_2d.m`` (same
+parameters, contour spacing by ``contspacing.m``, and axis conventions) as
+an interactive contour figure. ``plot_fid`` has no Spinach counterpart.
 
 The plotting functions need Plotly (``pip install -e ".[plot]"``); the axis
 functions need only NumPy.
@@ -172,6 +174,144 @@ def plot_1d(
         hoverformat=_HOVER_FORMAT[parameters["axis_units"]],
     )
     fig.update_yaxes(title_text="intensity / a.u.")
+    return fig
+
+
+def contspacing(
+    smax: float, smin: float, delta: Sequence[float], k: int, signs: str, ncont: int
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Contour levels for a 2D spectrum (port of ``contspacing.m``).
+
+    Positive levels run from ``delta[0] * smax`` to ``delta[1] * smax`` and
+    negative ones from ``delta[2] * smin`` to ``delta[3] * smin``, spaced
+    as the ``k``-th power of a linear grid of ``ncont`` points; ``signs``
+    is ``'positive'``, ``'negative'`` or ``'both'``. Returns all levels in
+    ascending order, then the positive and the negative sets.
+    """
+    delta = np.asarray(delta, dtype=float)
+    if delta.size != 4 or np.any(delta < 0) or np.any(delta > 1) or delta[0] > delta[1] or delta[2] > delta[3]:
+        raise ValueError("delta must give ascending minimum and maximum contour fractions between 0 and 1 for each sign.")
+    if signs not in ("positive", "negative", "both"):
+        raise ValueError("signs must be 'positive', 'negative', or 'both'.")
+    if int(k) != k or k < 1 or int(ncont) != ncont or ncont < 1:
+        raise ValueError("k and ncont must be positive integers.")
+    grid = np.linspace(0, 1, int(ncont)) ** k
+    pos = (delta[1] - delta[0]) * smax * grid + smax * delta[0] if smax > 0 and signs in ("positive", "both") else np.array([])
+    neg = (delta[3] - delta[2]) * smin * grid + smin * delta[2] if smin < 0 and signs in ("negative", "both") else np.array([])
+    return np.concatenate([neg[::-1], pos]), pos, neg
+
+
+def axis_2d(spin_system: SpinSystem, spectrum: np.ndarray, parameters: dict[str, Any]) -> tuple[np.ndarray, np.ndarray, str, str]:
+    """F1 and F2 axes and labels of a 2D spectrum, as ``plot_2d.m`` derives them.
+
+    ``spectrum`` is ``(nF2, nF1)``: rows are the direct dimension F2
+    (``parameters['sweep'][1]``, ``['offset'][1]``, ``['spins'][1]``),
+    columns the indirect dimension F1. Scalar ``spins``, ``offset`` and
+    ``sweep`` apply to both dimensions.
+    """
+    spins = list(parameters["spins"]) * 2 if len(parameters["spins"]) == 1 else list(parameters["spins"])
+    offset = np.atleast_1d(np.asarray(parameters.get("offset", 0.0), dtype=float))
+    sweep = np.atleast_1d(np.asarray(parameters["sweep"], dtype=float))
+    offset = np.repeat(offset, 2) if offset.size == 1 else offset
+    sweep = np.repeat(sweep, 2) if sweep.size == 1 else sweep
+    units = parameters.get("axis_units", "ppm")
+    axis_f1 = ft_axis(offset[0], sweep[0], spectrum.shape[1])
+    axis_f2 = ft_axis(offset[1], sweep[1], spectrum.shape[0])
+    if units == "ppm":
+        axis_f1 = 1e6 * 2 * np.pi * axis_f1 / (spin(spins[0])[0] * spin_system.magnet)
+        axis_f2 = 1e6 * 2 * np.pi * axis_f2 / (spin(spins[1])[0] * spin_system.magnet)
+        labels = (f"F1: {spins[0]} chemical shift / ppm", f"F2: {spins[1]} chemical shift / ppm")
+    elif units in ("Hz", "kHz", "MHz"):
+        scale = {"Hz": 1.0, "kHz": 1e-3, "MHz": 1e-6}[units]
+        axis_f1, axis_f2 = scale * axis_f1, scale * axis_f2
+        labels = (f"F1: {spins[0]} linear frequency / {units}", f"F2: {spins[1]} linear frequency / {units}")
+    elif units == "Gauss":
+        axis_f1 = 1e4 * (spin_system.magnet - 2 * np.pi * axis_f1 / spin("E")[0])
+        axis_f2 = 1e4 * (spin_system.magnet - 2 * np.pi * axis_f2 / spin("E")[0])
+        labels = ("F1: magnetic induction / Gauss", "F2: magnetic induction / Gauss")
+    elif units == "points":
+        axis_f1, axis_f2 = np.arange(1, spectrum.shape[1] + 1), np.arange(1, spectrum.shape[0] + 1)
+        labels = (f"F1: {spins[0]} linear frequency / points", f"F2: {spins[1]} linear frequency / points")
+    else:
+        raise ValueError("unknown axis units.")
+    return axis_f1, axis_f2, labels[0], labels[1]
+
+
+def plot_2d(
+    spin_system: SpinSystem,
+    spectrum: np.ndarray,
+    parameters: dict[str, Any],
+    ncont: int = 20,
+    delta: Sequence[float] = (0.02, 0.2, 0.02, 0.2),
+    k: int = 2,
+    ncol: int = 256,
+    m: int = 6,
+    signs: str = "both",
+    *,
+    title: str | None = None,
+    theme: str = "light",
+    height: int = 560,
+):
+    """Interactive contour plot of a real 2D spectrum, after Spinach's ``plot_2d``.
+
+    ``spectrum`` is the ``(nF2, nF1)`` array that ``fftshift(fft2(fid))``
+    of a sequence's FID gives (rows along the direct dimension); its real
+    part is drawn, positive contours in red and negative ones in blue.
+    ``ncont``, ``delta``, ``k`` and ``signs`` set the contour levels as in
+    :func:`contspacing`; ``ncol`` and ``m`` (Spinach's colour map
+    parameters) are accepted for compatibility and ``m`` steepens the
+    colour gradient. Both axes decrease to the right/top as in Spinach.
+    Returns a ``plotly.graph_objects.Figure``.
+    """
+    try:
+        import plotly.graph_objects as go
+    except ImportError as error:
+        raise ImportError('plotting needs Plotly: pip install -e ".[plot]"') from error
+    if theme not in CHROME:
+        raise ValueError(f"theme must be 'light' or 'dark', not {theme!r}.")
+    spectrum = np.asarray(spectrum)
+    if np.iscomplexobj(spectrum):
+        spectrum = spectrum.real
+    if spectrum.ndim != 2:
+        raise ValueError("spectrum must be a 2D array.")
+    c = CHROME[theme]
+    axis_f1, axis_f2, label_f1, label_f2 = axis_2d(spin_system, spectrum, parameters)
+    smax, smin = float(spectrum.max()), float(spectrum.min())
+    _, pos, neg = contspacing(smax, smin, delta, k, signs, ncont)
+    fig = go.Figure()
+    reds, blues = ("#b3261e", "#f2b8b5"), ("#1d4ed8", "#bfdbfe")
+
+    def shade(start: str, end: str, fraction: float) -> str:
+        a, b = (int(start[i:i + 2], 16) for i in (1, 3, 5)), (int(end[i:i + 2], 16) for i in (1, 3, 5))
+        return "#%02x%02x%02x" % tuple(int(round(x + (y - x) * fraction)) for x, y in zip(a, b))
+
+    z = spectrum.T   # Plotly draws z[y, x]; x is F2 (rows of the spectrum), y is F1
+    for levels, (strong, weak) in ((pos, reds), (neg, blues)):
+        for n, level in enumerate(levels):
+            fraction = (1 - n / max(len(levels) - 1, 1)) ** (1 / m)
+            fig.add_contour(
+                x=axis_f2, y=axis_f1, z=z, showscale=False, hoverinfo="skip",
+                contours={"type": "constraint", "operation": "=", "value": float(level), "showlabels": False},
+                line={"color": shade(weak, strong, fraction), "width": 1.2}, showlegend=False,
+            )
+    if not len(pos) and not len(neg):
+        fig.add_annotation(text="all-zero spectrum", x=0.5, y=0.5, xref="paper", yref="paper", showarrow=False)
+    axis = {"showgrid": True, "gridcolor": c["grid"], "zeroline": False, "showline": True, "linecolor": c["axis"],
+            "ticks": "outside", "tickcolor": c["axis"], "tickfont": {"color": c["ink2"], "size": 12},
+            "title": {"font": {"color": c["ink2"], "size": 13}}, "mirror": True}
+    isotopes = list(parameters["spins"]) * 2 if len(parameters["spins"]) == 1 else list(parameters["spins"])
+    fig.update_layout(
+        height=height, width=height, font={"family": FONT, "color": c["ink"], "size": 13},
+        paper_bgcolor=c["surface"], plot_bgcolor=c["surface"],
+        margin={"l": 72, "r": 24, "t": 56 if title else 24, "b": 64},
+        title={"text": title, "x": 0, "xanchor": "left", "font": {"size": 15, "color": c["ink"]}} if title else None,
+        xaxis={**axis, "title": {**axis["title"], "text": _rich(label_f2, isotopes[1])},
+               "range": [float(axis_f2.max()), float(axis_f2.min())]},
+        yaxis={**axis, "title": {**axis["title"], "text": _rich(label_f1, isotopes[0])},
+               "range": [float(axis_f1.max()), float(axis_f1.min())]},
+        modebar={"bgcolor": "rgba(0,0,0,0)", "color": c["muted"], "activecolor": c["ink2"], "remove": ["lasso2d", "select2d"]},
+        dragmode="zoom", showlegend=False,
+    )
     return fig
 
 

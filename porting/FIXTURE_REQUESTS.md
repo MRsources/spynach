@@ -103,3 +103,13 @@ before going further.
 - **Produces:** `mas_csa`, `mas_dip`, `mas_nqi`, `mas_crystal_offaxis`
 - **Check:** `SPINPY_FIXTURES=/fixtures pytest tests/slice/test_mas_parity.py -rs`; nothing should skip.
 - **Result:** finished (host, 2026-10-11); four cases written, earlier cases skipped.
+
+## FR-007: pulse sequence library (`dump_seq.m`)
+
+- **Status:** requested 2026-10-11, branch `main`
+- **Spinach:** clean checkout, 2.13 (`03a88b7e`), as before
+- **Needs:** the same host setup (`asyredf` disabled for the NOESY case). Three cases, 32-64 points per dimension: seconds to a minute each.
+- **Run:** `oracle/run_fixtures.sh` from the `main` checkout (`dump_seq` is in `dump_scripts`; existing cases are skipped).
+- **Produces:** `seq_cosy_derome`, `seq_noesy_pair`, `seq_hsqc_dilute`
+- **Check:** `SPINPY_FIXTURES=/fixtures pytest tests/slice/test_seq_parity.py -rs`; nothing should skip.
+- **Result:** _(human: fixture path, MATLAB version, any errors or warnings)_

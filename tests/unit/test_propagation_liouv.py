@@ -156,7 +156,7 @@ def test_unported_evolution_options_are_refused():
     ls = spinpy.basis(system(*CASES["ab_2spin"]), LIOUV)
     L = liouvillian(ls)
     rho = spinpy.state(ls, "L+", "1H")
-    with pytest.raises(NotImplementedError, match="refocus"):
-        spinpy.evolution(ls, L, rho, rho, 1e-3, 2, "refocus")
+    with pytest.raises(NotImplementedError, match="total"):
+        spinpy.evolution(ls, L, rho, rho, 1e-3, 2, "total")
     with pytest.raises(NotImplementedError, match="not ported"):
         spinpy.create({"isotopes": ["1H"], "magnet": 14.1, "disable": ["symmetry"]}, {})

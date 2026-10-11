@@ -74,10 +74,10 @@ def zte(spin_system: SpinSystem, L: Matrix, rho: np.ndarray) -> sps.csc_array:
         log.warning("zero track elimination disabled, basis left unchanged.")
         return identity
     if np.count_nonzero(rho) / rho.size > tols.zte_maxden:
-        log.warning("too few zeros in the state vector, basis left unchanged.")
+        log.info("too few zeros in the state vector, basis left unchanged.")
         return identity
     if np.sum(np.abs(rho)) < tols.zte_tol:
-        log.warning("state vector norm below drop tolerance, basis left unchanged.")
+        log.info("state vector norm below drop tolerance, basis left unchanged.")
         return identity
     norm = _norm1(L)
     timestep = 1 / norm if norm > 0 else 1.0

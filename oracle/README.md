@@ -187,3 +187,13 @@ about an axis off the magic angle with a transmitter offset. Variables:
 | `/fp/G_first_orientation` | the Fokker-Planck generator `blkdiag(H(phi))+1i*M` at the first orientation, as `singlerot` builds it |
 | `/states/rho0_fp_crystal`, `/states/coil_fp` | the expanded states handed to the sequence (`single_crystal` grid for `rho0`) |
 | `/fid/singlerot`, `/spectrum/raw` | `singlerot(spin_system,@acquire,pars,'nmr')` and its unapodised spectrum |
+
+### `dump_seq.m`: pulse sequences
+
+Three cases (FR-007). `seq_cosy_derome`: `cosy` FID, its apodised form and
+spectrum, apodisation of known vectors/matrices (`/apod/*`), `'trajectory'`
+and `'refocus'` outputs (`/evo/*`), `acquire` with `dead_time`, and
+`homospoil` on a stack. `seq_noesy_pair`: `noesy` cos/sin FIDs, the
+`oldschool` variant, `rho_eq`. `seq_hsqc_dilute`: per-isotopomer `hsqc`
+pos/neg FIDs and bases (`/sub/*`, `/fid/hsqc_*_n`), the summed spectrum,
+and `decouple` of a Liouvillian and a state.

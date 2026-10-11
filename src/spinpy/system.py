@@ -22,7 +22,7 @@ field raises ``NotImplementedError`` rather than being ignored.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 import numpy as np
@@ -524,3 +524,56 @@ def _check_square(values: Sequence[Sequence[Any]], nspins: int, name: str) -> Se
     if len(values) != nspins or any(len(row) != nspins for row in values):
         raise ValueError(f"{name} must be a {nspins} x {nspins} nested list.")
     return values
+
+
+def kill_spin(spin_system: SpinSystem, hit_list: Sequence[int]) -> SpinSystem:
+    """Remove the spins in ``hit_list`` (0-based) from a spin system (port of ``kill_spin.m``).
+
+    Interaction tensors, coordinates, the proximity matrix, chemical parts
+    and per-spin relaxation rates are reindexed; the basis is dropped and
+    must be built again with :func:`spinpy.basis`.
+    """
+    hit = sorted({int(n) for n in hit_list})
+    if any(n < 0 or n >= spin_system.nspins for n in hit):
+        raise ValueError("hit_list must contain spin numbers within the system bounds.")
+    keep = [n for n in range(spin_system.nspins) if n not in hit]
+    new_index = {old: new for new, old in enumerate(keep)}
+    chem = spin_system.chem
+    parts = tuple(tuple(new_index[n] for n in part if n in new_index) for part in chem.parts)
+    rlx = spin_system.rlx
+    return replace(
+        spin_system,
+        isotopes=tuple(spin_system.isotopes[n] for n in keep),
+        labels=tuple(spin_system.labels[n] for n in keep),
+        types=tuple(spin_system.types[n] for n in keep),
+        mults=spin_system.mults[keep],
+        gammas=spin_system.gammas[keep],
+        basefrqs=spin_system.basefrqs[keep],
+        zeeman_matrix=tuple(spin_system.zeeman_matrix[n] for n in keep),
+        coupling_matrix=tuple(tuple(spin_system.coupling_matrix[n][k] for k in keep) for n in keep),
+        coordinates=tuple(spin_system.coordinates[n] for n in keep),
+        proxmatrix=spin_system.proxmatrix[np.ix_(keep, keep)],
+        chem=replace(chem, parts=parts),
+        rlx=replace(
+            rlx,
+            r1_rates=tuple(rlx.r1_rates[n] for n in keep) if rlx.r1_rates else (),
+            r2_rates=tuple(rlx.r2_rates[n] for n in keep) if rlx.r2_rates else (),
+        ),
+        basis=None,
+        assumptions=None,
+    )
+
+
+def dilute(spin_system: SpinSystem, isotope: str, tuples: int = 1) -> list[SpinSystem]:
+    """Isotopomer subsystems of a dilute isotope (port of ``dilute.m``).
+
+    Returns one spin system per combination of ``tuples`` spins of
+    ``isotope``, with every other spin of that isotope removed; the
+    natural-abundance spectrum is the sum over the subsystems.
+    """
+    from itertools import combinations
+
+    dilute_spins = [n for n, iso in enumerate(spin_system.isotopes) if iso == isotope]
+    if len(dilute_spins) < tuples:
+        raise ValueError(f"not enough {isotope} in the system to make the selection.")
+    return [kill_spin(spin_system, sorted(set(dilute_spins) - set(combo))) for combo in combinations(dilute_spins, tuples)]

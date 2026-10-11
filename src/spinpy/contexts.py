@@ -22,7 +22,7 @@ from spinpy.assume import assume
 from spinpy.conventions import wigner
 from spinpy.hamiltonian import frqoffset, hamiltonian, orientation
 from spinpy.kinetics import kinetics
-from spinpy.relaxation import relaxation
+from spinpy.relaxation import equilibrium, relaxation
 from spinpy.system import SpinSystem
 from spinpy.utilities import Matrix, clean_up
 
@@ -270,8 +270,14 @@ def _defaults(spin_system: SpinSystem, parameters: dict[str, Any]) -> dict[str, 
     parameters.setdefault("needs", [])
     if parameters["rframes"]:
         raise NotImplementedError("additional rotating frame transformations are not ported yet.")
+    unported = set(parameters["needs"]) - {"rho_eq", "iso_eq"}
+    if unported:
+        raise NotImplementedError(f"parameters['needs'] {sorted(unported)} not ported yet.")
+    if parameters["needs"] and "rho0" in parameters:
+        raise ValueError("thermal equilibrium request conflicts with user-specified initial condition.")
     if parameters["needs"]:
-        raise NotImplementedError(f"parameters['needs'] {parameters['needs']} not ported yet.")
+        # 'rho_eq' (liquid) and 'iso_eq' (singlerot): the thermal state of the isotropic lab-frame Hamiltonian
+        parameters["rho0"] = equilibrium(spin_system)
     return parameters
 
 

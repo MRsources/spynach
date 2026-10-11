@@ -29,6 +29,9 @@ is ported and verified against Spinach 2.13 fixtures
 Magic angle spinning in Fokker-Planck form (`singlerot`) is ported and
 verified against Spinach 2.13 fixtures (`tests/slice/test_mas_parity.py`),
 rotor echoes and the fast-spinning limit.
+The pulse sequence library (COSY, NOESY, HSQC with isotopomer dilution,
+analytical decoupling, apodisation and 2D plotting) is ported; its Spinach
+fixtures are requested (FR-007).
 
 ```python
 import numpy as np
@@ -56,11 +59,12 @@ spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))
 | `kinetics.m` | `spinpy.kinetics` | first-order exchange between chemical subsystems |
 | `correlation.m`, `coherence.m` | `spinpy.correlation`, `spinpy.coherence` | `sphten-liouv` |
 | `propagator.m`, `step.m`, `krylov.m` | `spinpy.propagator`, `spinpy.step`, `spinpy.krylov` | dense Pade below `small_matrix`, scaled-squared Taylor above; Taylor action on vectors with 1-, 2-, 3-point Lie quadratures |
-| `evolution.m` | `spinpy.evolution` | `zeeman-hilb`: `observable`; `sphten-liouv`: `observable`, `final`, `trajectory`, `multichannel`, destination state screening, Krylov path |
+| `evolution.m` | `spinpy.evolution` | `zeeman-hilb`: `observable`; `sphten-liouv`: `observable`, `final`, `trajectory`, `multichannel`, `refocus`, destination state screening, Krylov path |
 | `reduce.m`, `zte.m`, `path_trace.m` | `spinpy.reduce`, `spinpy.zte`, `spinpy.path_trace` | zero track elimination, path tracing with subspace merging; no symmetry |
 | `relaxation.m`, `equilibrium.m`, `thermalize.m` | `spinpy.relaxation`, `spinpy.equilibrium`, `spinpy.thermalize` | Redfield (isotropic, axial, rhombic diffusion; diagonalisation-free integral), `t1_t2`, `damp`; `rlx_keep`, `rlx_dfs`; `zero`/`IME`/`dibari` thermalisation |
 | `liquid.m`, `crystal.m`, `powder.m`, `singlerot.m`, `fourdif.m`, `acquire.m` | `spinpy.liquid`, `spinpy.crystal`, `spinpy.powder`, `spinpy.singlerot`, `spinpy.contexts.fourdif`, `spinpy.acquire` | both formalisms (MAS in Liouville space); relaxation and exchange kinetics; powder averages over Spinach's grids (shipped as `spinpy/grids`); MAS in Fokker-Planck form with the Fourier spectral derivative; no decoupling |
-| `ft_axis.m`, `axis_1d.m`, `plot_1d.m` | `spinpy.plotting` | all axis units; interactive Plotly figures; no `derivative` |
+| `ft_axis.m`, `axis_1d.m`, `plot_1d.m`, `plot_2d.m`, `contspacing.m`, `apodisation.m` | `spinpy.plotting`, `spinpy.apodisation` | all axis units; interactive Plotly 1D and 2D contour figures; window functions except `bad-z*`; no `derivative` |
+| `cosy.m`, `noesy.m`, `hsqc.m`, `decouple.m`, `homospoil.m`, `dilute.m`, `kill_spin.m` | `spinpy.cosy`, `spinpy.noesy`, `spinpy.hsqc`, `spinpy.decouple`, `spinpy.homospoil`, `spinpy.dilute`, `spinpy.kill_spin` | COSY, States-TPPI NOESY, echo-antiecho HSQC; analytical decoupling; isotopomer sums |
 
 Anything not ported raises `NotImplementedError`; inputs are never silently
 ignored.

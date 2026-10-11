@@ -1,4 +1,4 @@
-"""Analytical state filters (ports of ``correlation.m`` and ``coherence.m``).
+"""Analytical state filters (ports of ``correlation.m``, ``coherence.m``, ``homospoil.m`` and ``decouple.m``).
 
 Ported for ``sphten-liouv``, where correlation and coherence orders are
 labels of the basis states and filtering means zeroing coefficients.
@@ -16,9 +16,11 @@ from collections.abc import Sequence
 from typing import Any
 
 import numpy as np
+import scipy.sparse as sps
 
 from spinpy.operators import lin2lm
 from spinpy.system import SpinSystem
+from spinpy.utilities import clean_up
 
 
 def correlation(
@@ -91,3 +93,62 @@ def _spins(spin_system: SpinSystem, spins: str | Sequence[int]) -> list[int]:
     if any(n < 0 or n >= spin_system.nspins for n in numbers):
         raise ValueError("spin numbers must be within the system bounds.")
     return numbers
+
+
+def homospoil(spin_system: SpinSystem, rho: np.ndarray, zqc_flag: str) -> np.ndarray:
+    """Homospoil gradient: destroy all coherences (port of ``homospoil.m``).
+
+    ``zqc_flag='keep'`` zeroes every state with a non-zero Zeeman frequency
+    (``sum(basefrq * m)``), keeping zero-quantum coherences; ``'destroy'``
+    zeroes every state with a non-zero coherence order on any spin,
+    keeping only longitudinal states and the unit state.
+    """
+    _check(spin_system, rho)
+    _, projections = lin2lm(spin_system.basis.basis)
+    if zqc_flag == "keep":
+        mask = np.abs(projections @ spin_system.basefrqs) <= 1e-6
+    elif zqc_flag == "destroy":
+        mask = np.abs(projections).sum(axis=1) == 0
+    else:
+        raise ValueError("the available values for zqc_flag are 'keep' and 'destroy'.")
+    return _apply(rho, mask)
+
+
+def decouple(spin_system: SpinSystem, L: Any, rho: np.ndarray | None, spins: Sequence[Any]) -> tuple[Any, np.ndarray | None]:
+    """Analytical decoupling: freeze and depopulate ``spins`` (port of ``decouple.m``, ``sphten-liouv``).
+
+    ``spins`` is a list of isotope names or 0-based spin numbers (empty:
+    nothing happens). Every basis state that involves one of them is
+    removed from the dynamics: its rows and columns of the generator
+    ``L`` and its entries of the state ``rho`` are zeroed. Both ``L`` and
+    ``rho`` may span a Fokker-Planck space (``spc_dim`` copies of the spin
+    state space, spin index fastest).
+    """
+    spins = list(spins)
+    if not spins:
+        return L, rho
+    if spin_system.basis is None or spin_system.basis.formalism != "sphten-liouv":
+        raise NotImplementedError("analytical decoupling is only ported for the sphten-liouv formalism.")
+    if all(isinstance(s, str) for s in spins):
+        if any(s not in spin_system.isotopes for s in spins):
+            raise ValueError("the system does not contain the spins specified.")
+        mask = np.array([iso in spins for iso in spin_system.isotopes])
+    else:
+        numbers = [int(s) for s in spins]
+        if any(n < 0 or n >= spin_system.nspins for n in numbers):
+            raise ValueError("spin numbers must be within the system bounds.")
+        mask = np.zeros(spin_system.nspins, dtype=bool)
+        mask[numbers] = True
+    spn_dim = spin_system.basis.nstates
+    zero_mask = spin_system.basis.basis[:, mask].any(axis=1)
+    if L is not None:
+        spc_dim = L.shape[0] // spn_dim
+        keep = np.tile(~zero_mask, spc_dim).astype(float)
+        projector = sps.diags_array(keep, format="csr")
+        L = projector @ L @ projector
+        L = clean_up(spin_system.tols, sps.csr_array(L) if sps.issparse(L) else np.asarray(L), spin_system.tols.liouv_zero)
+    if rho is not None:
+        rho = np.array(rho, dtype=complex)
+        spc_dim = rho.shape[0] // spn_dim
+        rho[np.tile(zero_mask, spc_dim)] = 0
+    return L, rho
