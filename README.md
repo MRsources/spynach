@@ -24,8 +24,8 @@ tensors, dipolar couplings from coordinates, quadrupolar couplings) with
 the `crystal` and `powder` contexts are ported and verified against
 Spinach 2.13 fixtures as well (`tests/slice/test_aniso_parity.py`).
 Relaxation (Redfield theory, T1/T2 and damping models, thermalisation)
-is ported and checked against the Solomon equations; its Spinach fixtures
-are requested (FR-005).
+is ported and verified against Spinach 2.13 fixtures
+(`tests/slice/test_relax_parity.py`) and the Solomon equations.
 
 ```python
 import numpy as np

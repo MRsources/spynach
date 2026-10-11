@@ -243,4 +243,12 @@ pairs, a three-spin system with CSA, dipolar couplings and secular
 retention under IME, axial diffusion with dynamic frequency shifts, and
 the T1/T2 model plus anisotropic damping) with Spinach 2.13
 fixtures (FR-005 in `porting/FIXTURE_REQUESTS.md`); those tests skip
-while the fixtures are absent.
+while the fixtures are absent. Measured agreement over the five cases
+(largest elementwise difference relative to the largest element):
+
+| stage | difference from Spinach |
+|---|---|
+| relaxation superoperators, isotropic and at an orientation | 0 (identical after the `rlx_zero` rounding) |
+| equilibrium states | 3e-25 |
+| thermalised superoperators (IME, DiBari-Levitt) | 1e-15 |
+| NOE trajectories (`multichannel`, up to 1000 steps) | 5e-15 |

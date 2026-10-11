@@ -166,8 +166,9 @@ Status (2026-10-11): implemented on `main`. `redfield` (isotropic, axial,
 rhombic diffusion via `expmint`), `t1_t2`, `damp`; `rlx_keep`, `rlx_dfs`;
 `equilibrium` and `thermalize` (IME, DiBari-Levitt); `R` in every context;
 `evolution` `multichannel`. Verified against the Solomon equations and
-Boltzmann states (`tests/unit/test_relaxation.py`); FR-005 fixtures
-requested. Not ported: Lindblad, Nottingham/Weizmann DNP, SRFK/SRSK,
+Boltzmann states (`tests/unit/test_relaxation.py`); FR-005 fulfilled,
+20 parity tests pass (superoperators identical, table in
+`docs/relaxation.md`). Not ported: Lindblad, Nottingham/Weizmann DNP, SRFK/SRSK,
 Nakajima-Zwanzig, rate functions, bosonic dissipators.
 
 ## Later

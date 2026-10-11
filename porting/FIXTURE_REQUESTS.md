@@ -84,10 +84,11 @@ before going further.
 
 ## FR-005: relaxation (`dump_relax.m`)
 
-- **Status:** requested 2026-10-11, branch `main`
+- **Status:** fulfilled 2026-10-11, `/fixtures/2.13/`, run log `run_20261011T213425Z.log`; MATLAB R2026b, Spinach `03a88b7e` (2.13), clean; `pytest tests/slice/test_relax_parity.py`: 20 passed
+- **Requested:** 2026-10-11, branch `main`
 - **Spinach:** clean checkout, 2.13 (`03a88b7e`), as before
 - **Needs:** the same host setup. The dump sets `sys.disable={'hygiene','asyredf'}` so that the Redfield integral takes the serial path (same numbers as the parallel one). Five cases, seconds each.
 - **Run:** `oracle/run_fixtures.sh` from the `main` checkout (`dump_relax` is in `dump_scripts`; existing cases are skipped).
 - **Produces:** `relax_noe_het`, `relax_noe_hom`, `relax_csa_dd_secular`, `relax_axial_dfs`, `relax_t1t2_damp`
 - **Check:** `SPINPY_FIXTURES=/fixtures pytest tests/slice/test_relax_parity.py -rs`; nothing should skip.
-- **Result:** _(human: fixture path, MATLAB version, any errors or warnings)_
+- **Result:** done (host, 2026-10-11); five cases written, earlier cases skipped.
