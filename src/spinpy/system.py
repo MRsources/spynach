@@ -27,7 +27,10 @@ from spinpy.tolerances import Tolerances, tolerances
 
 FREE_ELECTRON_G = 2.00231930436092  # Spinach tols.freeg
 
-SYS_FIELDS = {"isotopes", "magnet", "tols", "labels"}
+SYS_FIELDS = {"isotopes", "magnet", "tols", "labels", "enable", "disable"}
+# Spinach sys.enable / sys.disable tokens that have a meaning in spinpy
+ENABLE_TOKENS = {"krylov"}
+DISABLE_TOKENS = {"zte", "pt", "dss", "merge", "krylov", "trajlevel"}
 INTER_FIELDS = {"zeeman", "coupling", "chem"}
 ZEEMAN_FIELDS = {"scalar", "matrix"}
 COUPLING_FIELDS = {"scalar", "matrix"}
@@ -96,6 +99,8 @@ class SpinSystem:
     coupling_matrix: tuple[tuple[np.ndarray | None, ...], ...]   # 3x3 coupling tensors, rad/s; None if absent
     tols: Tolerances
     chem: Chemistry
+    enable: frozenset[str] = frozenset()    # sys['enable'] tokens, e.g. 'krylov'
+    disable: frozenset[str] = frozenset()   # sys['disable'] tokens: 'zte', 'pt', 'dss', 'merge', 'krylov', 'trajlevel'
     basis: Basis | None = None
     assumptions: Assumptions | None = None
 
@@ -108,7 +113,11 @@ def create(sys: dict[str, Any], inter: dict[str, Any]) -> SpinSystem:
     """Build a spin system from Spinach-style ``sys`` and ``inter`` dictionaries.
 
     ``sys['isotopes']``: list of isotope names; ``sys['magnet']``: field in Tesla;
-    optional ``sys['tols']``: tolerance overrides; optional ``sys['labels']``.
+    optional ``sys['tols']``: tolerance overrides; optional ``sys['labels']``;
+    optional ``sys['enable']`` (``'krylov'``) and ``sys['disable']`` (``'zte'``,
+    ``'pt'``, ``'dss'``, ``'merge'``, ``'krylov'``, ``'trajlevel'``) switch
+    the trajectory-level reductions and the Krylov propagation path as in
+    Spinach; other tokens are not ported.
 
     ``inter['zeeman']['scalar']``: per-spin chemical shift in ppm (nuclei) or
     isotropic g-value (electrons), ``None`` for none. ``inter['zeeman']['matrix']``:
@@ -126,6 +135,12 @@ def create(sys: dict[str, Any], inter: dict[str, Any]) -> SpinSystem:
     labels = tuple(sys.get("labels", [None] * nspins))
     if len(labels) != nspins:
         raise ValueError("sys['labels'] must have one entry per spin.")
+    enable = frozenset(sys.get("enable", []))
+    disable = frozenset(sys.get("disable", []))
+    if enable - ENABLE_TOKENS:
+        raise NotImplementedError(f"sys['enable'] token(s) {sorted(enable - ENABLE_TOKENS)} not ported yet")
+    if disable - DISABLE_TOKENS:
+        raise NotImplementedError(f"sys['disable'] token(s) {sorted(disable - DISABLE_TOKENS)} not ported yet")
 
     gammas = np.empty(nspins)
     mults = np.empty(nspins, dtype=np.int64)
@@ -151,6 +166,8 @@ def create(sys: dict[str, Any], inter: dict[str, Any]) -> SpinSystem:
         coupling_matrix=coupling,
         tols=tols,
         chem=chem,
+        enable=enable,
+        disable=disable,
     )
 
 

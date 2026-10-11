@@ -437,16 +437,17 @@ with a Spinach example script translated line by line.
 
 These raise `NotImplementedError` with a message naming the missing piece:
 
-- formalisms other than `zeeman-hilb` (`sphten-liouv`, `zeeman-liouv`),
-  permutation symmetry,
+- the `zeeman-liouv` formalism and permutation symmetry (`sphten-liouv`
+  has [its own guide](liouville-space.md)),
 - anisotropic interactions, coordinates, dipolar couplings, relaxation,
   chemical kinetics, the rotating-frame and lab-frame assumption sets other
   than `"nmr"`,
-- `evolution` outputs other than `"observable"`, and state stacks,
+- `evolution` outputs other than `"observable"` and state stacks in
+  Hilbert space (Liouville space has `"final"` and `"trajectory"` too),
 - decoupling, dead time, and homodecoupling in `acquire`; extra rotating
   frames and `needs` in `liquid`,
 - operator labels `CT*` and `ZL*`, and bosonic modes,
-- `step` and apodisation; plotting functions other than `plot_1d`
+- apodisation; plotting functions other than `plot_1d`
   (`plot_2d`, `plot_3d`, ...) and its `derivative` option.
 
 ## Checking results against Spinach

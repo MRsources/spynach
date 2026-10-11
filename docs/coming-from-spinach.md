@@ -401,14 +401,17 @@ ignored by the simulation, as in Spinach.
 |---|---|
 | contexts: `liquid`, `powder`, `crystal`, `singlerot`, `doublerot`, `floquet`, `gridfree`, `imaging`, ... | `liquid` only |
 | pulse sequences in `experiments/`: `acquire`, `hsqc`, `cosy`, `noesy`, ... | `acquire`; write others yourself |
-| `evolution` outputs `'observable'`, `'final'`, `'total'`, `'trajectory'`, `'refocus'`, `'multichannel'` | `'observable'` |
-| `evolution(...,destination)` destination state screening | not ported |
-| `step`, `krylov`, `pulse`, `shaped_pulse_*` | not ported; use `propagator` for ideal pulses |
+| `evolution` outputs `'observable'`, `'final'`, `'total'`, `'trajectory'`, `'refocus'`, `'multichannel'` | `'observable'` in Hilbert space; `'observable'`, `'final'`, `'trajectory'` in Liouville space |
+| `evolution(...,destination)` destination state screening | the same, Liouville space (`destination=` keyword) |
+| `reduce`, `zte`, `path_trace` (trajectory-level reduction), `sys.disable={'zte','pt','dss','merge','krylov','trajlevel'}`, `sys.enable={'krylov'}` | the same, Liouville space; permutation symmetry not ported |
+| `step` (single generator and 2/3-point Lie quadratures), `krylov` | the same in Liouville space; Hilbert-space `step` for one generator |
+| `pulse`, `shaped_pulse_*` | not ported; use `propagator` or `step` |
 | `propagator`: Pade `expm` below `small_matrix`, scaled and squared Taylor series above | the same |
 | relaxation (`relaxation`) | not ported; `R` is zero |
-| chemical kinetics (`kinetics`) | first-order exchange; `liquid` passes it as `K` (Liouville-space propagation itself is not ported yet) |
+| chemical kinetics (`kinetics`) | first-order exchange; `liquid` passes it as `K` and `acquire` propagates under `H + 1i*K` |
 | parallel `evolution` (Kuprov-Edwards split), `parfor` | serial; the same numbers |
 | GPU via `sys.enable={'gpu'}` | CPU only; CuPy backend planned |
+| Liouville-space states | dense 1-D NumPy vectors; stacks are `(nstates, k)` arrays, trajectories `(nstates, nsteps + 1)` as in Spinach |
 
 **Pulse sequences** have Spinach's signature, `sequence(spin_system,
 parameters, H, R, K)`, and are passed to `liquid` the same way. Inside,

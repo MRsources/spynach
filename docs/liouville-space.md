@@ -8,10 +8,11 @@ that lets Spinach simulate large spin systems. Read
 companion notebook is
 [`notebooks/liouville-space.ipynb`](notebooks/liouville-space.ipynb).
 
-Ported so far: the basis set with its restrictions, operators
-(superoperators), states, the Hamiltonian and kinetics superoperators and
-the analytical filters. Propagation in this formalism (`evolution`,
-`liquid`) follows in the next step.
+Ported: the basis set with its restrictions, operators (superoperators),
+states, the Hamiltonian and kinetics superoperators, the analytical
+filters, and propagation with trajectory-level reduction (`step`,
+`evolution`, `liquid`), so pulse-acquire experiments and chemical
+exchange run end to end.
 
 Every Python block is executed by `tests/docs/`, in order and in one
 namespace.
@@ -27,8 +28,10 @@ namespace.
 7. [States](#states)
 8. [The Liouvillian: Hamiltonian and kinetics superoperators](#the-liouvillian-hamiltonian-and-kinetics-superoperators)
 9. [Analytical filters](#analytical-filters)
-10. [What is not ported yet](#what-is-not-ported-yet)
-11. [Checking results against Spinach](#checking-results-against-spinach)
+10. [Propagation: `step`, `evolution`, and the reductions](#propagation-step-evolution-and-the-reductions)
+11. [Pulse-acquire and chemical exchange through `liquid`](#pulse-acquire-and-chemical-exchange-through-liquid)
+12. [What is not ported yet](#what-is-not-ported-yet)
+13. [Checking results against Spinach](#checking-results-against-spinach)
 
 ## Why Liouville space
 
@@ -351,11 +354,108 @@ stack = np.stack([rho, 2 * rho])
 assert spinpy.correlation(hc_nmr, stack, [2]).shape == (2, 16)
 ```
 
+## Propagation: `step`, `evolution`, and the reductions
+
+A Liouville-space state is a vector, so one time step is a
+matrix-vector product with `expm(-1j * L * dt)`. `step(ss, L, rho, dt)`
+computes it without forming the exponential: a Taylor series of the
+generator acting on the vector, in substeps short enough for the series
+to converge quickly. It takes a single vector or a stack of column
+vectors, and a list of two or three generators sampled across the step
+(the Lie-group quadratures Spinach uses for shaped pulses):
+
+```python
+import scipy.linalg as sla
+
+L = spinpy.frqoffset(hc_nmr, spinpy.hamiltonian(hc_nmr), {"spins": ["1H"], "offset": [1200.0]})
+rho = spinpy.state(hc_nmr, "L+", "1H")
+dt = 1e-3
+rho_dt = spinpy.step(hc_nmr, L, rho, dt)
+assert np.allclose(rho_dt, sla.expm(-1j * np.asarray(L) * dt) @ rho, rtol=1e-12)
+```
+
+`evolution(ss, L, coil, rho, dt, nsteps, output)` runs a whole free
+evolution period. Before propagating, it reduces the problem exactly for
+the trajectory at hand (`spinpy.reduce`):
+
+- **destination state screening** (Krzystyniak et al. 2011): for the
+  `'observable'` output the reduction is run backwards from the coil
+  state, since only states that can reach the detector matter;
+- **zero track elimination** (Kuprov 2008, `spinpy.zte`): a short trial
+  propagation marks the states that are ever populated above
+  `tols.zte_tol`; the others are dropped;
+- **path tracing** (Hogben et al. 2010, `spinpy.path_trace`): the
+  generator is split into non-interacting subspaces (connected components
+  of its graph), unpopulated ones are dropped, small ones merged into
+  batches of `tols.merge_dim` states. Skipped below `tols.merge_dim`
+  states.
+
+Each subspace is then propagated with the exponential propagator, or, above
+`tols.krylov_tol` states, by repeated `step` calls (`spinpy.krylov`).
+`sys["disable"]` accepts Spinach's `'zte'`, `'pt'`, `'dss'`, `'merge'`,
+`'krylov'` and `'trajlevel'` tokens, `sys["enable"]` accepts `'krylov'`;
+none of them changes the answer:
+
+```python
+coil = spinpy.state(hc_nmr, "L+", "1H")
+fid = spinpy.evolution(hc_nmr, L, coil, rho, 1 / 500, 63, "observable")
+hc_plain = spinpy.create({"isotopes": ["1H", "13C"], "magnet": 14.1, "disable": ["trajlevel"]},
+                         {"zeeman": {"scalar": [2.0, 30.0]}, "coupling": {"scalar": [[0, 145.0], [0, 0]]}})
+hc_plain = spinpy.assume(spinpy.basis(hc_plain, {"formalism": "sphten-liouv", "approximation": "none"}), "nmr")
+fid_plain = spinpy.evolution(hc_plain, L, coil, rho, 1 / 500, 63, "observable")
+assert np.allclose(fid, fid_plain, rtol=1e-9)
+projectors = spinpy.reduce(hc_nmr, L.conj().T, coil)
+assert sum(p.shape[1] for p in projectors) == 2     # L+(H) and L+(H)Lz(C) are all that reaches the coil
+```
+
+Outputs: `'observable'` returns `coil^H rho(t)` at `nsteps + 1` points
+(a `(nsteps + 1, k)` array for a stack of `k` vectors), `'final'` the
+state after `nsteps` steps, `'trajectory'` the `(nstates, nsteps + 1)`
+array of states. Because `'exact'` states carry a factor `1/sqrt(dim)`
+each, a Liouville-space observable is the Hilbert-space one divided by
+`dim`:
+
+```python
+hc_hilb_nmr = spinpy.assume(spinpy.basis(hc, {"formalism": "zeeman-hilb", "approximation": "none"}), "nmr")
+L_hilb = spinpy.frqoffset(hc_hilb_nmr, spinpy.hamiltonian(hc_hilb_nmr), {"spins": ["1H"], "offset": [1200.0]})
+rho_hilb = spinpy.state(hc_hilb_nmr, "L+", "1H")
+fid_hilb = spinpy.evolution(hc_hilb_nmr, L_hilb, rho_hilb, rho_hilb, 1 / 500, 63, "observable")
+assert np.allclose(4 * fid, fid_hilb, rtol=1e-9)
+```
+
+## Pulse-acquire and chemical exchange through `liquid`
+
+`liquid` builds `H`, `R` (zero: relaxation is not ported) and `K`
+(`spinpy.kinetics`) and hands them to the pulse sequence, which forms the
+Liouvillian as `L = H + 1j * R + 1j * K`; `acquire` then calls
+`evolution`. For an exchanging system the initial state is weighted by
+the concentrations (`state(..., "chem")`) and the coil is not, exactly as
+in Spinach's `examples/kinetics/exchange_symmetric.m`:
+
+```python
+from spinpy.plotting import plot_1d
+
+exch_pars = {"spins": ["1H"], "offset": 900.0, "sweep": 5000.0, "npoints": 512, "zerofill": 1024,
+             "rho0": spinpy.state(two_sites, "L+", "1H", "chem"), "coil": spinpy.state(two_sites, "L+", "1H"),
+             "axis_units": "ppm", "invert_axis": True}
+fid_exch = spinpy.liquid(two_sites, spinpy.acquire, exch_pars, "nmr")
+fid_exch *= np.exp(-6 * np.arange(exch_pars["npoints"]) / exch_pars["npoints"])   # exponential apodisation
+spectrum_exch = np.fft.fftshift(np.fft.fft(fid_exch, exch_pars["zerofill"]))
+plot_1d(two_sites, spectrum_exch.real, exch_pars)
+```
+
+The two lines at 0 and 3 ppm, 1800 Hz apart at 14.1 T, exchange at
+2000 Hz: close to coalescence, they merge into one broad line. The same
+FID follows the McConnell equations of the two sites, which
+`tests/unit/test_propagation_liouv.py` checks against a `2 x 2` matrix
+exponential.
+
 ## What is not ported yet
 
-- `evolution`, `liquid` and propagation in general for `sphten-liouv`
-  systems (next step of the port), relaxation, magnetisation flux and
-  radical-pair kinetics;
+- `evolution` outputs `'total'`, `'refocus'` and `'multichannel'`,
+  Lie-group quadratures in Hilbert space, relaxation, magnetisation flux
+  and radical-pair kinetics, `decouple`, `homodec_*` and `dead_time` in
+  `acquire`;
 - permutation symmetry (`sym_group`, `sym_spins`);
 - the `zeeman-liouv` formalism, and the `IK-DNP` and `IK-SBS` basis sets;
 - proximity-based correlations, which need `inter.coordinates`.

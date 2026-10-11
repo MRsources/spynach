@@ -112,8 +112,16 @@ def test_filters():
         spinpy.coherence(spinpy.basis(ss, HILB), np.eye(16), [("1H", 1)])
 
 
-def test_liquid_refuses_liouville_space_until_propagation_is_ported():
-    ls = spinpy.basis(system(*CASES["hc_2spin"]), LIOUV)
-    with pytest.raises(NotImplementedError, match="propagation"):
-        spinpy.liquid(ls, spinpy.acquire, {"spins": ["1H"], "offset": [0], "sweep": 500, "npoints": 8,
-                                           "rho0": spinpy.state(ls, "L+", "1H"), "coil": spinpy.state(ls, "L+", "1H")}, "nmr")
+def test_liquid_builds_the_kinetics_superoperator():
+    """liquid() hands K = kinetics(...) to the sequence in Liouville space."""
+    ss = system(["1H", "1H"], zeeman={"scalar": [0.0, 3.0]},
+                chem={"parts": [[0], [1]], "concs": [1, 1], "rates": [[-1e3, 1e3], [1e3, -1e3]]})
+    ls = spinpy.basis(ss, LIOUV)
+    seen = {}
+
+    def grab(spin_system, parameters, H, R, K):
+        seen["K"] = K
+        return None
+
+    spinpy.liquid(ls, grab, {"spins": ["1H"]}, "nmr")
+    assert_matches(seen["K"], spinpy.kinetics(ls), rtol=0, atol=0)

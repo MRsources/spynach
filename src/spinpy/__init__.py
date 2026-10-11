@@ -7,7 +7,8 @@ from spinpy.filters import coherence, correlation
 from spinpy.hamiltonian import frqoffset, hamiltonian
 from spinpy.kinetics import kinetics
 from spinpy.operators import operator
-from spinpy.propagation import evolution, propagator
+from spinpy.propagation import evolution, krylov, propagator, step
+from spinpy.reduction import path_trace, reduce, zte
 from spinpy.sequences import acquire
 from spinpy.states import state
 from spinpy.system import Chemistry, SpinSystem, create
@@ -27,8 +28,13 @@ __all__ = [
     "hamiltonian",
     "hdot",
     "kinetics",
+    "krylov",
     "liquid",
     "operator",
+    "path_trace",
     "propagator",
+    "reduce",
     "state",
+    "step",
+    "zte",
 ]

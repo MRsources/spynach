@@ -14,6 +14,7 @@ import scipy.sparse as sps
 
 from spinpy.assume import assume
 from spinpy.hamiltonian import frqoffset, hamiltonian
+from spinpy.kinetics import kinetics
 from spinpy.system import SpinSystem
 from spinpy.utilities import Matrix
 
@@ -28,9 +29,8 @@ def liquid(
     ``parameters`` must contain ``'spins'`` (isotopes of the working channels)
     and may contain ``'offset'`` (Hz per channel). Relaxation is not ported
     yet, so R is zero, which is what Spinach produces when the system
-    specifies none, and K is zero because kinetics needs Liouville space.
-    Only ``zeeman-hilb`` systems can be run until Liouville-space propagation
-    is ported.
+    specifies none; K is :func:`spinpy.kinetics` in Liouville space and
+    zero in Hilbert space, where exchange cannot be described.
     """
     parameters = dict(parameters)
     parameters.setdefault("decouple", [])
@@ -42,13 +42,16 @@ def liquid(
     if parameters["needs"]:
         raise NotImplementedError(f"parameters['needs'] {parameters['needs']} not ported yet.")
 
-    if spin_system.basis is None or spin_system.basis.formalism != "zeeman-hilb":
-        raise NotImplementedError("liquid() needs Liouville-space propagation, which is not ported yet; use zeeman-hilb.")
+    if spin_system.basis is None:
+        raise ValueError("basis set information is missing, run basis() before calling this function.")
     spin_system = assume(spin_system, assumptions)
     H = hamiltonian(spin_system)
     dim = H.shape[0]
     R = sps.csr_array((dim, dim), dtype=complex)
-    K = sps.csr_array((dim, dim), dtype=complex)   # kinetics() needs sphten-liouv, refused above
+    if spin_system.basis.formalism == "sphten-liouv":
+        K = kinetics(spin_system)
+    else:
+        K = sps.csr_array((dim, dim), dtype=complex)
     H = frqoffset(spin_system, H, parameters)
 
     parameters["spc_dim"] = 1

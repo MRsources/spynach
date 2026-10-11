@@ -1,9 +1,16 @@
-"""Time propagation (ports of ``propagator.m`` and the ``'zeeman-hilb'`` part of ``evolution.m``)."""
+"""Time propagation (ports of ``propagator.m``, ``step.m``, ``krylov.m`` and ``evolution.m``).
+
+Liouville-space states are dense vectors ``(nstates,)`` or stacks
+``(nstates, k)``; ``step`` applies ``expm(-1j * L * dt)`` to them without
+forming the exponential, and ``evolution`` reduces the problem with
+:mod:`spinpy.reduction` before propagating each subspace.
+"""
 
 from __future__ import annotations
 
 import logging
 import math
+from collections.abc import Sequence
 from dataclasses import replace
 
 import numpy as np
@@ -11,7 +18,7 @@ import scipy.linalg as sla
 import scipy.sparse as sps
 
 from spinpy.system import SpinSystem
-from spinpy.utilities import Matrix, clean_up, dagger, hdot, nnz
+from spinpy.utilities import Matrix, clean_up, dagger, hdot, matlab_round, nnz
 
 log = logging.getLogger("spinpy")
 
@@ -63,39 +70,260 @@ def propagator(spin_system: SpinSystem, L: Matrix, timestep: float) -> Matrix:
     return P
 
 
+def step(spin_system: SpinSystem, L: Matrix | Sequence[Matrix], rho: Matrix, timestep: float) -> Matrix:
+    """One time step under a constant generator (port of ``step.m``).
+
+    In the Liouville formalisms ``rho`` is a vector or a stack of column
+    vectors and the result is ``expm(-1j * L * dt) @ rho`` computed as a
+    Taylor series in substeps of ``2 / ||L||_1``. ``L`` may also be a list
+    of two or three generators sampled across the step (Lie-group
+    quadratures of Rasulov et al. 2023). In ``zeeman-hilb`` ``rho`` is a
+    density matrix, propagated by a dense exponential below
+    ``tols.small_matrix`` and by the commutator series above it.
+    """
+    if not np.isscalar(timestep) or not np.isfinite(timestep):
+        raise ValueError("timestep must be a finite scalar.")
+    generators = list(L) if isinstance(L, (list, tuple)) else [L]
+    if len(generators) not in (1, 2, 3):
+        raise ValueError("L must be a matrix or a list of two or three matrices.")
+    if timestep == 0:
+        return rho
+    if spin_system.basis is None:
+        raise ValueError("basis set information is missing, run basis() before calling this function.")
+    norm = max(_norm1(G) for G in generators) * abs(timestep)
+    nsteps = max(1, math.ceil(norm / 2))
+    if nsteps > 1e4:
+        raise ValueError("either dt is too long, or L is too big: |L*dt|>1e4, check both.")
+    if nsteps > 100:
+        log.warning("%d substeps required, consider using evolution() here.", nsteps)
+
+    if spin_system.basis.formalism == "zeeman-hilb":
+        if len(generators) > 1:
+            raise NotImplementedError("Lie-group quadratures are not ported for Hilbert space yet.")
+        H = generators[0]
+        if H.shape[0] < spin_system.tols.small_matrix:
+            P = sla.expm((-1j * timestep) * (H.toarray() if sps.issparse(H) else np.asarray(H)))
+            return P @ rho @ dagger(P)
+        return _commutator_series(H, rho, timestep, nsteps)
+
+    rho = np.asarray(rho.toarray() if sps.issparse(rho) else rho, dtype=complex)
+    scaling = np.abs(rho).max() if rho.size else 0.0
+    if scaling == 0:
+        log.warning("all-zero state received")
+        return rho
+    return scaling * _reordered_taylor(generators, rho / scaling, timestep, nsteps)
+
+
+def _reordered_taylor(generators: list[Matrix], rho: np.ndarray, t: float, nsteps: int) -> np.ndarray:
+    """Taylor series of expm(-1j*L*t) acting on rho, in nsteps substeps (step.m ``reordered_taylor``)."""
+    eps = np.finfo(float).eps
+    dt = t / nsteps
+    for _ in range(nsteps):
+        next_term, k = rho, 1
+        while np.any(np.abs(next_term) > eps):
+            if len(generators) == 1:
+                next_term = (-1j / k) * dt * (generators[0] @ next_term)
+            elif len(generators) == 2:
+                a, b = generators[0] @ next_term, generators[1] @ next_term
+                next_term = (-1j / 2) * (1 / k) * dt * (a + b) + (1 / 6) * (1 / k) * (t**2 / nsteps) * (
+                    generators[0] @ b - generators[1] @ a
+                )
+            else:
+                a, b, c = generators[0] @ next_term, generators[1] @ next_term, generators[2] @ next_term
+                next_term = (-1j / 6) * (1 / k) * dt * (a + 4 * b + c) + (1 / 12) * (1 / k) * (t**2 / nsteps) * (
+                    generators[0] @ c - generators[2] @ a
+                )
+            rho = rho + next_term
+            k += 1
+        if k > 32:
+            log.warning("loss of accuracy in the Taylor series, k=%d, use evolution() here instead of step()", k)
+    return rho
+
+
+def _commutator_series(H: Matrix, rho: Matrix, t: float, nsteps: int) -> Matrix:
+    """Hilbert-space step by the nested commutator series (step.m ``comm_series``)."""
+    eps = np.finfo(float).eps
+    scaling = _norm1(rho)
+    if scaling == 0:
+        log.warning("all-zero state received")
+        return rho
+    rho = rho / scaling
+    dt = t / nsteps
+    for _ in range(nsteps):
+        next_term, k = rho, 1
+        while nnz(next_term) > 0:
+            next_term = (-1j * dt / k) * (H @ next_term - next_term @ H)
+            next_term = _chop(next_term, eps)
+            rho = _add(rho, next_term)
+            k += 1
+        if k > 32:
+            log.warning("loss of accuracy in the commutator series, iter=%d, use evolution() here instead of step()", k)
+        rho = _chop(rho, eps)
+    return scaling * rho
+
+
+def krylov(
+    spin_system: SpinSystem, L: Matrix, coil: np.ndarray | None, rho: np.ndarray, timestep: float, nsteps: int, output: str
+) -> np.ndarray:
+    """Propagation by repeated :func:`step` calls, for generators too large to exponentiate (port of ``krylov.m``)."""
+    if spin_system.basis is None or spin_system.basis.formalism != "sphten-liouv":
+        raise NotImplementedError("krylov() is only ported for the sphten-liouv formalism.")
+    rho = np.asarray(rho.toarray() if sps.issparse(rho) else rho, dtype=complex)
+    if output == "final":
+        return step(spin_system, L, rho, timestep * nsteps)
+    if output == "trajectory":
+        answer = np.zeros((rho.shape[0], nsteps + 1), dtype=complex)
+        answer[:, 0] = rho.reshape(-1)
+        for n in range(nsteps):
+            rho = step(spin_system, L, rho, timestep)
+            answer[:, n + 1] = rho.reshape(-1)
+        return answer
+    if output == "observable":
+        answer = np.zeros((nsteps + 1,) + rho.shape[1:], dtype=complex)
+        answer[0] = _detect(coil, rho)
+        for n in range(nsteps):
+            rho = step(spin_system, L, rho, timestep)
+            answer[n + 1] = _detect(coil, rho)
+        return answer
+    raise NotImplementedError(f"krylov output {output!r} not ported yet.")
+
+
 def evolution(
     spin_system: SpinSystem,
     L: Matrix,
-    coil: Matrix,
+    coil: Matrix | None,
     rho: Matrix,
     timestep: float,
     nsteps: int,
     output: str,
+    destination: np.ndarray | None = None,
 ) -> np.ndarray:
-    """Time evolution under a constant generator.
+    """Time evolution under a constant generator (port of ``evolution.m``).
 
-    Ported: ``output='observable'`` in the ``'zeeman-hilb'`` formalism, which
-    returns ``hdot(coil, rho(t))`` at ``nsteps + 1`` equally spaced time points,
-    starting at t = 0, as a 1-D complex array.
+    ``zeeman-hilb``: ``output='observable'`` only; returns ``hdot(coil, rho(t))``
+    at ``nsteps + 1`` equally spaced time points starting at t = 0, as a 1-D
+    complex array. Spinach parallelises this case with the Kuprov-Edwards
+    split over the columns of rho; the serial loop computes the same thing.
 
-    Spinach parallelises this case with the Kuprov-Edwards split over the
-    columns of rho; the serial loop used here computes the same quantity.
+    ``sphten-liouv``: ``rho`` is a vector or a stack of column vectors. The
+    problem is first reduced with :func:`spinpy.reduction.reduce`, screened
+    against ``destination`` or, for ``'observable'``, the coil state
+    (destination state screening, unless ``'dss'`` is disabled), then each
+    subspace is propagated with the exponential propagator, or with
+    :func:`krylov` above ``tols.krylov_tol`` states. Outputs: ``'observable'``
+    (``coil^H rho(t)``, shape ``(nsteps + 1,)`` or ``(nsteps + 1, k)``),
+    ``'final'`` (the state after ``nsteps`` steps), ``'trajectory'``
+    (``(nstates, nsteps + 1)``, single vector only).
     """
-    if spin_system.basis is None or spin_system.basis.formalism != "zeeman-hilb":
-        raise NotImplementedError("evolution() is only ported for the 'zeeman-hilb' formalism.")
-    if output != "observable":
-        raise NotImplementedError(f"evolution output {output!r} not ported yet; only 'observable'.")
+    if spin_system.basis is None:
+        raise ValueError("basis set information is missing, run basis() before calling this function.")
     if isinstance(rho, (list, tuple)):
-        raise NotImplementedError("state stacks are not ported yet.")
-    if coil.shape != rho.shape:
-        raise ValueError("coil and rho must have identical dimensions.")
-    P = propagator(spin_system, L, timestep)
-    P_dag = dagger(P)
-    answer = np.empty(nsteps + 1, dtype=complex)
-    for n in range(nsteps + 1):
-        answer[n] = hdot(coil, rho)
-        rho = P @ rho @ P_dag
+        raise NotImplementedError("state stacks as lists are not ported yet; stack column vectors in an array.")
+    if spin_system.basis.formalism == "zeeman-hilb":
+        if output != "observable":
+            raise NotImplementedError(f"evolution output {output!r} not ported yet in zeeman-hilb; only 'observable'.")
+        if coil.shape != rho.shape:
+            raise ValueError("coil and rho must have identical dimensions.")
+        P = propagator(spin_system, L, timestep)
+        P_dag = dagger(P)
+        answer = np.empty(nsteps + 1, dtype=complex)
+        for n in range(nsteps + 1):
+            answer[n] = hdot(coil, rho)
+            rho = P @ rho @ P_dag
+        return answer
+    if spin_system.basis.formalism != "sphten-liouv":
+        raise NotImplementedError(f"formalism {spin_system.basis.formalism!r} not ported yet.")
+    if output not in ("observable", "final", "trajectory"):
+        raise NotImplementedError(f"evolution output {output!r} not ported yet.")
+
+    from spinpy.reduction import reduce  # noqa: PLC0415  (reduction imports step from this module)
+
+    tols = spin_system.tols
+    rho = np.asarray(rho.toarray() if sps.issparse(rho) else rho, dtype=complex)
+    single = rho.ndim == 1
+    rho = rho.reshape(rho.shape[0], -1)
+    if output == "trajectory" and rho.shape[1] > 1:
+        raise ValueError("trajectory output is not available for state vector stacks.")
+    if coil is not None:
+        coil = np.asarray(coil.toarray() if sps.issparse(coil) else coil, dtype=complex)
+        coil = coil.reshape(coil.shape[0], -1)
+    if "dss" in spin_system.disable:
+        projectors = reduce(spin_system, L, rho)
+    elif destination is not None:
+        projectors = reduce(spin_system, dagger(L), destination)
+    elif output == "observable":
+        if coil is None:
+            raise ValueError("coil state must be given for the observable output.")
+        projectors = reduce(spin_system, dagger(L), coil)
+    else:
+        projectors = reduce(spin_system, L, rho)
+
+    use_krylov = "krylov" in spin_system.enable
+    if output == "observable":
+        answer = np.zeros((nsteps + 1, rho.shape[1]), dtype=complex)
+    elif output == "final":
+        answer = np.zeros_like(rho)
+    else:
+        answer = np.zeros((rho.shape[0], nsteps + 1), dtype=complex)
+    for P in projectors:
+        P_dag = P.conj().T
+        L_loc = clean_up(tols, _as_matrix(P_dag @ L @ P), tols.liouv_zero)
+        rho_loc = _chop(P_dag @ rho, tols.zte_tol)
+        dim = L_loc.shape[0]
+        krylov_path = use_krylov or (dim >= tols.krylov_tol and "krylov" not in spin_system.disable)
+        if output == "observable":
+            coil_loc = _chop(P_dag @ coil, tols.zte_tol)
+            if krylov_path:
+                answer += krylov(spin_system, L_loc, coil_loc, rho_loc, timestep, nsteps, "observable")
+            else:
+                prop = propagator(spin_system, L_loc, timestep)
+                for n in range(nsteps + 1):
+                    answer[n] += _detect(coil_loc, rho_loc)
+                    rho_loc = prop @ rho_loc
+        elif output == "final":
+            if krylov_path:
+                rho_loc = krylov(spin_system, L_loc, None, rho_loc, timestep, nsteps, "final")
+            else:
+                # Optimal stepping: fewer, longer steps when the propagator is cheap relative to the stack
+                nsteps_opt = max(1, math.ceil(math.log2(dim / (rho_loc.shape[1] * math.log(2)))))
+                prop = propagator(spin_system, L_loc, timestep * nsteps / nsteps_opt)
+                for _ in range(nsteps_opt):
+                    rho_loc = prop @ rho_loc
+            answer += P @ _chop(rho_loc, tols.zte_tol)
+        else:
+            if krylov_path:
+                traj = krylov(spin_system, L_loc, None, rho_loc, timestep, nsteps, "trajectory")
+            else:
+                prop = propagator(spin_system, L_loc, timestep)
+                traj = np.zeros((dim, nsteps + 1), dtype=complex)
+                for n in range(nsteps + 1):
+                    traj[:, n] = rho_loc[:, 0]
+                    rho_loc = prop @ rho_loc
+            answer += P @ _chop(traj, tols.zte_tol)
+    if output == "final":
+        answer = _chop(answer, tols.zte_tol)
+    if single and output != "trajectory":
+        answer = answer[:, 0]
     return answer
+
+
+def _detect(coil: np.ndarray, rho: np.ndarray) -> np.ndarray:
+    """``coil' * rho`` for a coil column and a state stack ``(nstates, k)``, giving ``(k,)``."""
+    return (coil.conj().T @ rho).reshape(-1)
+
+
+def _chop(x: Matrix, tol: float) -> Matrix:
+    """Round the elements of a vector, stack, or matrix to a grid of ``tol`` (clean_up without storage choice)."""
+    if sps.issparse(x):
+        x = sps.csr_array(x, copy=True)
+        x.data = tol * matlab_round(x.data / tol)
+        x.eliminate_zeros()
+        return x
+    return tol * matlab_round(np.asarray(x) / tol)
+
+
+def _as_matrix(x: Matrix) -> Matrix:
+    return sps.csr_array(x) if sps.issparse(x) else np.asarray(x)
 
 
 def _norm1(matrix: Matrix) -> float:

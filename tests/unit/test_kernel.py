@@ -138,8 +138,8 @@ def test_unported_inputs_are_refused():
     with pytest.raises(NotImplementedError, match="zeeman-liouv"):
         spinpy.basis(ss, {"formalism": "zeeman-liouv", "approximation": "none"})
     liouv = spinpy.basis(ss, {"formalism": "sphten-liouv", "approximation": "none"})
-    with pytest.raises(NotImplementedError, match="propagation"):
-        spinpy.liquid(liouv, spinpy.acquire, {"spins": ["1H"]}, "nmr")
+    with pytest.raises(NotImplementedError, match="refocus"):
+        spinpy.evolution(liouv, np.zeros((4, 4)), np.ones(4), np.ones(4), 1.0, 1, "refocus")
     with pytest.raises(NotImplementedError, match="esr"):
         spinpy.assume(ss, "esr")
     hs = spinpy.basis(ss, HILB)

@@ -11,11 +11,14 @@ guide has a runnable Jupyter notebook in [`docs/notebooks/`](docs/notebooks/). S
 
 Ported and verified against Spinach 2.13 fixtures (`tests/slice/`): the
 `zeeman-hilb` pulse-acquire chain for liquid-state NMR with isotropic
-interactions. The `sphten-liouv` Liouville-space setup (basis with state-space
-restriction, operators, states, Hamiltonian and kinetics superoperators,
-analytical filters) is ported and verified against Spinach 2.13 fixtures
-(`tests/slice/test_liouv_setup_parity.py`, twelve cases); propagation in
-Liouville space is next.
+interactions. The `sphten-liouv` Liouville-space formalism (basis with state-space
+restriction, superoperators, states, Hamiltonian and kinetics
+superoperators, analytical filters, propagation with zero track
+elimination, path tracing and destination state screening) runs
+pulse-acquire and chemical exchange end to end; its setup is verified
+against Spinach 2.13 fixtures (`tests/slice/test_liouv_setup_parity.py`)
+and its propagation against Hilbert space and analytic exchange line
+shapes, with Spinach fixtures requested (FR-003).
 
 ```python
 import numpy as np
@@ -41,9 +44,10 @@ spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))
 | `hamiltonian.m`, `frqoffset.m` | `spinpy.hamiltonian`, `spinpy.frqoffset` | isotropic part; in `sphten-liouv` as `left`/`right`/`comm`/`acomm` superoperators |
 | `kinetics.m` | `spinpy.kinetics` | first-order exchange between chemical subsystems |
 | `correlation.m`, `coherence.m` | `spinpy.correlation`, `spinpy.coherence` | `sphten-liouv` |
-| `propagator.m` | `spinpy.propagator` | dense Pade below `small_matrix`, scaled-squared Taylor above |
-| `evolution.m` | `spinpy.evolution` | `zeeman-hilb`, `observable` |
-| `liquid.m`, `acquire.m` | `spinpy.liquid`, `spinpy.acquire` | no decoupling, relaxation, or kinetics |
+| `propagator.m`, `step.m`, `krylov.m` | `spinpy.propagator`, `spinpy.step`, `spinpy.krylov` | dense Pade below `small_matrix`, scaled-squared Taylor above; Taylor action on vectors with 1-, 2-, 3-point Lie quadratures |
+| `evolution.m` | `spinpy.evolution` | `zeeman-hilb`: `observable`; `sphten-liouv`: `observable`, `final`, `trajectory`, destination state screening, Krylov path |
+| `reduce.m`, `zte.m`, `path_trace.m` | `spinpy.reduce`, `spinpy.zte`, `spinpy.path_trace` | zero track elimination, path tracing with subspace merging; no symmetry |
+| `liquid.m`, `acquire.m` | `spinpy.liquid`, `spinpy.acquire` | both formalisms; exchange kinetics in Liouville space; no decoupling or relaxation |
 | `ft_axis.m`, `axis_1d.m`, `plot_1d.m` | `spinpy.plotting` | all axis units; interactive Plotly figures; no `derivative` |
 
 Anything not ported raises `NotImplementedError`; inputs are never silently
