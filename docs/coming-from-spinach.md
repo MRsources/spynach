@@ -410,7 +410,7 @@ ignored by the simulation, as in Spinach.
 | relaxation (`relaxation`) | not ported; `R` is zero |
 | chemical kinetics (`kinetics`) | first-order exchange; `liquid` passes it as `K` and `acquire` propagates under `H + 1i*K` |
 | parallel `evolution` (Kuprov-Edwards split), `parfor` | serial; the same numbers |
-| GPU via `sys.enable={'gpu'}` | CPU only; CuPy backend planned |
+| GPU via `sys.enable={'gpu'}` | CPU only; `'gpu'` is refused with a pointer to `porting/gpu-notes.md`, where the backend plan lives |
 | Liouville-space states | dense 1-D NumPy vectors; stacks are `(nstates, k)` arrays, trajectories `(nstates, nsteps + 1)` as in Spinach |
 
 **Pulse sequences** have Spinach's signature, `sequence(spin_system,

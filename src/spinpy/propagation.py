@@ -14,9 +14,8 @@ from collections.abc import Sequence
 from dataclasses import replace
 
 import numpy as np
-import scipy.linalg as sla
-import scipy.sparse as sps
 
+from spinpy.backend import get_backend
 from spinpy.system import SpinSystem
 from spinpy.utilities import Matrix, clean_up, dagger, hdot, matlab_round, nnz
 
@@ -35,12 +34,14 @@ def propagator(spin_system: SpinSystem, L: Matrix, timestep: float) -> Matrix:
     if not np.isfinite(timestep):
         raise ValueError("timestep must be a finite scalar.")
     tols = spin_system.tols
+    be = get_backend()
     if L.shape[0] < tols.small_matrix:
-        generator = L.toarray() if sps.issparse(L) else np.asarray(L)
-        return sla.expm((-1j * timestep) * generator)
+        return be.expm((-1j * timestep) * be.dense(L))   # GPU: small matrices stay on the host, as in Spinach
 
-    A = clean_up(tols, (-1j * timestep) * L, tols.prop_chop)
-    mat_norm = _norm1(A)
+    # GPU: Spinach moves A to the device above 500 states and runs the Taylor loop and the
+    # squarings there (sparse-sparse products); clean_up must then work on device arrays
+    A = be.to_device(clean_up(tols, (-1j * timestep) * L, tols.prop_chop))
+    mat_norm = be.norm1(A)
     if mat_norm > 1e9:
         raise ValueError("norm of -i*L*dt exceeds 1e9, check your L and your dt.")
     if mat_norm > 1024:
@@ -54,11 +55,11 @@ def propagator(spin_system: SpinSystem, L: Matrix, timestep: float) -> Matrix:
     if n_squarings > 0:
         A = (1 / 2**n_squarings) * A
 
-    P: Matrix = sps.eye_array(A.shape[0], dtype=complex, format="csr")
+    P: Matrix = be.eye(A.shape[0])
     next_term: Matrix = P
     n = 1
-    while nnz(next_term) > 0:
-        next_term = ((1 / n) * A) @ next_term if sps.issparse(A) else ((1 / n) * next_term) @ A
+    while be.nnz(next_term) > 0:
+        next_term = ((1 / n) * A) @ next_term if be.issparse(A) else ((1 / n) * next_term) @ A
         next_term = clean_up(tols, next_term, tols.prop_chop)
         P = _add(P, next_term)
         n += 1
@@ -67,7 +68,7 @@ def propagator(spin_system: SpinSystem, L: Matrix, timestep: float) -> Matrix:
     P = clean_up(tols, P, tols.prop_chop)
     for _ in range(n_squarings):
         P = clean_up(tols, P @ P, tols.prop_chop)
-    return P
+    return be.to_host(P)   # GPU: propagators are returned to the host, as Spinach gathers them
 
 
 def step(spin_system: SpinSystem, L: Matrix | Sequence[Matrix], rho: Matrix, timestep: float) -> Matrix:
@@ -90,7 +91,8 @@ def step(spin_system: SpinSystem, L: Matrix | Sequence[Matrix], rho: Matrix, tim
         return rho
     if spin_system.basis is None:
         raise ValueError("basis set information is missing, run basis() before calling this function.")
-    norm = max(_norm1(G) for G in generators) * abs(timestep)
+    be = get_backend()
+    norm = max(be.norm1(G) for G in generators) * abs(timestep)
     nsteps = max(1, math.ceil(norm / 2))
     if nsteps > 1e4:
         raise ValueError("either dt is too long, or L is too big: |L*dt|>1e4, check both.")
@@ -102,16 +104,19 @@ def step(spin_system: SpinSystem, L: Matrix | Sequence[Matrix], rho: Matrix, tim
             raise NotImplementedError("Lie-group quadratures are not ported for Hilbert space yet.")
         H = generators[0]
         if H.shape[0] < spin_system.tols.small_matrix:
-            P = sla.expm((-1j * timestep) * (H.toarray() if sps.issparse(H) else np.asarray(H)))
+            P = be.expm((-1j * timestep) * be.dense(H))
             return P @ rho @ dagger(P)
         return _commutator_series(H, rho, timestep, nsteps)
 
-    rho = np.asarray(rho.toarray() if sps.issparse(rho) else rho, dtype=complex)
-    scaling = np.abs(rho).max() if rho.size else 0.0
+    # GPU: step.m moves L and rho to the device whenever 'gpu' is enabled; the Taylor
+    # loop below is pure matvec and runs unchanged on device arrays
+    rho = be.dense(rho, dtype=complex)
+    scaling = float(np.abs(rho).max()) if rho.size else 0.0
     if scaling == 0:
         log.warning("all-zero state received")
         return rho
-    return scaling * _reordered_taylor(generators, rho / scaling, timestep, nsteps)
+    generators = [be.to_device(G) for G in generators]
+    return be.to_host(scaling * _reordered_taylor(generators, be.to_device(rho / scaling), timestep, nsteps))
 
 
 def _reordered_taylor(generators: list[Matrix], rho: np.ndarray, t: float, nsteps: int) -> np.ndarray:
@@ -143,7 +148,7 @@ def _reordered_taylor(generators: list[Matrix], rho: np.ndarray, t: float, nstep
 def _commutator_series(H: Matrix, rho: Matrix, t: float, nsteps: int) -> Matrix:
     """Hilbert-space step by the nested commutator series (step.m ``comm_series``)."""
     eps = np.finfo(float).eps
-    scaling = _norm1(rho)
+    scaling = get_backend().norm1(rho)
     if scaling == 0:
         log.warning("all-zero state received")
         return rho
@@ -168,7 +173,7 @@ def krylov(
     """Propagation by repeated :func:`step` calls, for generators too large to exponentiate (port of ``krylov.m``)."""
     if spin_system.basis is None or spin_system.basis.formalism != "sphten-liouv":
         raise NotImplementedError("krylov() is only ported for the sphten-liouv formalism.")
-    rho = np.asarray(rho.toarray() if sps.issparse(rho) else rho, dtype=complex)
+    rho = get_backend().dense(rho, dtype=complex)   # GPU: krylov.m keeps L, rho and coil on the device across steps
     if output == "final":
         return step(spin_system, L, rho, timestep * nsteps)
     if output == "trajectory":
@@ -239,14 +244,14 @@ def evolution(
     from spinpy.reduction import reduce  # noqa: PLC0415  (reduction imports step from this module)
 
     tols = spin_system.tols
-    rho = np.asarray(rho.toarray() if sps.issparse(rho) else rho, dtype=complex)
+    be = get_backend()
+    rho = be.dense(rho, dtype=complex)
     single = rho.ndim == 1
     rho = rho.reshape(rho.shape[0], -1)
     if output == "trajectory" and rho.shape[1] > 1:
         raise ValueError("trajectory output is not available for state vector stacks.")
     if coil is not None:
-        coil = np.asarray(coil.toarray() if sps.issparse(coil) else coil, dtype=complex)
-        coil = coil.reshape(coil.shape[0], -1)
+        coil = be.dense(coil, dtype=complex).reshape(-1, 1) if be.dense(coil).ndim == 1 else be.dense(coil, dtype=complex)
     if "dss" in spin_system.disable:
         projectors = reduce(spin_system, L, rho)
     elif destination is not None:
@@ -271,6 +276,8 @@ def evolution(
         rho_loc = _chop(P_dag @ rho, tols.zte_tol)
         dim = L_loc.shape[0]
         krylov_path = use_krylov or (dim >= tols.krylov_tol and "krylov" not in spin_system.disable)
+        # GPU: evolution.m moves P, rho_loc and coil_loc to the device for the loops below
+        # and gathers the observables; the propagator itself is built as above
         if output == "observable":
             coil_loc = _chop(P_dag @ coil, tols.zte_tol)
             if krylov_path:
@@ -314,26 +321,28 @@ def _detect(coil: np.ndarray, rho: np.ndarray) -> np.ndarray:
 
 def _chop(x: Matrix, tol: float) -> Matrix:
     """Round the elements of a vector, stack, or matrix to a grid of ``tol`` (clean_up without storage choice)."""
-    if sps.issparse(x):
-        x = sps.csr_array(x, copy=True)
+    be = get_backend()
+    if be.issparse(x):
+        x = be.csr(x, copy=True)
         x.data = tol * matlab_round(x.data / tol)
         x.eliminate_zeros()
         return x
-    return tol * matlab_round(np.asarray(x) / tol)
+    return tol * matlab_round(be.dense(x) / tol)
 
 
 def _as_matrix(x: Matrix) -> Matrix:
-    return sps.csr_array(x) if sps.issparse(x) else np.asarray(x)
+    be = get_backend()
+    return be.csr(x) if be.issparse(x) else be.dense(x)
 
 
 def _norm1(matrix: Matrix) -> float:
     """Maximum absolute column sum (Spinach cheap_norm for non-polyadic input)."""
-    column_sums = abs(matrix).sum(axis=0)
-    return float(np.max(column_sums)) if matrix.shape[1] else 0.0
+    return get_backend().norm1(matrix)
 
 
 def _add(a: Matrix, b: Matrix) -> Matrix:
     """Sum of two matrices that may be dense or sparse; dense if either is dense."""
-    if sps.issparse(a) and sps.issparse(b):
-        return sps.csr_array(a + b)
-    return np.asarray((a.toarray() if sps.issparse(a) else a) + (b.toarray() if sps.issparse(b) else b))
+    be = get_backend()
+    if be.issparse(a) and be.issparse(b):
+        return be.csr(a + b)
+    return be.dense(a) + be.dense(b)

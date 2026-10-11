@@ -3,6 +3,9 @@
 Read `HANDOFF.md` for goals and design decisions, `README.md` for status,
 `porting/ROADMAP.md` for the current step, and `porting/design-notes.md`
 for the Liouville-space kernel design (literature and Spinach source review).
+GPU acceleration is deferred: `porting/gpu-notes.md` lists the entry points;
+keep the hot loops going through `spinpy.backend` and mark new device-relevant
+lines with `# GPU:`.
 
 ## User documentation is part of every change
 

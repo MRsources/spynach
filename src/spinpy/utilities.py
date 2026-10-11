@@ -14,6 +14,7 @@ Matrix = Union[np.ndarray, sps.csr_array]
 
 def nnz(matrix: Matrix) -> int:
     return int(matrix.count_nonzero()) if sps.issparse(matrix) else int(np.count_nonzero(matrix))
+    # GPU: count_nonzero exists for cupyx sparse matrices and cupy arrays; route through the backend then
 
 
 def matlab_round(values: np.ndarray) -> np.ndarray:
@@ -35,6 +36,8 @@ def clean_up(tols: Tolerances, matrix: Matrix, nonzero_tol: float) -> Matrix:
         return matrix
     if nonzero_tol < 0:
         raise ValueError("nonzero_tol parameter must be a positive real number.")
+    # GPU: this is called inside the propagator Taylor loop on device arrays; the rounding
+    # works through the array module and the sparse/dense switch through the backend's csr()
     scale = 1 / nonzero_tol
     if sps.issparse(matrix):
         matrix = sps.csr_array(matrix, copy=True)

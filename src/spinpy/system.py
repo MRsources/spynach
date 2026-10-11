@@ -137,6 +137,8 @@ def create(sys: dict[str, Any], inter: dict[str, Any]) -> SpinSystem:
         raise ValueError("sys['labels'] must have one entry per spin.")
     enable = frozenset(sys.get("enable", []))
     disable = frozenset(sys.get("disable", []))
+    if "gpu" in enable:
+        raise NotImplementedError("sys['enable'] 'gpu' is not available yet: the GPU backend is planned, see porting/gpu-notes.md")
     if enable - ENABLE_TOKENS:
         raise NotImplementedError(f"sys['enable'] token(s) {sorted(enable - ENABLE_TOKENS)} not ported yet")
     if disable - DISABLE_TOKENS:

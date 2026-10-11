@@ -81,6 +81,7 @@ def zte(spin_system: SpinSystem, L: Matrix, rho: np.ndarray) -> sps.csc_array:
         return identity
     norm = _norm1(L)
     timestep = 1 / norm if norm > 0 else 1.0
+    # GPU: the trial propagation is a handful of step() calls; L stays wherever step() puts it
     trajectory = np.zeros((dim, tols.zte_nsteps), dtype=complex)
     trajectory[:, 0] = rho
     reached = np.abs(rho) > tols.zte_tol

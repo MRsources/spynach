@@ -187,3 +187,17 @@ def test_exchange_needs_matching_isotope_sequences():
             {"isotopes": ["1H", "13C"], "magnet": 14.1},
             {"chem": {"parts": [[0], [1]], "concs": [1, 1], "rates": [[-1, 1], [1, -1]]}},
         )
+
+
+def test_backend_adapter_is_numpy_and_gpu_is_refused_with_a_pointer():
+    from spinpy import backend
+
+    be = backend.get_backend()
+    assert be.name == "numpy"
+    A = sps.csr_array(np.eye(3))
+    assert be.issparse(A) and be.to_device(A) is A and be.to_host(A) is A
+    assert be.nnz(A) == 3 and be.norm1(A) == 1.0 and be.dense(A).shape == (3, 3)
+    with pytest.raises(NotImplementedError, match="gpu-notes"):
+        backend.use("cupy")
+    with pytest.raises(NotImplementedError, match="gpu-notes"):
+        spinpy.create({"isotopes": ["1H"], "magnet": 14.1, "enable": ["gpu"]}, {})
