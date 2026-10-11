@@ -177,7 +177,8 @@ Status (2026-10-11): `singlerot` in Fokker-Planck form with `fourdif`
 implemented on `main`, as `singlerot.m` builds it (explicit block-diagonal
 generator plus the rotor term; no polyadic container needed at this
 scale). Verified by exact rotor echoes, the fast-spinning limit and the
-static limit against `crystal`; FR-006 fixtures requested. Not ported:
+static limit against `crystal`; FR-006 fulfilled, 16 parity tests pass
+(generators identical, FIDs 1e-13; table in `docs/magic-angle-spinning.md`). Not ported:
 `doublerot`, `floquet`, `gridfree`, Hilbert-space `singlerot`.
 
 ## Later
