@@ -9,8 +9,10 @@ only; see `porting/FIXTURE_REQUESTS.md` for the request workflow.
 - `/spinach` is never modified. Instrument by putting a replacement `.m` file
   in `oracle/matlab/shadow/` ahead of Spinach on the MATLAB path;
   `oracle_meta.m` records every active shadow file with its SHA-256.
-- Fixtures are never overwritten. Dump scripts refuse to write into an
-  existing case directory; a changed dump script means a new fixture run.
+- Fixtures are never overwritten. Dump scripts skip case directories that
+  already exist, so `run_fixtures` can be re-run after adding a dump script
+  and only produces the new cases. A changed dump script means deleting
+  its old cases first (they are read-only: `chmod -R u+w` then remove).
 - Fixtures live read-only at `/fixtures/<spinach-tag>/<case>/` (override the
   root with `$SPINPY_FIXTURES`).
 

@@ -10,7 +10,7 @@ read-only under `/fixtures/<spinach-tag>/`.
 - **Requested:** 2026-10-08, branch `oracle-harness`
 - **Spinach:** clean checkout, expected `03a88b7e912ffbb3122dd24829cc5d216209c804` (no local modifications; `oracle_meta.m` records the dirty flag)
 - **Needs:** MATLAB R2024b or later with Parallel Computing Toolbox (`create()` starts a pool). The shadow `oracle/matlab/shadow/isworkernode.m` sends `evolution()` down its serial branch, because the Hilbert-space `spmd` split uses `distributed` arrays, which MATLAB does not support on local process pools on Apple silicon Macs (`distributedutil.errorIfUnsupportedPlatformOrEnvironment`; this is a MATLAB restriction, not a Spinach one). Spinach's startup check rejects the shadow, so the dump sets `sys.disable={'hygiene'}`.
-- **Re-running:** delete the existing `hilb_pa_*` case directories first; the dump refuses to overwrite them.
+- **Re-running:** existing `hilb_pa_*` case directories are skipped; delete them first to regenerate.
 - **Produces:** `hilb_pa_ab_2spin`, `hilb_pa_abx_3spin`, `hilb_pa_hc_2spin`, `hilb_pa_hd_2spin` (each a few MB at most)
 
 Edit the settings block at the top of `oracle/matlab/run_fixtures.m` if the
@@ -54,7 +54,7 @@ before going further.
 - **Status:** requested 2026-10-11, branch `main` (commit with this entry)
 - **Spinach:** clean checkout, 2.13 (`03a88b7e`), as for FR-001
 - **Needs:** the same host setup as FR-001 (shadow `isworkernode.m`, `sys.disable={'hygiene'}`). No propagation: every case runs in seconds, the twelve-spin chain is the largest (a few thousand states).
-- **Run:** add `'dump_liouv_setup'` to `dump_scripts` in `oracle/matlab/run_fixtures.m` (already done in the repository) and run as for FR-001; the new cases are written next to the existing `hilb_pa_*` ones.
+- **Run:** from the `main` checkout (not the `oracle-harness` worktree): check `repo_dir` in `oracle/matlab/run_fixtures.m` and run `oracle/run_fixtures.sh`. `dump_liouv_setup` is already in `dump_scripts`; the existing `hilb_pa_*` cases are skipped and the new ones are written next to them.
 - **Produces:** `liouv_ab_none`, `liouv_hd_none`, `liouv_inad_none`, `liouv_styrene_ik0_1`, `liouv_styrene_ik0_2`, `liouv_styrene_ik0_4`, `liouv_styrene_ik1`, `liouv_styrene_ik2_proj`, `liouv_chain12_ik2`, `liouv_exch_sym`, `liouv_exch_asym`, `liouv_hcn_filters` (each a few MB at most)
 - **Check:** `SPINPY_FIXTURES=/fixtures pytest tests/slice/test_liouv_setup_parity.py tests/oracle -rs`; nothing should skip.
 - **Result:** _(human: fixture path, MATLAB version, any errors or warnings)_

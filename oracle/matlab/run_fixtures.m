@@ -6,25 +6,26 @@
 %                       run('<repo>/oracle/matlab/run_fixtures.m')
 %
 % or from a shell with oracle/run_fixtures.sh, which starts Matlab in
-% batch mode. Fixtures go to <fixtures_root>/<spinach tag>/<case>/. The
+% batch mode. Run it from the checkout that holds the dump scripts you
+% want (repo_dir below). Dump scripts skip cases that already exist, so
+% re-running after adding a dump script only produces the new cases.
+% Fixtures go to <fixtures_root>/<spinach tag>/<case>/. The
 % console output, including per-stage progress and any error, is also
 % written to <fixtures_root>/<spinach tag>/run_<UTC time>.log, and the
 % Spinach report output of each case to <case>/spinach.log.
 
 %% Settings - edit these
-worktrees_dir='/Users/alexej/Documents/PROG/spinpy/.worktrees/';
-worktree_name='oracle-harness';
+repo_dir='/Users/alexej/Documents/PROG/spinpy';          % spinpy checkout holding the dump scripts to run
 spinach_dir='/Users/alexej/Documents/PROG/spinpy-spinach';
 fixtures_root='/Users/alexej/Documents/PROG/spinpy-fixtures';
-dump_scripts={'dump_hilb_pa','dump_liouv_setup'};
+dump_scripts={'dump_hilb_pa','dump_liouv_setup'};       % cases that already exist are skipped
 
 %% Nothing below needs editing
 
 % Locate the harness inside the repository
-repo_dir=fullfile(worktrees_dir,worktree_name);
 oracle_dir=fullfile(repo_dir,'oracle','matlab');
 if ~isfolder(oracle_dir)
-    error(['oracle directory not found: ' oracle_dir ', check worktrees_dir and worktree_name.']);
+    error(['oracle directory not found: ' oracle_dir ', check repo_dir.']);
 end
 if ~isfolder(fullfile(spinach_dir,'kernel'))
     error(['Spinach kernel not found under ' spinach_dir ', check spinach_dir.']);

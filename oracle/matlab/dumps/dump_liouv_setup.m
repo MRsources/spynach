@@ -9,8 +9,8 @@
 % Parameters:
 %
 %    out_root - fixture directory for the current Spinach tag, e.g.
-%               /fixtures/<spinach-tag>; case directories inside it
-%               must not exist yet
+%               /fixtures/<spinach-tag>; cases whose directory
+%               already exists there are skipped, never overwritten
 %
 % Outputs:
 %
@@ -139,10 +139,11 @@ op_types={'left','right','comm','acomm'};
 % Loop over cases
 for n=1:numel(cases)
 
-    % Refuse to overwrite existing fixtures
+    % Never overwrite existing fixtures: skip cases that are already there
     case_dir=fullfile(out_root,['liouv_' cases(n).name]);
     if isfolder(case_dir)
-        error(['fixture directory ' case_dir ' already exists.']);
+        fprintf('%s [%s] exists, skipped\n',char(datetime('now','Format','yyyy-MM-dd HH:mm:ss')),cases(n).name);
+        continue;
     end
     mkdir(case_dir); h5_file=fullfile(case_dir,'data.h5');
     case_label=sprintf('%s %d/%d',cases(n).name,n,numel(cases));
