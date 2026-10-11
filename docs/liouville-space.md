@@ -468,11 +468,14 @@ operators (`<B_k | Q B_j>`), which needs no reference data and holds to
 1e-15 for operators and to the `liouv_zero` rounding grid (1e-10 rad/s)
 for Hamiltonians. `tests/slice/test_liouv_setup_parity.py` compares the
 basis descriptors, product tables, superoperators, states, Hamiltonians,
-kinetics and filters of twelve reference cases with the output of Spinach
-2.13 stored as fixtures (`oracle/README.md`, request FR-002 in
-`porting/FIXTURE_REQUESTS.md`); those tests skip while the fixtures are
-absent. Measured agreement over the twelve cases (largest elementwise
-difference relative to the largest element):
+kinetics and filters of twelve reference cases, and
+`tests/slice/test_liouv_pa_parity.py` the propagators, steps, reductions,
+`evolution` outputs and pulse-acquire FIDs of nine (including two-site
+exchange, and cases with the Krylov path and path tracing forced), with
+the output of Spinach 2.13 stored as fixtures (`oracle/README.md`,
+requests FR-002 and FR-003 in `porting/FIXTURE_REQUESTS.md`); those tests
+skip while the fixtures are absent. Measured agreement (largest
+elementwise difference relative to the largest element):
 
 | stage | difference from Spinach |
 |---|---|
@@ -484,6 +487,12 @@ difference relative to the largest element):
 | Hamiltonian superoperators and offsets | 2e-14 |
 | kinetics superoperators | 0 |
 | `correlation` and `coherence` | 0 |
+| Liouvillians `H + iK` with offsets | 2e-14 |
+| dwell-time propagators (16 to 1789 states) | 2e-14 |
+| `step` over one and over 7.3 dwell times | 1e-16, 7e-16 |
+| zero-track and `reduce` projectors | identical sets of kept states |
+| `evolution`: `observable`, `final`, `trajectory` | 3e-13, 8e-13, 5e-14 |
+| `liquid`/`acquire` FIDs and spectra (256 to 512 points) | 3e-13, 8e-13 |
 
 The Hamiltonian figure is the same `liouv_zero` grid effect as in Hilbert
 space: Spinach sums the terms in random order before rounding, so single

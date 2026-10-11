@@ -17,8 +17,9 @@ superoperators, analytical filters, propagation with zero track
 elimination, path tracing and destination state screening) runs
 pulse-acquire and chemical exchange end to end; its setup is verified
 against Spinach 2.13 fixtures (`tests/slice/test_liouv_setup_parity.py`)
-and its propagation against Hilbert space and analytic exchange line
-shapes, with Spinach fixtures requested (FR-003).
+and its propagation against Spinach 2.13 fixtures as well
+(`tests/slice/test_liouv_pa_parity.py`), Hilbert space, and analytic
+exchange line shapes.
 
 ```python
 import numpy as np

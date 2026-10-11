@@ -62,10 +62,11 @@ before going further.
 
 ## FR-003: sphten-liouv propagation (`dump_liouv_pa.m`)
 
-- **Status:** requested 2026-10-11, branch `main`
+- **Status:** fulfilled 2026-10-11, `/fixtures/2.13/`, run log `run_20261011T204823Z.log`; MATLAB R2026b, Spinach `03a88b7e` (2.13), clean; `pytest tests/slice/test_liouv_pa_parity.py`: 54 passed
+- **Requested:** 2026-10-11, branch `main`
 - **Spinach:** clean checkout, 2.13 (`03a88b7e`), as before
 - **Needs:** the same host setup as FR-001/FR-002. Nine cases; the largest propagates 1789 states (styrene IK-1) for 512 points and should take well under a minute.
 - **Run:** `oracle/run_fixtures.sh` from the `main` checkout (`dump_liouv_pa` is in `dump_scripts`; existing cases are skipped).
 - **Produces:** `liouv_pa_ab`, `liouv_pa_hd`, `liouv_pa_inad_krylov` (Krylov path forced with `tols.krylov_tol=1`), `liouv_pa_hc_pt` (path tracing forced with `tols.merge_dim=2`), `liouv_pa_styrene_ik0_2`, `liouv_pa_styrene_ik1`, `liouv_pa_chain12_ik2`, `liouv_pa_exch_sym`, `liouv_pa_exch_asym`
 - **Check:** `SPINPY_FIXTURES=/fixtures pytest tests/slice/test_liouv_pa_parity.py -rs`; nothing should skip.
-- **Result:** _(human: fixture path, MATLAB version, any errors or warnings)_
+- **Result:** ran successfully (host, 2026-10-11); nine cases written, earlier cases skipped.

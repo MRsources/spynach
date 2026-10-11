@@ -128,7 +128,8 @@ the parity tests in `tests/slice/test_liouv_setup_parity.py`.
 Status (2026-10-11): `step`, `krylov`, `evolution` ('observable', 'final',
 'trajectory', destination state screening), `reduce`/`zte`/`path_trace`,
 `liquid` with kinetics are on `main` (commit `3fd6f81`), verified against
-Hilbert space and the McConnell equations; FR-003 fixtures requested.
+Hilbert space and the McConnell equations; FR-003 fulfilled, 54 parity
+tests pass (agreement 1e-13 or better, table in `docs/liouville-space.md`).
 Deferred: the CuPy backend (no GPU in the development container; needs a
 host with CUDA to test) and the benchmarks that depend on it.
 
