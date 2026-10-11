@@ -60,9 +60,13 @@ def irr_sph_ten(mult: int, rank: int) -> tuple[sps.csr_array, ...]:
     return tuple(sps.csr_array(t) for t in tensors)
 
 
-def lin2lm(index: int) -> tuple[int, int]:
-    """Linear spherical tensor index to (l, m): index = l*l + l - m."""
-    rank = int(np.sqrt(index))
+def lin2lm(index):
+    """Linear spherical tensor index to (l, m): index = l*l + l - m. Works on ints and arrays."""
+    if isinstance(index, (int, np.integer)):
+        rank = int(np.sqrt(index))
+        return rank, rank * rank + rank - index
+    index = np.asarray(index)
+    rank = np.floor(np.sqrt(index)).astype(np.int64)
     return rank, rank * rank + rank - index
 
 

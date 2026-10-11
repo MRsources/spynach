@@ -36,11 +36,23 @@ CHEM_FIELDS = {"parts", "concs", "rates"}
 
 @dataclass(frozen=True, eq=False)
 class Basis:
-    """Basis set information (Spinach ``spin_system.bas``)."""
+    """Basis set information (Spinach ``spin_system.bas``).
+
+    ``basis`` has one row per basis state and one column per spin. In
+    ``zeeman-hilb`` it holds Zeeman level numbers (1 = highest projection);
+    in ``sphten-liouv`` the linear spherical tensor index ``l*l + l - m`` of
+    each spin (0 = unit operator), see :mod:`spinpy.basis`.
+    """
 
     formalism: str
     approximation: str
-    levels: np.ndarray  # (dim, nspins) Zeeman level number (1 = highest projection) of each basis state
+    basis: np.ndarray
+    tot_proj: np.ndarray | None = None   # (nstates,) total coherence order (sphten-liouv)
+    tot_cord: np.ndarray | None = None   # (nstates,) spin correlation order (sphten-liouv)
+
+    @property
+    def nstates(self) -> int:
+        return self.basis.shape[0]
 
 
 @dataclass(frozen=True, eq=False)

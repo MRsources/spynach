@@ -2,7 +2,7 @@
 
 A Python reimplementation of the [Spinach](https://spindynamics.org) spin
 dynamics kernel (MIT licence), verified stage by stage against the MATLAB
-original. **Start with the [user guide](docs/user-guide.md)**; if you use
+original. **Start with the [Hilbert-space guide](docs/hilbert-space.md)**; if you use
 Spinach, also read [Coming from Spinach](docs/coming-from-spinach.md). Each
 guide has a runnable Jupyter notebook in [`docs/notebooks/`](docs/notebooks/). See `HANDOFF.md` for goals and design decisions, and
 `oracle/README.md` for the reference-data ("fixture") harness.
@@ -11,7 +11,8 @@ guide has a runnable Jupyter notebook in [`docs/notebooks/`](docs/notebooks/). S
 
 Ported and verified against Spinach 2.13 fixtures (`tests/slice/`): the
 `zeeman-hilb` pulse-acquire chain for liquid-state NMR with isotropic
-interactions.
+interactions. In progress: the `sphten-liouv` Liouville-space setup (basis
+with state-space restriction; operators, states and Hamiltonians follow).
 
 ```python
 import numpy as np
@@ -31,7 +32,7 @@ spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))
 | Spinach | spinpy | ported |
 |---|---|---|
 | `create.m` | `spinpy.create` | isotopes, magnet, tolerances, Zeeman scalars/tensors, scalar/tensor couplings, chemical subsystems (`inter.chem` parts, concentrations, exchange rates) |
-| `basis.m` | `spinpy.basis` | `zeeman-hilb` |
+| `basis.m` | `spinpy.basis` | `zeeman-hilb`; `sphten-liouv` with `none`, `IK-0`, `IK-1`, `IK-2`, the `projections`/`longitudinal`/`zero_quantum`/`manual` filters, and chemical subsystems (no symmetry, no coordinates) |
 | `operator.m`, `state.m` | `spinpy.operator`, `spinpy.state` | Hilbert space; `E`, `Lx`, `Ly`, `Lz`, `L+`, `L-`, `Tl,m` |
 | `assume.m` | `spinpy.assume` | `nmr`, with `zeeman`/`couplings` retention |
 | `hamiltonian.m`, `frqoffset.m` | `spinpy.hamiltonian`, `spinpy.frqoffset` | isotropic part |

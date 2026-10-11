@@ -4,7 +4,7 @@ spinpy keeps Spinach's structure: the same functions, called in the same
 order, with the same arguments, field names, units, and tolerances. A
 Spinach script translates into spinpy almost line by line. This page lists,
 topic by topic, what carries over unchanged and what is different, and
-what is not ported yet. The [user guide](user-guide.md) explains each
+what is not ported yet. The [Hilbert-space guide](hilbert-space.md) explains each
 function in full.
 
 Every Python block on this page is executed by `tests/docs/`. MATLAB blocks
@@ -234,17 +234,46 @@ bas = {"formalism": "zeeman-hilb", "approximation": "none"}
 hc = spinpy.basis(hc, bas)
 ```
 
-- **Same:** field names; `zeeman-hilb` requires `approximation='none'`;
-  basis states are Zeeman product states ordered as `kron(spin 1, spin 2, ...)`,
-  so matrices are element for element identical to Spinach's.
-- **Different:** none for `zeeman-hilb`.
-- **Not ported yet:** the `zeeman-liouv` and `sphten-liouv` formalisms, and
-  with them every truncation field (`level`, `space_level`,
-  `connectivity`, `longitudinals`, `projections`, `zero_quantum`, `manual`,
-  the IK approximations) and permutation symmetry (`sym_group`,
-  `sym_spins`). In Spinach, switching a script from Hilbert to Liouville
-  space changes only `bas`, and states become vectors instead of matrices;
-  spinpy will keep that behaviour when the Liouville formalisms are ported.
+- **Same:** field names and meanings: `formalism`, `approximation`,
+  `inter_level`, `prox_level`, `connectivity`, `projections`,
+  `longitudinal`, `zero_quantum`, `manual`. `zeeman-hilb` requires
+  `approximation='none'`; basis states are Zeeman product states ordered as
+  `kron(spin 1, spin 2, ...)`, so matrices are element for element
+  identical to Spinach's. In `sphten-liouv` the basis descriptor
+  `ss.basis.basis` is Spinach's `spin_system.bas.basis` (same integer
+  encoding `l*l + l - m`, same lexicographic row order, unit state first),
+  and `ss.basis.tot_proj`/`tot_cord` are `bas.tot_proj`/`bas.tot_cord`.
+  Spinach 2.13 renamed `bas.level` to `inter_level`, `bas.space_level` to
+  `prox_level` and `bas.longitudinals` to `longitudinal`; spinpy uses the
+  new names and raises the same rename errors for the old ones.
+- **Different:** spin numbers in `longitudinal`, `zero_quantum` and
+  `manual` are 0-based; the per-substance cell arrays become lists with one
+  entry per chemical subsystem (`projections=[[1]]` for one substance,
+  `longitudinal=[["13C"], []]` for two). Without `inter.coordinates` the
+  proximity graph is empty, so `prox_level` has no effect yet.
+
+```matlab
+bas.formalism='sphten-liouv';
+bas.approximation='IK-2';
+bas.connectivity='scalar_couplings';
+bas.prox_level=1;
+bas.projections={+1};
+```
+
+```python
+bas_ik2 = {"formalism": "sphten-liouv", "approximation": "IK-2",
+           "connectivity": "scalar_couplings", "prox_level": 1, "projections": [[1]]}
+hc_liouv = spinpy.basis(hc, bas_ik2)
+assert hc_liouv.basis.basis[0].tolist() == [0, 0]     # unit state first
+assert set(hc_liouv.basis.tot_proj[1:]) == {1}        # coherence order +1 only
+```
+
+- **Not ported yet:** `zeeman-liouv`, the `IK-DNP` and `IK-SBS`
+  approximations, permutation symmetry (`sym_group`, `sym_spins`), and
+  proximity-based correlations (they need `inter.coordinates`). In
+  Spinach, switching a script from Hilbert to Liouville space changes only
+  `bas`, and states become vectors instead of matrices; spinpy keeps that
+  behaviour.
 
 ## Operators and states
 
@@ -338,14 +367,14 @@ ignored by the simulation, as in Spinach.
 **Pulse sequences** have Spinach's signature, `sequence(spin_system,
 parameters, H, R, K)`, and are passed to `liquid` the same way. Inside,
 use `spinpy.operator`, `spinpy.propagator`, and `spinpy.evolution` as you
-would in MATLAB; the user guide has a
-[worked example](user-guide.md#writing-your-own-pulse-sequence).
+would in MATLAB; the Hilbert-space guide has a
+[worked example](hilbert-space.md#writing-your-own-pulse-sequence).
 Spinach sequences usually combine the generator as `L = H + 1i*R + 1i*K`;
 in Python that is `L = H + 1j * R + 1j * K`.
 
 **Numerical agreement** with Spinach is checked stage by stage against
 stored Spinach 2.13 output; see
-[Checking results against Spinach](user-guide.md#checking-results-against-spinach).
+[Checking results against Spinach](hilbert-space.md#checking-results-against-spinach).
 
 ## Processing and plotting
 

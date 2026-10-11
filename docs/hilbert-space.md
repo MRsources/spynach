@@ -1,13 +1,14 @@
-# spinpy user guide: liquid-state NMR in Hilbert space
+# Liquid-state NMR in Hilbert space
 
-This guide covers what spinpy can do today: simulate free induction decays
-and spectra of small liquid-state NMR spin systems with isotropic chemical
-shifts and J-couplings, in the Zeeman Hilbert-space formalism
-(`zeeman-hilb`). Every stage reproduces Spinach 2.13 to rounding error; see
+This guide simulates free induction decays and spectra of small
+liquid-state NMR spin systems with isotropic chemical shifts and
+J-couplings in the Zeeman Hilbert-space formalism (`zeeman-hilb`). It is
+the place to start; [Liouville space](liouville-space.md) continues with
+the spherical-tensor formalism and state-space restriction. Every stage reproduces Spinach 2.13 to rounding error; see
 [Checking results against Spinach](#checking-results-against-spinach).
 
 To run the examples interactively, open the companion notebook
-[`notebooks/user-guide.ipynb`](notebooks/user-guide.ipynb), generated from
+[`notebooks/hilbert-space.ipynb`](notebooks/hilbert-space.ipynb), generated from
 this page. If you know Spinach, read
 [Coming from Spinach](coming-from-spinach.md) next: it lists, topic by
 topic, what carries over unchanged and what is different.
@@ -201,7 +202,7 @@ Isotope data (multiplicity and magnetogyric ratio) come from Spinach's
 
 ```python
 ss = spinpy.basis(ss, {"formalism": "zeeman-hilb", "approximation": "none"})
-assert ss.basis.levels.shape == (4, 2)   # dim x nspins Zeeman level table
+assert ss.basis.basis.shape == (4, 2)    # dim x nspins Zeeman level table
 ```
 
 `zeeman-hilb` works with the full Hilbert space of dimension

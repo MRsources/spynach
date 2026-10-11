@@ -135,8 +135,11 @@ def test_unported_inputs_are_refused():
     with pytest.raises(NotImplementedError, match="enable"):
         spinpy.create({"isotopes": ["1H"], "magnet": 14.1, "enable": ["gpu"]}, {})
     ss = spinpy.create({"isotopes": ["1H"], "magnet": 14.1}, {})
+    with pytest.raises(NotImplementedError, match="zeeman-liouv"):
+        spinpy.basis(ss, {"formalism": "zeeman-liouv", "approximation": "none"})
+    liouv = spinpy.basis(ss, {"formalism": "sphten-liouv", "approximation": "none"})
     with pytest.raises(NotImplementedError, match="sphten-liouv"):
-        spinpy.basis(ss, {"formalism": "sphten-liouv", "approximation": "none"})
+        spinpy.operator(liouv, "Lz", "1H")
     with pytest.raises(NotImplementedError, match="esr"):
         spinpy.assume(ss, "esr")
     hs = spinpy.basis(ss, HILB)
