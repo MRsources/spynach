@@ -109,7 +109,7 @@ def _sphten_basis(spin_system: SpinSystem, bas: dict[str, Any]) -> np.ndarray:
     # Coupling and proximity graphs (every spin connected and proximate to itself)
     if approximation in ("IK-1", "IK-2"):
         conmatrix = _connectivity(spin_system, bas["connectivity"])
-        proxmatrix = np.eye(nspins, dtype=bool)   # no coordinates: nothing is proximate
+        proxmatrix = spin_system.proxmatrix | spin_system.proxmatrix.T | np.eye(nspins, dtype=bool)
 
     # Subgraphs (boolean rows over all spins) and the substance each belongs to
     subgraphs: list[np.ndarray] = []

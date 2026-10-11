@@ -4,6 +4,7 @@
 |---|---|---|
 | [Hilbert space](hilbert-space.md) | [hilbert-space.ipynb](notebooks/hilbert-space.ipynb) | liquid-state NMR in Hilbert space (`zeeman-hilb`): setup, the simulation pipeline, pulse sequences, tolerances, parity with Spinach |
 | [Liouville space](liouville-space.md) | [liouville-space.ipynb](notebooks/liouville-space.ipynb) | the spherical-tensor formalism (`sphten-liouv`): basis descriptor, state-space restriction (`IK-0/1/2`), filters, chemical subsystems |
+| [Solid state](solid-state.md) | [solid-state.ipynb](notebooks/solid-state.ipynb) | anisotropic interactions: tensors from eigenvalues and Euler angles, dipolar couplings from coordinates, quadrupolar couplings, the `Q` components and `orientation`, `crystal` and `powder` contexts, grids, assumption sets |
 | [Coming from Spinach](coming-from-spinach.md) | [coming-from-spinach.ipynb](notebooks/coming-from-spinach.ipynb) | what carries over from Spinach and what differs: spin systems, basis, operators, Hamiltonians, parameters, calculation modalities, processing |
 
 The notebooks are saved with their outputs, plots included. Open them

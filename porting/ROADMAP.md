@@ -141,7 +141,27 @@ refused), `krylov`, Taylor propagator with thresholding and the
 exchange line shapes. Then the `spinpy.backend` adapter and CuPy, with the
 first benchmarks on `liouv_chain_ik2`-style systems at 500–10 000 states.
 
-## Step 5: consolidation
+## Step 5: anisotropic interactions (decided 2026-10-11: this, then relaxation)
 
-Review; decide between relaxation, symmetry, anisotropic `Q`, the polyadic
-container, and the JAX layer.
+Status (2026-10-11): implemented on `main`. `create` takes `eigs`/`euler`
+tensors and coordinates (dipolar couplings, proximity graph);
+`hamiltonian(..., aniso=True)` returns `(I, Q)` and `orientation` contracts
+`Q` with Wigner matrices (`spinpy.conventions`); `crystal` and `powder`
+contexts with Spinach's grids shipped as `spinpy/grids/*.npz`;
+`esr`/`deer`/`labframe` assumption sets. Verified against closed forms
+(CSA, dipolar angular dependence, quadrupolar) and Hilbert/Liouville
+agreement; FR-004 fixtures requested. Not ported: `pbc`, MAS and the
+Fokker-Planck contexts, `needs`, callable `rho0`.
+
+## Step 6: relaxation
+
+Redfield/BRW (`relaxation.m`, diagonalisation-free implementation of
+Kuprov 2011, auxiliary-matrix integrals of Goodwin & Kuprov 2015) with the
+`inter.relaxation`, `inter.tau_c`, `inter.r1_rates`/`r2_rates` inputs,
+thermalisation (`equilibrium`, `inter.temperature`), and `R` in all
+contexts; fixtures from `examples/nmr_liquids` NOESY-type cases.
+
+## Later
+
+Symmetry, polyadic generators and the Fokker-Planck contexts (MAS), the
+GPU backend (`porting/gpu-notes.md`), the JAX layer.

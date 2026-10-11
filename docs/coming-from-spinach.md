@@ -197,6 +197,12 @@ for J in (140.0, 145.0, 150.0):
     assert np.isclose(scanned.coupling_matrix[0][1][0, 0], 2 * np.pi * J)
 ```
 
+- **Tensors and coordinates:** `inter.zeeman.eigs`/`euler` and
+  `inter.coupling.eigs`/`euler` carry over as nested lists with `None`
+  for empty cells (same units, radians for the ZYZ Euler angles);
+  `inter.coordinates` (Angstrom) gives the same point dipolar couplings
+  as `dipolar.m`, half the tensor in both `[n][k]` and `[k][n]`, and the
+  same proximity matrix. See the [solid-state guide](solid-state.md).
 - **Chemical subsystems:** `inter.chem.parts`, `inter.chem.concs`, and
   `inter.chem.rates` carry over with 0-based spin indices in `parts`; the
   validation is Spinach's (every spin in one part, no couplings between
@@ -218,9 +224,8 @@ assert exch.chem.parts == ((0,), (1,))
 
 **Not ported yet** (each raises `NotImplementedError` naming the field):
 `sys.output`, `sys.enable` (GPU and other options), `sys.disable`,
-`sys.parallel`, `sys.scratch`, `inter.coordinates` and `inter.pbc`
-(dipolar couplings), `inter.zeeman.eigs`/`euler`,
-`inter.coupling.eigs`/`euler`, `inter.giant`, `inter.suscept`,
+`sys.parallel`, `sys.scratch`, `inter.pbc` (periodic images of the
+dipolar couplings), `inter.giant`, `inter.suscept`,
 `inter.order_matrix`, `inter.relaxation` and all relaxation fields,
 `inter.chem.flux_rate`/`flux_type` (magnetisation flux), `inter.chem.rp_*`
 (radical pair kinetics), `inter.temperature`, and bosonic modes
@@ -353,10 +358,13 @@ assert np.allclose(H - H_zeeman, 2 * np.pi * 145.0 * LzSz.toarray())  # weak 1H-
   `2*pi*offset*[Lz, .]`; `kinetics(ss)` is the exchange superoperator of
   `kinetics.m` with the `L = H + 1i*R + 1i*K` convention; `correlation`
   and `coherence` zero the same states.
-- **Different:** Spinach's `[H,Q]=hamiltonian(...)` also returns the
-  anisotropic components `Q`; spinpy returns `H` alone. Spinach sums the
-  Hamiltonian terms in a random order, so its last digits change from run
-  to run; spinpy sums in a fixed order and is reproducible. `coherence`
+- **Different:** Spinach's `[H,Q]=hamiltonian(...)` becomes
+  `H, Q = hamiltonian(ss, aniso=True)`; `Q[0]`/`Q[1]` are the rank-1 and
+  rank-2 nested lists (Spinach's `Q{1}`/`Q{2}`), and
+  `orientation(Q, angles)` is the same contraction with the same Wigner
+  matrices. Spinach sums the Hamiltonian terms in a random order, so its
+  last digits change from run to run; spinpy sums in a fixed order and
+  is reproducible. `coherence`
   takes a list of `(spins, orders)` pairs instead of nested cell arrays,
   and both filters expect the spin state space on the *last* axis of a
   stacked state array.
@@ -369,10 +377,10 @@ H_right = spinpy.hamiltonian(hc_liouv, "right")
 assert abs(H_comm - (H_left - H_right)).max() < 1e-9   # each is rounded to liouv_zero separately
 ```
 
-- **Not ported yet:** the other assumption sets (`'esr'`, `'deer'`,
-  `'labframe'`, `'qnmr'`, the DNP sets, ...), anisotropic interactions,
-  magnetisation flux and radical-pair kinetics, and the Hilbert-space
-  branches of `correlation` and `coherence`.
+- **Not ported yet:** the `'qnmr'` and DNP assumption sets (`'nmr'`,
+  `'esr'`, `'deer'`, `'deer-zz'` and `'labframe'` are ported),
+  magnetisation flux and radical-pair kinetics, giant-spin terms, and
+  the Hilbert-space branches of `correlation` and `coherence`.
 
 ## Experiment parameters
 
@@ -399,7 +407,7 @@ ignored by the simulation, as in Spinach.
 
 | Spinach | spinpy |
 |---|---|
-| contexts: `liquid`, `powder`, `crystal`, `singlerot`, `doublerot`, `floquet`, `gridfree`, `imaging`, ... | `liquid` only |
+| contexts: `liquid`, `powder`, `crystal`, `singlerot`, `doublerot`, `floquet`, `gridfree`, `imaging`, ... | `liquid`, `crystal`, `powder` (serial over the grid, same weighted sum; grids by their Spinach names) |
 | pulse sequences in `experiments/`: `acquire`, `hsqc`, `cosy`, `noesy`, ... | `acquire`; write others yourself |
 | `evolution` outputs `'observable'`, `'final'`, `'total'`, `'trajectory'`, `'refocus'`, `'multichannel'` | `'observable'` in Hilbert space; `'observable'`, `'final'`, `'trajectory'` in Liouville space |
 | `evolution(...,destination)` destination state screening | the same, Liouville space (`destination=` keyword) |

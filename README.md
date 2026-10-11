@@ -19,7 +19,10 @@ pulse-acquire and chemical exchange end to end; its setup is verified
 against Spinach 2.13 fixtures (`tests/slice/test_liouv_setup_parity.py`)
 and its propagation against Spinach 2.13 fixtures as well
 (`tests/slice/test_liouv_pa_parity.py`), Hilbert space, and analytic
-exchange line shapes.
+exchange line shapes. Anisotropic interactions (shielding and coupling
+tensors, dipolar couplings from coordinates, quadrupolar couplings) with
+the `crystal` and `powder` contexts are ported; their Spinach fixtures
+are requested (FR-004).
 
 ```python
 import numpy as np
@@ -38,17 +41,18 @@ spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))
 
 | Spinach | spinpy | ported |
 |---|---|---|
-| `create.m` | `spinpy.create` | isotopes, magnet, tolerances, Zeeman scalars/tensors, scalar/tensor couplings, chemical subsystems (`inter.chem` parts, concentrations, exchange rates) |
+| `create.m`, `dipolar.m` | `spinpy.create` | isotopes, magnet, tolerances, Zeeman and coupling tensors as scalars, matrices, or eigenvalues with Euler angles, coordinates with point dipolar couplings and the proximity graph, chemical subsystems (`inter.chem` parts, concentrations, exchange rates) |
 | `basis.m` | `spinpy.basis` | `zeeman-hilb`; `sphten-liouv` with `none`, `IK-0`, `IK-1`, `IK-2`, the `projections`/`longitudinal`/`zero_quantum`/`manual` filters, and chemical subsystems (no symmetry, no coordinates) |
 | `operator.m`, `state.m` | `spinpy.operator`, `spinpy.state` | Hilbert space and `sphten-liouv` superoperators (`left`, `right`, `comm`, `acomm`); states by the `exact`, `cheap` and `chem` methods; `E`, `Lx`, `Ly`, `Lz`, `L+`, `L-`, `Tl,m` |
-| `assume.m` | `spinpy.assume` | `nmr`, with `zeeman`/`couplings` retention |
-| `hamiltonian.m`, `frqoffset.m` | `spinpy.hamiltonian`, `spinpy.frqoffset` | isotropic part; in `sphten-liouv` as `left`/`right`/`comm`/`acomm` superoperators |
+| `assume.m` | `spinpy.assume` | `nmr`, `esr`, `deer`, `deer-zz`, `labframe`, with `zeeman`/`couplings` retention |
+| `hamiltonian.m`, `orientation.m`, `frqoffset.m` | `spinpy.hamiltonian`, `spinpy.orientation`, `spinpy.frqoffset` | isotropic part and the rank-1/rank-2 irreducible components `Q` (CSA, anisotropic couplings, quadrupolar); in `sphten-liouv` as `left`/`right`/`comm`/`acomm` superoperators |
+| `euler2dcm.m`, `mat2sphten.m`, `wigner.m`, `eeqq2nqi.m` | `spinpy.conventions` | the same conventions |
 | `kinetics.m` | `spinpy.kinetics` | first-order exchange between chemical subsystems |
 | `correlation.m`, `coherence.m` | `spinpy.correlation`, `spinpy.coherence` | `sphten-liouv` |
 | `propagator.m`, `step.m`, `krylov.m` | `spinpy.propagator`, `spinpy.step`, `spinpy.krylov` | dense Pade below `small_matrix`, scaled-squared Taylor above; Taylor action on vectors with 1-, 2-, 3-point Lie quadratures |
 | `evolution.m` | `spinpy.evolution` | `zeeman-hilb`: `observable`; `sphten-liouv`: `observable`, `final`, `trajectory`, destination state screening, Krylov path |
 | `reduce.m`, `zte.m`, `path_trace.m` | `spinpy.reduce`, `spinpy.zte`, `spinpy.path_trace` | zero track elimination, path tracing with subspace merging; no symmetry |
-| `liquid.m`, `acquire.m` | `spinpy.liquid`, `spinpy.acquire` | both formalisms; exchange kinetics in Liouville space; no decoupling or relaxation |
+| `liquid.m`, `crystal.m`, `powder.m`, `acquire.m` | `spinpy.liquid`, `spinpy.crystal`, `spinpy.powder`, `spinpy.acquire` | both formalisms; exchange kinetics in Liouville space; powder averages over Spinach's grids (shipped as `spinpy/grids`); no decoupling or relaxation |
 | `ft_axis.m`, `axis_1d.m`, `plot_1d.m` | `spinpy.plotting` | all axis units; interactive Plotly figures; no `derivative` |
 
 Anything not ported raises `NotImplementedError`; inputs are never silently

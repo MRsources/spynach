@@ -2,9 +2,9 @@
 
 from spinpy.assume import assume
 from spinpy.basis import basis
-from spinpy.contexts import liquid
+from spinpy.contexts import crystal, liquid, load_grid, powder
 from spinpy.filters import coherence, correlation
-from spinpy.hamiltonian import frqoffset, hamiltonian
+from spinpy.hamiltonian import frqoffset, hamiltonian, orientation
 from spinpy.kinetics import kinetics
 from spinpy.operators import operator
 from spinpy.propagation import evolution, krylov, propagator, step
@@ -23,6 +23,7 @@ __all__ = [
     "coherence",
     "correlation",
     "create",
+    "crystal",
     "evolution",
     "frqoffset",
     "hamiltonian",
@@ -30,8 +31,11 @@ __all__ = [
     "kinetics",
     "krylov",
     "liquid",
+    "load_grid",
     "operator",
+    "orientation",
     "path_trace",
+    "powder",
     "propagator",
     "reduce",
     "state",

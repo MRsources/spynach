@@ -70,3 +70,13 @@ before going further.
 - **Produces:** `liouv_pa_ab`, `liouv_pa_hd`, `liouv_pa_inad_krylov` (Krylov path forced with `tols.krylov_tol=1`), `liouv_pa_hc_pt` (path tracing forced with `tols.merge_dim=2`), `liouv_pa_styrene_ik0_2`, `liouv_pa_styrene_ik1`, `liouv_pa_chain12_ik2`, `liouv_pa_exch_sym`, `liouv_pa_exch_asym`
 - **Check:** `SPINPY_FIXTURES=/fixtures pytest tests/slice/test_liouv_pa_parity.py -rs`; nothing should skip.
 - **Result:** ran successfully (host, 2026-10-11); nine cases written, earlier cases skipped.
+
+## FR-004: anisotropic interactions (`dump_aniso.m`)
+
+- **Status:** requested 2026-10-11, branch `main`
+- **Spinach:** clean checkout, 2.13 (`03a88b7e`), as before
+- **Needs:** the same host setup. Five cases, each a few seconds (powder averages over 50- and 100-point grids with 128 points).
+- **Run:** `oracle/run_fixtures.sh` from the `main` checkout (`dump_aniso` is in `dump_scripts`; existing cases are skipped).
+- **Produces:** `aniso_csa_pair`, `aniso_dip_pair`, `aniso_nqi_14n`, `aniso_hc_tensors`, `aniso_esr_nitroxide`
+- **Check:** `SPINPY_FIXTURES=/fixtures pytest tests/slice/test_aniso_parity.py -rs`; nothing should skip.
+- **Result:** _(human: fixture path, MATLAB version, any errors or warnings)_

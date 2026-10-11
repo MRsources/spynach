@@ -135,3 +135,23 @@ Variables:
 | `/reduce/zte_projector`, `/reduce/projectors` | `zte(L',coil)` and `reduce(L',coil)` (destination state screening as `evolution` applies it) |
 | `/fid/evolution`, `/fid/final`, `/fid/trajectory` | `evolution` outputs `'observable'` (npoints), `'final'` (after npoints-1 steps), `'trajectory'` (32 points) |
 | `/fid/liquid`, `/spectrum/raw` | `liquid(spin_system,@acquire,pars,'nmr')` and its unapodised spectrum |
+
+### `dump_aniso.m`: anisotropic interactions
+
+Five cases `aniso_<name>` (FR-004): a CSA pair, a dipolar pair from
+coordinates, two quadrupolar 14N (Hilbert space), a 1H-13C pair with
+tensor shielding, anisotropic J and a dipolar coupling (Hilbert space),
+and a nitroxide-like electron with a 14N hyperfine tensor under `'esr'`.
+Variables:
+
+| path | content |
+|------|---------|
+| `/inter/zeeman_matrix`, `/inter/coupling_matrix`, `/inter/proxmatrix` | `create()` output |
+| `/bas/basis` | basis descriptor |
+| `/ham/I`, `/ham/Q1`, `/ham/Q2` | `[I,Q]=hamiltonian(...)`: isotropic part, 3×3 and 5×5 cells of rank-1 and rank-2 components |
+| `/ham/I_off`, `/ham/H_orient_1`, `/ham/H_orient_2` | `I` after `frqoffset`, and `(H+H')/2` with `H=I_off+orientation(Q,angles)` at `[0 0 0]` and `[0.3 0.9 1.2]` |
+| `/conv/wigner_1..3` | `wigner(l,0.3,0.9,1.2)` |
+| `/grids/<name>` | `[alphas betas gammas weights]` of `single_crystal`, `leb_2ang_rank_11`, `rep_2ang_100pts_sph` |
+| `/states/rho0` | `state(...,'L+',det)` |
+| `/fid/crystal` | `crystal(...)` at `[0.3 0.9 1.2]` |
+| `/fid/powder_leb11`, `/fid/powder_rep100`, `/spectrum/powder_rep100` | `powder(...)` on the two grids (serial), and the unapodised spectrum |

@@ -33,6 +33,12 @@ class Tolerances:
     dP_method: str = "auxmat"
     dd_ncells: int = 2
     cache_mem: int = 365
+    # Physical constants, as Spinach keeps them in tols (CODATA 2018)
+    hbar: float = 6.62607015e-34 / (2 * 3.141592653589793)
+    kbol: float = 1.380649e-23
+    freeg: float = 2.00231930436092
+    mu0: float = 1.25663706127e-6
+    muB: float = 9.2740100657e-24
 
 
 def tolerances(overrides: dict[str, Any] | None = None) -> Tolerances:

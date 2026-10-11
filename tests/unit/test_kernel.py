@@ -130,8 +130,8 @@ def test_taylor_propagator_large_dimension(norm_target, prop_chop, rtol):
 
 
 def test_unported_inputs_are_refused():
-    with pytest.raises(NotImplementedError, match="coordinates"):
-        spinpy.create({"isotopes": ["1H"], "magnet": 14.1}, {"coordinates": [[0, 0, 0]]})
+    with pytest.raises(NotImplementedError, match="pbc"):
+        spinpy.create({"isotopes": ["1H"], "magnet": 14.1}, {"coordinates": [[0, 0, 0]], "pbc": [[10, 0, 0]]})
     with pytest.raises(NotImplementedError, match="enable"):
         spinpy.create({"isotopes": ["1H"], "magnet": 14.1, "enable": ["gpu"]}, {})
     ss = spinpy.create({"isotopes": ["1H"], "magnet": 14.1}, {})
@@ -140,8 +140,8 @@ def test_unported_inputs_are_refused():
     liouv = spinpy.basis(ss, {"formalism": "sphten-liouv", "approximation": "none"})
     with pytest.raises(NotImplementedError, match="refocus"):
         spinpy.evolution(liouv, np.zeros((4, 4)), np.ones(4), np.ones(4), 1.0, 1, "refocus")
-    with pytest.raises(NotImplementedError, match="esr"):
-        spinpy.assume(ss, "esr")
+    with pytest.raises(NotImplementedError, match="qnmr"):
+        spinpy.assume(ss, "qnmr")
     hs = spinpy.basis(ss, HILB)
     with pytest.raises(NotImplementedError, match="final"):
         spinpy.evolution(hs, np.zeros((2, 2)), np.eye(2), np.eye(2), 1.0, 1, "final")

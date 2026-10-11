@@ -7,9 +7,11 @@ dataclasses: :func:`create` builds a :class:`SpinSystem`, and later stages
 
 Spin indices are 0-based throughout spinpy (Spinach uses 1-based indices).
 
-Ported so far: isotopes, magnet, user tolerances, isotropic and tensor
-Zeeman interactions, scalar and tensor couplings, and the chemical
-subsystem description (``inter['chem']``: parts, concentrations, first-order
+Ported so far: isotopes, magnet, user tolerances, Zeeman interactions as
+scalars, tensors, or eigenvalues with Euler angles, couplings as scalars,
+tensors, or eigenvalues with Euler angles, atomic coordinates (point
+dipolar couplings and the proximity graph), and the chemical subsystem
+description (``inter['chem']``: parts, concentrations, first-order
 exchange rates). Every other ``sys`` or ``inter`` field raises
 ``NotImplementedError`` rather than being ignored.
 """
@@ -22,6 +24,7 @@ from typing import Any
 
 import numpy as np
 
+from spinpy.conventions import euler2dcm
 from spinpy.isotopes import particle_type, spin
 from spinpy.tolerances import Tolerances, tolerances
 
@@ -31,9 +34,9 @@ SYS_FIELDS = {"isotopes", "magnet", "tols", "labels", "enable", "disable"}
 # Spinach sys.enable / sys.disable tokens that have a meaning in spinpy
 ENABLE_TOKENS = {"krylov"}
 DISABLE_TOKENS = {"zte", "pt", "dss", "merge", "krylov", "trajlevel"}
-INTER_FIELDS = {"zeeman", "coupling", "chem"}
-ZEEMAN_FIELDS = {"scalar", "matrix"}
-COUPLING_FIELDS = {"scalar", "matrix"}
+INTER_FIELDS = {"zeeman", "coupling", "chem", "coordinates"}
+ZEEMAN_FIELDS = {"scalar", "matrix", "eigs", "euler"}
+COUPLING_FIELDS = {"scalar", "matrix", "eigs", "euler"}
 CHEM_FIELDS = {"parts", "concs", "rates"}
 
 
@@ -97,6 +100,8 @@ class SpinSystem:
     basefrqs: np.ndarray              # (nspins,) carrier frequencies -gamma*B0, rad/s
     zeeman_matrix: tuple[np.ndarray, ...]                        # 3x3 lab-frame Zeeman tensors, rad/s
     coupling_matrix: tuple[tuple[np.ndarray | None, ...], ...]   # 3x3 coupling tensors, rad/s; None if absent
+    coordinates: tuple[np.ndarray | None, ...]                   # (3,) positions in Angstrom, None if not given
+    proxmatrix: np.ndarray                                       # (nspins, nspins) bool: pairs closer than prox_cutoff
     tols: Tolerances
     chem: Chemistry
     enable: frozenset[str] = frozenset()    # sys['enable'] tokens, e.g. 'krylov'
@@ -152,8 +157,10 @@ def create(sys: dict[str, Any], inter: dict[str, Any]) -> SpinSystem:
     basefrqs = -gammas * magnet
 
     zeeman = _zeeman_tensors(isotopes, basefrqs, inter.get("zeeman"))
-    coupling = _coupling_tensors(mults, tols, inter.get("coupling"))
     chem = _chemistry(isotopes, inter.get("chem"))
+    coordinates = _coordinates(nspins, inter.get("coordinates"))
+    dipolar, proxmatrix = _dipolar(coordinates, gammas, chem, tols)
+    coupling = _coupling_tensors(mults, tols, inter.get("coupling"), dipolar)
     _check_no_couplings_between_parts(chem, coupling)
 
     return SpinSystem(
@@ -166,6 +173,8 @@ def create(sys: dict[str, Any], inter: dict[str, Any]) -> SpinSystem:
         basefrqs=basefrqs,
         zeeman_matrix=zeeman,
         coupling_matrix=coupling,
+        coordinates=coordinates,
+        proxmatrix=proxmatrix,
         tols=tols,
         chem=chem,
         enable=enable,
@@ -254,6 +263,16 @@ def _zeeman_tensors(
         return tuple(np.eye(3) * basefrqs[n] for n in range(nspins))
     _reject_unported(zeeman, ZEEMAN_FIELDS, "inter['zeeman']")
     tensors = [np.zeros((3, 3)) for _ in range(nspins)]
+    if "eigs" in zeeman:
+        if "euler" not in zeeman:
+            raise ValueError("inter['zeeman']['euler'] must be set together with inter['zeeman']['eigs'].")
+        _check_length(zeeman["eigs"], nspins, "inter['zeeman']['eigs']")
+        _check_length(zeeman["euler"], nspins, "inter['zeeman']['euler']")
+        for n, (eigs, euler) in enumerate(zip(zeeman["eigs"], zeeman["euler"])):
+            if (eigs is None) != (euler is None):
+                raise ValueError("inter['zeeman']['eigs'] and ['euler'] must have identical non-empty patterns.")
+            if eigs is not None:
+                tensors[n] = tensors[n] + _rotated_diagonal(eigs, euler, "inter['zeeman']")
     if "matrix" in zeeman:
         _check_length(zeeman["matrix"], nspins, "inter['zeeman']['matrix']")
         for n, user in enumerate(zeeman["matrix"]):
@@ -276,13 +295,23 @@ def _zeeman_tensors(
 
 
 def _coupling_tensors(
-    mults: np.ndarray, tols: Tolerances, coupling: dict[str, Any] | None
+    mults: np.ndarray, tols: Tolerances, coupling: dict[str, Any] | None, dipolar: list[list[np.ndarray]]
 ) -> tuple[tuple[np.ndarray | None, ...], ...]:
-    """Coupling tensors in rad/s, as in the coupling section of create.m."""
+    """Coupling tensors in rad/s, as in the coupling section of create.m, starting from the dipolar ones."""
     nspins = len(mults)
-    tensors = [[np.zeros((3, 3)) for _ in range(nspins)] for _ in range(nspins)]
+    tensors = [[dipolar[n][k].copy() for k in range(nspins)] for n in range(nspins)]
     if coupling is not None:
         _reject_unported(coupling, COUPLING_FIELDS, "inter['coupling']")
+        if "eigs" in coupling:
+            if "euler" not in coupling:
+                raise ValueError("inter['coupling']['euler'] must be set together with inter['coupling']['eigs'].")
+            eigs = _check_square(coupling["eigs"], nspins, "inter['coupling']['eigs']")
+            euler = _check_square(coupling["euler"], nspins, "inter['coupling']['euler']")
+            for n in range(nspins):
+                for k in range(nspins):
+                    value = eigs[n][k]
+                    if value is not None and np.linalg.norm(np.asarray(value, dtype=float)) > tols.inter_cutoff:
+                        tensors[n][k] = tensors[n][k] + 2 * np.pi * _rotated_diagonal(value, euler[n][k], "inter['coupling']")
         if "matrix" in coupling:
             user = _check_square(coupling["matrix"], nspins, "inter['coupling']['matrix']")
             for n in range(nspins):
@@ -307,6 +336,72 @@ def _coupling_tensors(
         )
         for n in range(nspins)
     )
+
+
+def _rotated_diagonal(eigs: Any, euler: Any, name: str) -> np.ndarray:
+    """``S diag(eigs) S'`` with ``S`` the DCM of the Euler angles (identity if ``None``), symmetrised."""
+    eigs = np.asarray(eigs, dtype=float).reshape(-1)
+    if eigs.size != 3:
+        raise ValueError(f"non-empty elements of {name}['eigs'] must be real 3-vectors.")
+    if euler is None:
+        S = np.eye(3)
+    else:
+        euler = np.asarray(euler, dtype=float).reshape(-1)
+        if euler.size != 3:
+            raise ValueError(f"non-empty elements of {name}['euler'] must be real 3-vectors.")
+        S = euler2dcm(euler)
+    component = S @ np.diag(eigs) @ S.T
+    return (component + component.T) / 2
+
+
+def _coordinates(nspins: int, coordinates: Sequence[Any] | None) -> tuple[np.ndarray | None, ...]:
+    if coordinates is None:
+        return tuple([None] * nspins)
+    _check_length(coordinates, nspins, "inter['coordinates']")
+    out = []
+    for xyz in coordinates:
+        if xyz is None or np.size(xyz) == 0:
+            out.append(None)
+            continue
+        xyz = np.asarray(xyz, dtype=float).reshape(-1)
+        if xyz.size != 3:
+            raise ValueError("non-empty elements of inter['coordinates'] must be real 3-vectors.")
+        out.append(xyz)
+    return tuple(out)
+
+
+def _dipolar(
+    coordinates: tuple[np.ndarray | None, ...], gammas: np.ndarray, chem: Chemistry, tols: Tolerances
+) -> tuple[list[list[np.ndarray]], np.ndarray]:
+    """Point dipolar coupling tensors (rad/s, traceless) and the proximity matrix (port of ``dipolar.m``).
+
+    Pairs within one chemical subsystem, both with coordinates, closer than
+    ``tols.prox_cutoff`` Angstrom are proximate and get the dipolar tensor
+    ``A (1 - 3 n n^T)`` with ``A = mu0 hbar g1 g2 / (8 pi r^3)``. Without
+    coordinates the proximity matrix is the identity, as in Spinach.
+    """
+    nspins = len(coordinates)
+    tensors = [[np.zeros((3, 3)) for _ in range(nspins)] for _ in range(nspins)]
+    if all(xyz is None for xyz in coordinates):
+        return tensors, np.eye(nspins, dtype=bool)
+    proxmatrix = np.zeros((nspins, nspins), dtype=bool)
+    for part in chem.parts:
+        for n in part:
+            for k in part:
+                if n == k or coordinates[n] is None or coordinates[k] is None:
+                    continue
+                dv = coordinates[k] - coordinates[n]
+                distance = float(np.linalg.norm(dv))
+                if distance >= tols.prox_cutoff:
+                    continue
+                if distance < 0.5:
+                    raise ValueError(f"collision detected between spin {n} and spin {k}.")
+                proxmatrix[n, k] = True
+                ort = dv / distance
+                A = 0.5 * gammas[n] * gammas[k] * tols.hbar * tols.mu0 / (4 * np.pi * (distance * 1e-10) ** 3)
+                D = A * (np.eye(3) - 3 * np.outer(ort, ort))
+                tensors[n][k] = tensors[n][k] + (D - np.eye(3) * np.trace(D) / 3)
+    return tensors, proxmatrix
 
 
 def _check_length(values: Sequence[Any], nspins: int, name: str) -> None:
