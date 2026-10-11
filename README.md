@@ -79,6 +79,13 @@ is 4 CPUs; with the default thread count, dense LAPACK calls run ~1000x
 slower (a 256x256 `eigh` takes 10 s instead of 10 ms). Set
 `OPENBLAS_NUM_THREADS` to the quota for tests and especially for benchmarks.
 
+To test on a macOS host outside the container, install
+[uv](https://docs.astral.sh/uv/) (`brew install uv`) and run
+`scripts/mac-test.sh` (extra arguments go to pytest). The container's `.venv`
+does not work on the host, so the script keeps a separate `.venv-mac` and
+syncs it with `pyproject.toml` before every run. Source edits need no
+reinstall. Point VS Code's interpreter at `.venv-mac/bin/python`.
+
 Every user-facing change comes with user documentation in the same
 commit; see [`docs/README.md`](docs/README.md) for the conventions. After
 editing a guide, regenerate its notebook with
