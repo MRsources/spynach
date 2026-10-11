@@ -81,3 +81,13 @@ before going further.
 - **Produces:** `aniso_csa_pair`, `aniso_dip_pair`, `aniso_nqi_14n`, `aniso_hc_tensors`, `aniso_esr_nitroxide`
 - **Check:** `SPINPY_FIXTURES=/fixtures pytest tests/slice/test_aniso_parity.py -rs`; nothing should skip.
 - **Result:** done (host, 2026-10-11); five cases written, earlier cases skipped.
+
+## FR-005: relaxation (`dump_relax.m`)
+
+- **Status:** requested 2026-10-11, branch `main`
+- **Spinach:** clean checkout, 2.13 (`03a88b7e`), as before
+- **Needs:** the same host setup. The dump sets `sys.disable={'hygiene','asyredf'}` so that the Redfield integral takes the serial path (same numbers as the parallel one). Five cases, seconds each.
+- **Run:** `oracle/run_fixtures.sh` from the `main` checkout (`dump_relax` is in `dump_scripts`; existing cases are skipped).
+- **Produces:** `relax_noe_het`, `relax_noe_hom`, `relax_csa_dd_secular`, `relax_axial_dfs`, `relax_t1t2_damp`
+- **Check:** `SPINPY_FIXTURES=/fixtures pytest tests/slice/test_relax_parity.py -rs`; nothing should skip.
+- **Result:** _(human: fixture path, MATLAB version, any errors or warnings)_

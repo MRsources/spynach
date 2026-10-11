@@ -190,6 +190,13 @@ def krylov(
             rho = step(spin_system, L, rho, timestep)
             answer[n + 1] = _detect(coil, rho)
         return answer
+    if output == "multichannel":
+        answer = np.zeros((coil.shape[1], nsteps + 1, rho.shape[1]), dtype=complex)
+        answer[:, 0, :] = coil.conj().T @ rho
+        for n in range(nsteps):
+            rho = step(spin_system, L, rho, timestep)
+            answer[:, n + 1, :] = coil.conj().T @ rho
+        return answer
     raise NotImplementedError(f"krylov output {output!r} not ported yet.")
 
 
@@ -218,7 +225,9 @@ def evolution(
     :func:`krylov` above ``tols.krylov_tol`` states. Outputs: ``'observable'``
     (``coil^H rho(t)``, shape ``(nsteps + 1,)`` or ``(nsteps + 1, k)``),
     ``'final'`` (the state after ``nsteps`` steps), ``'trajectory'``
-    (``(nstates, nsteps + 1)``, single vector only).
+    (``(nstates, nsteps + 1)``, single vector only), ``'multichannel'``
+    (several coils stacked as the columns of ``coil``: ``(ncoils, nsteps + 1,
+    k)``, as in Spinach).
     """
     if spin_system.basis is None:
         raise ValueError("basis set information is missing, run basis() before calling this function.")
@@ -238,7 +247,7 @@ def evolution(
         return answer
     if spin_system.basis.formalism != "sphten-liouv":
         raise NotImplementedError(f"formalism {spin_system.basis.formalism!r} not ported yet.")
-    if output not in ("observable", "final", "trajectory"):
+    if output not in ("observable", "final", "trajectory", "multichannel"):
         raise NotImplementedError(f"evolution output {output!r} not ported yet.")
 
     from spinpy.reduction import reduce  # noqa: PLC0415  (reduction imports step from this module)
@@ -256,9 +265,9 @@ def evolution(
         projectors = reduce(spin_system, L, rho)
     elif destination is not None:
         projectors = reduce(spin_system, dagger(L), destination)
-    elif output == "observable":
+    elif output in ("observable", "multichannel"):
         if coil is None:
-            raise ValueError("coil state must be given for the observable output.")
+            raise ValueError("coil state must be given for the observable and multichannel outputs.")
         projectors = reduce(spin_system, dagger(L), coil)
     else:
         projectors = reduce(spin_system, L, rho)
@@ -266,6 +275,8 @@ def evolution(
     use_krylov = "krylov" in spin_system.enable
     if output == "observable":
         answer = np.zeros((nsteps + 1, rho.shape[1]), dtype=complex)
+    elif output == "multichannel":
+        answer = np.zeros((coil.shape[1], nsteps + 1, rho.shape[1]), dtype=complex)
     elif output == "final":
         answer = np.zeros_like(rho)
     else:
@@ -286,6 +297,15 @@ def evolution(
                 prop = propagator(spin_system, L_loc, timestep)
                 for n in range(nsteps + 1):
                     answer[n] += _detect(coil_loc, rho_loc)
+                    rho_loc = prop @ rho_loc
+        elif output == "multichannel":
+            coil_loc = _chop(P_dag @ coil, tols.zte_tol)
+            if krylov_path:
+                answer += krylov(spin_system, L_loc, coil_loc, rho_loc, timestep, nsteps, "multichannel")
+            else:
+                prop = propagator(spin_system, L_loc, timestep)
+                for n in range(nsteps + 1):
+                    answer[:, n, :] += coil_loc.conj().T @ rho_loc
                     rho_loc = prop @ rho_loc
         elif output == "final":
             if krylov_path:
@@ -309,8 +329,10 @@ def evolution(
             answer += P @ _chop(traj, tols.zte_tol)
     if output == "final":
         answer = _chop(answer, tols.zte_tol)
-    if single and output != "trajectory":
+    if single and output in ("observable", "final"):
         answer = answer[:, 0]
+    elif single and output == "multichannel":
+        answer = answer[:, :, 0]
     return answer
 
 

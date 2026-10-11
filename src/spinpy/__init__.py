@@ -9,6 +9,7 @@ from spinpy.kinetics import kinetics
 from spinpy.operators import operator
 from spinpy.propagation import evolution, krylov, propagator, step
 from spinpy.reduction import path_trace, reduce, zte
+from spinpy.relaxation import equilibrium, relaxation, thermalize
 from spinpy.sequences import acquire
 from spinpy.states import state
 from spinpy.system import Chemistry, SpinSystem, create
@@ -24,6 +25,7 @@ __all__ = [
     "correlation",
     "create",
     "crystal",
+    "equilibrium",
     "evolution",
     "frqoffset",
     "hamiltonian",
@@ -38,7 +40,9 @@ __all__ = [
     "powder",
     "propagator",
     "reduce",
+    "relaxation",
     "state",
     "step",
+    "thermalize",
     "zte",
 ]

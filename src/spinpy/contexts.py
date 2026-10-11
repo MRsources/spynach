@@ -2,8 +2,7 @@
 
 A context builds the Hamiltonian, relaxation, and kinetics for a physical
 setting and hands them to a pulse sequence function with the signature
-``sequence(spin_system, parameters, H, R, K)``. Relaxation is not ported
-yet, so ``R`` is zero.
+``sequence(spin_system, parameters, H, R, K)``.
 """
 
 from __future__ import annotations
@@ -18,6 +17,7 @@ import scipy.sparse as sps
 from spinpy.assume import assume
 from spinpy.hamiltonian import frqoffset, hamiltonian, orientation
 from spinpy.kinetics import kinetics
+from spinpy.relaxation import relaxation
 from spinpy.system import SpinSystem
 from spinpy.utilities import Matrix
 
@@ -38,7 +38,7 @@ def liquid(
     spin_system = assume(spin_system, assumptions)
     H = hamiltonian(spin_system)
     H = frqoffset(spin_system, H, parameters)
-    R, K = _dissipators(spin_system, H.shape[0])
+    R, K = _dissipators(spin_system, H.shape[0], None)
     parameters["spc_dim"], parameters["spn_dim"] = 1, H.shape[0]
     return pulse_sequence(spin_system, parameters, H, R, K)
 
@@ -61,7 +61,7 @@ def crystal(
     I, Q = hamiltonian(spin_system, aniso=True)
     I = frqoffset(spin_system, I, parameters)
     H = _hermitise(I + orientation(Q, angles))
-    R, K = _dissipators(spin_system, H.shape[0])
+    R, K = _dissipators(spin_system, H.shape[0], angles)
     parameters["spc_dim"], parameters["spn_dim"] = 1, H.shape[0]
     return pulse_sequence(spin_system, parameters, H, R, K)
 
@@ -87,13 +87,14 @@ def powder(
     spin_system = assume(spin_system, assumptions)
     I, Q = hamiltonian(spin_system, aniso=True)
     I = frqoffset(spin_system, I, parameters)
-    R, K = _dissipators(spin_system, I.shape[0])
+    K = kinetics(spin_system) if spin_system.basis.formalism == "sphten-liouv" else sps.csr_array(I.shape, dtype=complex)
     parameters["spc_dim"], parameters["spn_dim"] = 1, I.shape[0]
     results = []
     for alpha, beta, gamma in zip(grid["alphas"], grid["betas"], grid["gammas"]):
         local = dict(parameters)
         local["current_angles"] = np.array([alpha, beta, gamma])
         H = _hermitise(I + orientation(Q, [alpha, beta, gamma]))
+        R = relaxation(spin_system, [alpha, beta, gamma])
         results.append(pulse_sequence(spin_system, local, H, R, K))
     if not parameters["sum_up"]:
         return results
@@ -134,8 +135,8 @@ def _defaults(spin_system: SpinSystem, parameters: dict[str, Any]) -> dict[str, 
     return parameters
 
 
-def _dissipators(spin_system: SpinSystem, dim: int) -> tuple[Matrix, Matrix]:
-    R = sps.csr_array((dim, dim), dtype=complex)
+def _dissipators(spin_system: SpinSystem, dim: int, angles: Any) -> tuple[Matrix, Matrix]:
+    R = relaxation(spin_system) if angles is None else relaxation(spin_system, angles)
     if spin_system.basis.formalism == "sphten-liouv":
         return R, kinetics(spin_system)
     return R, sps.csr_array((dim, dim), dtype=complex)

@@ -343,7 +343,39 @@ These are propagation-time reductions and belong with the propagation step.
    tracing, DSS, `reduce`), symmetry, anisotropic `Q`, relaxation,
    polyadic generators and Fokker-Planck, CuPy.
 
-## 6. Open points to settle with fixtures
+## 6. Relaxation (ported 2026-10-11)
+
+- `relaxation.m` is a dispatcher over theories; ported: `redfield`, `t1_t2`,
+  `damp`. The Redfield branch (`includes/redfield_integral_serial.m`) is
+  Kuprov 2011's diagonalisation-free BRW: lab-frame `[L0, Q] =
+  hamiltonian(assume(labframe))` (commutation superoperators), then for
+  every pair of components `Q{n}{k,m}`, `Q{n}{p,q}` and every chemical
+  species and correlation-function component with weight `w` and decay
+  rate `r` (`corrfun.m`: isotropic `w = δkp δmq/(2n+1)`, `r = -n(n+1)D`,
+  `D = 1/(6τc)`; axial and rhombic forms), `R -= w · A · expmint(B, C, D, T)`
+  with `A = Q{n}{k,m}`, `B = clean_up(L0, rlx_integration/T)`,
+  `C = Q{n}{p,q}'`, `D = B - i r`, `T = -1.5 ln(1/rlx_integration)/r`.
+  `expmint` (GK15 auxiliary matrix) is the upper blocks of
+  `propagator([[-A, iB],[0, -C]], T)`: `R = P^H Q`. Rows/columns outside the
+  species are zeroed. Validity: `1/max|diag R| > τc` else error.
+- `rlx_dfs='ignore'` takes the real part; `rlx_keep` then masks: `diagonal`
+  (unit-state element zeroed), `kite` (longitudinal block + diagonal),
+  `secular` (same Zeeman frequency `Σ basefrq·m`), `labframe`.
+- `damp`: Liouville `-rate` on every state but the unit state; Hilbert
+  `-rate/2 · 1`. `t1_t2`: `-diag(Σ R1 over l≠0,m=0 spins + Σ R2 over m≠0
+  spins)`; tensor rates need an orientation (`ort = [0 0 1]·R(euler)`).
+- Thermalisation: `equilibrium.m` applies `exp(-βH)` (left product
+  superoperator, via `step` with imaginary time) to the unit state and
+  normalises its first element to 1; `thermalize.m`: IME
+  `R -= (R ρeq) uᵀ`, DiBari-Levitt `R ← R·propagator(HLSPS, iβ)`.
+- Contexts pass `R` per orientation (`powder`), and `evolution`'s
+  `multichannel` output (`coil'*rho` for a coil stack, `(ncoils, nsteps+1, k)`)
+  is what the NOE examples use.
+- Verified: Solomon rates (ρI, ρS, σ) to the integral truncation 1e-4; the
+  transient NOE against the 2×2 Solomon solution; equilibrium against the
+  Boltzmann matrix; both thermalisations leave ρeq stationary.
+
+## 7. Open points to settle with fixtures
 
 - Whether `operator()` in `sphten-liouv` reproduces Spinach's sparsity pattern
   exactly (the `kill_mask` in `superop.m`) — compare `nnz` as well as values.

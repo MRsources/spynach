@@ -155,3 +155,20 @@ Variables:
 | `/states/rho0` | `state(...,'L+',det)` |
 | `/fid/crystal` | `crystal(...)` at `[0.3 0.9 1.2]` |
 | `/fid/powder_leb11`, `/fid/powder_rep100`, `/spectrum/powder_rep100` | `powder(...)` on the two grids (serial), and the unapodised spectrum |
+
+### `dump_relax.m`: relaxation
+
+Five cases `relax_<name>` (FR-005): heteronuclear and homonuclear NOE pairs
+(Redfield, `kite`, DiBari-Levitt), a three-spin system with CSA and dipolar
+couplings (`secular`, IME), axial rotational diffusion with dynamic
+frequency shifts kept (`labframe`), and the extended T1/T2 model plus
+anisotropic damping (`diagonal`). Variables:
+
+| path | content |
+|------|---------|
+| `/bas/basis` | basis descriptor |
+| `/rlx/R`, `/rlx/R_oriented` | `relaxation(spin_system)` and `relaxation(spin_system,[0.3 0.9 1.2])` |
+| `/ham/HL` | lab-frame Hamiltonian as a left-side product superoperator |
+| `/states/rho_eq`, `/states/rho_eq_oriented` | `equilibrium(spin_system,HL)` and with `QL` at the orientation |
+| `/rlx/R_zero`, `/rlx/R_ime`, `/rlx/R_dibari` | the superoperator with `equilibrium='zero'` and its two thermalisations |
+| `/states/rho_inverted`, `/noe/multichannel` | spin 1 inverted, and `evolution(...,1i*R,coil,rho,dt,nsteps,'multichannel')` with `Lz` of every spin as coils |

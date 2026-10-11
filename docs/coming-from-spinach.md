@@ -226,7 +226,7 @@ assert exch.chem.parts == ((0,), (1,))
 `sys.output`, `sys.enable` (GPU and other options), `sys.disable`,
 `sys.parallel`, `sys.scratch`, `inter.pbc` (periodic images of the
 dipolar couplings), `inter.giant`, `inter.suscept`,
-`inter.order_matrix`, `inter.relaxation` and all relaxation fields,
+`inter.order_matrix`, the Lindblad/DNP/SRFK/SRSK relaxation fields,
 `inter.chem.flux_rate`/`flux_type` (magnetisation flux), `inter.chem.rp_*`
 (radical pair kinetics), `inter.temperature`, and bosonic modes
 (cavities, phonons, transmons). The `kinetics` superoperator itself is
@@ -409,13 +409,13 @@ ignored by the simulation, as in Spinach.
 |---|---|
 | contexts: `liquid`, `powder`, `crystal`, `singlerot`, `doublerot`, `floquet`, `gridfree`, `imaging`, ... | `liquid`, `crystal`, `powder` (serial over the grid, same weighted sum; grids by their Spinach names) |
 | pulse sequences in `experiments/`: `acquire`, `hsqc`, `cosy`, `noesy`, ... | `acquire`; write others yourself |
-| `evolution` outputs `'observable'`, `'final'`, `'total'`, `'trajectory'`, `'refocus'`, `'multichannel'` | `'observable'` in Hilbert space; `'observable'`, `'final'`, `'trajectory'` in Liouville space |
+| `evolution` outputs `'observable'`, `'final'`, `'total'`, `'trajectory'`, `'refocus'`, `'multichannel'` | `'observable'` in Hilbert space; `'observable'`, `'final'`, `'trajectory'`, `'multichannel'` in Liouville space |
 | `evolution(...,destination)` destination state screening | the same, Liouville space (`destination=` keyword) |
 | `reduce`, `zte`, `path_trace` (trajectory-level reduction), `sys.disable={'zte','pt','dss','merge','krylov','trajlevel'}`, `sys.enable={'krylov'}` | the same, Liouville space; permutation symmetry not ported |
 | `step` (single generator and 2/3-point Lie quadratures), `krylov` | the same in Liouville space; Hilbert-space `step` for one generator |
 | `pulse`, `shaped_pulse_*` | not ported; use `propagator` or `step` |
 | `propagator`: Pade `expm` below `small_matrix`, scaled and squared Taylor series above | the same |
-| relaxation (`relaxation`) | not ported; `R` is zero |
+| relaxation (`relaxation`, `equilibrium`, `thermalize`) | Redfield, `t1_t2`, `damp` with the same `inter` fields and policies; see the [relaxation guide](relaxation.md); Lindblad, DNP theories, SRFK/SRSK not ported |
 | chemical kinetics (`kinetics`) | first-order exchange; `liquid` passes it as `K` and `acquire` propagates under `H + 1i*K` |
 | parallel `evolution` (Kuprov-Edwards split), `parfor` | serial; the same numbers |
 | GPU via `sys.enable={'gpu'}` | CPU only; `'gpu'` is refused with a pointer to `porting/gpu-notes.md`, where the backend plan lives |

@@ -23,6 +23,9 @@ exchange line shapes. Anisotropic interactions (shielding and coupling
 tensors, dipolar couplings from coordinates, quadrupolar couplings) with
 the `crystal` and `powder` contexts are ported and verified against
 Spinach 2.13 fixtures as well (`tests/slice/test_aniso_parity.py`).
+Relaxation (Redfield theory, T1/T2 and damping models, thermalisation)
+is ported and checked against the Solomon equations; its Spinach fixtures
+are requested (FR-005).
 
 ```python
 import numpy as np
@@ -50,9 +53,10 @@ spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))
 | `kinetics.m` | `spinpy.kinetics` | first-order exchange between chemical subsystems |
 | `correlation.m`, `coherence.m` | `spinpy.correlation`, `spinpy.coherence` | `sphten-liouv` |
 | `propagator.m`, `step.m`, `krylov.m` | `spinpy.propagator`, `spinpy.step`, `spinpy.krylov` | dense Pade below `small_matrix`, scaled-squared Taylor above; Taylor action on vectors with 1-, 2-, 3-point Lie quadratures |
-| `evolution.m` | `spinpy.evolution` | `zeeman-hilb`: `observable`; `sphten-liouv`: `observable`, `final`, `trajectory`, destination state screening, Krylov path |
+| `evolution.m` | `spinpy.evolution` | `zeeman-hilb`: `observable`; `sphten-liouv`: `observable`, `final`, `trajectory`, `multichannel`, destination state screening, Krylov path |
 | `reduce.m`, `zte.m`, `path_trace.m` | `spinpy.reduce`, `spinpy.zte`, `spinpy.path_trace` | zero track elimination, path tracing with subspace merging; no symmetry |
-| `liquid.m`, `crystal.m`, `powder.m`, `acquire.m` | `spinpy.liquid`, `spinpy.crystal`, `spinpy.powder`, `spinpy.acquire` | both formalisms; exchange kinetics in Liouville space; powder averages over Spinach's grids (shipped as `spinpy/grids`); no decoupling or relaxation |
+| `relaxation.m`, `equilibrium.m`, `thermalize.m` | `spinpy.relaxation`, `spinpy.equilibrium`, `spinpy.thermalize` | Redfield (isotropic, axial, rhombic diffusion; diagonalisation-free integral), `t1_t2`, `damp`; `rlx_keep`, `rlx_dfs`; `zero`/`IME`/`dibari` thermalisation |
+| `liquid.m`, `crystal.m`, `powder.m`, `acquire.m` | `spinpy.liquid`, `spinpy.crystal`, `spinpy.powder`, `spinpy.acquire` | both formalisms; relaxation and exchange kinetics in Liouville space; powder averages over Spinach's grids (shipped as `spinpy/grids`); no decoupling |
 | `ft_axis.m`, `axis_1d.m`, `plot_1d.m` | `spinpy.plotting` | all axis units; interactive Plotly figures; no `derivative` |
 
 Anything not ported raises `NotImplementedError`; inputs are never silently

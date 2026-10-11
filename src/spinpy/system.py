@@ -12,8 +12,11 @@ scalars, tensors, or eigenvalues with Euler angles, couplings as scalars,
 tensors, or eigenvalues with Euler angles, atomic coordinates (point
 dipolar couplings and the proximity graph), and the chemical subsystem
 description (``inter['chem']``: parts, concentrations, first-order
-exchange rates). Every other ``sys`` or ``inter`` field raises
-``NotImplementedError`` rather than being ignored.
+exchange rates), and the relaxation settings (``inter['relaxation']`` with
+the ``'damp'``, ``'t1_t2'`` and ``'redfield'`` theories, ``rlx_keep``,
+``equilibrium``, ``tau_c``, ``temperature``, ``damp_rate``,
+``r1_rates``/``r2_rates``, ``rlx_dfs``). Every other ``sys`` or ``inter``
+field raises ``NotImplementedError`` rather than being ignored.
 """
 
 from __future__ import annotations
@@ -34,7 +37,12 @@ SYS_FIELDS = {"isotopes", "magnet", "tols", "labels", "enable", "disable"}
 # Spinach sys.enable / sys.disable tokens that have a meaning in spinpy
 ENABLE_TOKENS = {"krylov"}
 DISABLE_TOKENS = {"zte", "pt", "dss", "merge", "krylov", "trajlevel"}
-INTER_FIELDS = {"zeeman", "coupling", "chem", "coordinates"}
+INTER_FIELDS = {
+    "zeeman", "coupling", "chem", "coordinates",
+    "relaxation", "rlx_keep", "equilibrium", "tau_c", "temperature", "damp_rate", "r1_rates", "r2_rates", "rlx_dfs",
+}
+RELAXATION_THEORIES = {"damp", "t1_t2", "redfield"}
+UNPORTED_THEORIES = {"lindblad", "nottingham", "weizmann", "SRFK", "SRSK", "naka-zwan"}
 ZEEMAN_FIELDS = {"scalar", "matrix", "eigs", "euler"}
 COUPLING_FIELDS = {"scalar", "matrix", "eigs", "euler"}
 CHEM_FIELDS = {"parts", "concs", "rates"}
@@ -90,6 +98,31 @@ class Chemistry:
 
 
 @dataclass(frozen=True, eq=False)
+class Relaxation:
+    """Relaxation settings (Spinach ``spin_system.rlx``), read by :func:`spinpy.relaxation`.
+
+    ``theories`` is the list from ``inter['relaxation']`` (empty: no
+    relaxation). ``keep`` is the retention policy (``'diagonal'``, ``'kite'``,
+    ``'secular'``, ``'labframe'``), ``equilibrium`` the thermalisation
+    (``'zero'``, ``'IME'``, ``'dibari'``), ``dfs`` what to do with dynamic
+    frequency shifts (``'ignore'`` or ``'keep'``). ``tau_c`` holds one array
+    of one to three rotational correlation times (s) per chemical
+    subsystem; ``r1_rates``/``r2_rates`` one scalar or 3x3 tensor (Hz) per
+    spin; ``damp_rate`` a scalar or 3x3 tensor (Hz).
+    """
+
+    theories: tuple[str, ...] = ()
+    keep: str = "labframe"
+    equilibrium: str = "zero"
+    dfs: str = "ignore"
+    temperature: float = 298.0
+    tau_c: tuple[np.ndarray, ...] = ()
+    damp_rate: np.ndarray | None = None
+    r1_rates: tuple[np.ndarray, ...] = ()
+    r2_rates: tuple[np.ndarray, ...] = ()
+
+
+@dataclass(frozen=True, eq=False)
 class SpinSystem:
     isotopes: tuple[str, ...]
     labels: tuple[str | None, ...]
@@ -104,6 +137,7 @@ class SpinSystem:
     proxmatrix: np.ndarray                                       # (nspins, nspins) bool: pairs closer than prox_cutoff
     tols: Tolerances
     chem: Chemistry
+    rlx: Relaxation = Relaxation()
     enable: frozenset[str] = frozenset()    # sys['enable'] tokens, e.g. 'krylov'
     disable: frozenset[str] = frozenset()   # sys['disable'] tokens: 'zte', 'pt', 'dss', 'merge', 'krylov', 'trajlevel'
     basis: Basis | None = None
@@ -162,6 +196,7 @@ def create(sys: dict[str, Any], inter: dict[str, Any]) -> SpinSystem:
     dipolar, proxmatrix = _dipolar(coordinates, gammas, chem, tols)
     coupling = _coupling_tensors(mults, tols, inter.get("coupling"), dipolar)
     _check_no_couplings_between_parts(chem, coupling)
+    rlx = _relaxation_settings(nspins, chem, inter)
 
     return SpinSystem(
         isotopes=isotopes,
@@ -177,9 +212,85 @@ def create(sys: dict[str, Any], inter: dict[str, Any]) -> SpinSystem:
         proxmatrix=proxmatrix,
         tols=tols,
         chem=chem,
+        rlx=rlx,
         enable=enable,
         disable=disable,
     )
+
+
+def _relaxation_settings(nspins: int, chem: Chemistry, inter: dict[str, Any]) -> Relaxation:
+    """Relaxation inputs, validated as in the relaxation section of create.m."""
+    theories = tuple(inter.get("relaxation", []))
+    temperature = float(inter.get("temperature", 298.0))
+    if temperature < 0:
+        raise ValueError("inter['temperature'] must be non-negative.")
+    if not theories:
+        for name in ("rlx_keep", "equilibrium", "tau_c", "damp_rate", "r1_rates", "r2_rates", "rlx_dfs"):
+            if name in inter:
+                raise ValueError(f"inter['{name}'] requires a relaxation theory in inter['relaxation'].")
+        return Relaxation(temperature=temperature)
+    unported = set(theories) & UNPORTED_THEORIES
+    if unported:
+        raise NotImplementedError(f"relaxation theor{'y' if len(unported) == 1 else 'ies'} {sorted(unported)} not ported yet")
+    if set(theories) - RELAXATION_THEORIES:
+        raise ValueError("unrecognised relaxation theory specification.")
+    if "rlx_keep" not in inter:
+        raise ValueError("relaxation superoperator term retention policy must be specified in inter['rlx_keep'].")
+    if inter["rlx_keep"] not in ("diagonal", "kite", "secular", "labframe"):
+        raise ValueError("allowed values for inter['rlx_keep'] are 'diagonal', 'kite', 'secular' and 'labframe'.")
+    if "equilibrium" not in inter:
+        raise ValueError("relaxation destination must be specified in inter['equilibrium'].")
+    if inter["equilibrium"] not in ("zero", "IME", "dibari"):
+        raise ValueError("allowed values for inter['equilibrium'] are 'zero', 'IME' and 'dibari'.")
+    dfs = inter.get("rlx_dfs", "ignore")
+    if dfs not in ("keep", "ignore"):
+        raise ValueError("allowed values for inter['rlx_dfs'] are 'keep' and 'ignore'.")
+
+    tau_c: tuple[np.ndarray, ...] = ()
+    if "redfield" in theories:
+        if "tau_c" not in inter:
+            raise ValueError("correlation time(s) must be specified in inter['tau_c'] with Redfield theory.")
+        tau_c = tuple(np.atleast_1d(np.asarray(t, dtype=float)) for t in inter["tau_c"])
+        if len(tau_c) != chem.nparts:
+            raise ValueError("the number of elements in inter['tau_c'] must match the number of chemical subsystems.")
+        for t in tau_c:
+            if t.ndim != 1 or not 1 <= t.size <= 3 or np.any(t <= 0):
+                raise ValueError("elements of inter['tau_c'] must be lists of one to three positive correlation times.")
+    elif "tau_c" in inter:
+        raise ValueError("inter['tau_c'] requires Redfield relaxation theory.")
+
+    damp_rate = None
+    if "damp" in theories:
+        if "damp_rate" not in inter:
+            raise ValueError("damping rate or tensor must be specified in inter['damp_rate'] with non-selective damping.")
+        damp_rate = np.asarray(inter["damp_rate"], dtype=float)
+        if damp_rate.shape not in ((), (3, 3)):
+            raise ValueError("inter['damp_rate'] must be a scalar or a 3x3 matrix.")
+
+    r1_rates: tuple[np.ndarray, ...] = ()
+    r2_rates: tuple[np.ndarray, ...] = ()
+    if "t1_t2" in theories:
+        if "r1_rates" not in inter or "r2_rates" not in inter:
+            raise ValueError("R1 and R2 rates must be specified in inter['r1_rates'] and inter['r2_rates'] with extended T1,T2 theory.")
+        r1_rates = _rate_list(inter["r1_rates"], nspins, "r1_rates")
+        r2_rates = _rate_list(inter["r2_rates"], nspins, "r2_rates")
+    return Relaxation(
+        theories=theories, keep=inter["rlx_keep"], equilibrium=inter["equilibrium"], dfs=dfs,
+        temperature=temperature, tau_c=tau_c, damp_rate=damp_rate, r1_rates=r1_rates, r2_rates=r2_rates,
+    )
+
+
+def _rate_list(values: Sequence[Any], nspins: int, name: str) -> tuple[np.ndarray, ...]:
+    _check_length(values, nspins, f"inter['{name}']")
+    out = []
+    for value in values:
+        if callable(value):
+            raise NotImplementedError(f"orientation functions in inter['{name}'] are not ported yet.")
+        rate = np.asarray(value, dtype=float)
+        if rate.shape not in ((), (3, 3)):
+            raise ValueError(f"elements of inter['{name}'] must be scalars or 3x3 matrices.")
+        out.append(rate)
+    return tuple(out)
 
 
 def _chemistry(isotopes: tuple[str, ...], chem: dict[str, Any] | None) -> Chemistry:

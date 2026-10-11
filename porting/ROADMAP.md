@@ -162,6 +162,14 @@ Kuprov 2011, auxiliary-matrix integrals of Goodwin & Kuprov 2015) with the
 thermalisation (`equilibrium`, `inter.temperature`), and `R` in all
 contexts; fixtures from `examples/nmr_liquids` NOESY-type cases.
 
+Status (2026-10-11): implemented on `main`. `redfield` (isotropic, axial,
+rhombic diffusion via `expmint`), `t1_t2`, `damp`; `rlx_keep`, `rlx_dfs`;
+`equilibrium` and `thermalize` (IME, DiBari-Levitt); `R` in every context;
+`evolution` `multichannel`. Verified against the Solomon equations and
+Boltzmann states (`tests/unit/test_relaxation.py`); FR-005 fixtures
+requested. Not ported: Lindblad, Nottingham/Weizmann DNP, SRFK/SRSK,
+Nakajima-Zwanzig, rate functions, bosonic dissipators.
+
 ## Later
 
 Symmetry, polyadic generators and the Fokker-Planck contexts (MAS), the
