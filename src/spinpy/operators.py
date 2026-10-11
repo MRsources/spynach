@@ -259,7 +259,25 @@ def superop(spin_system: SpinSystem, opspec: np.ndarray, side: str) -> tuple[np.
     return _superop_side(spin_system, opspec, side)
 
 
+OP_CACHE_LIMIT = 1024   # entries per basis, first in first out (an entry is a few MB at 10^4 states)
+
+
 def _superop_side(
+    spin_system: SpinSystem, opspec: np.ndarray, side: str, commutator: bool = False
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Triplets of one side, cached on the basis since sequences and Hamiltonians ask for the same ones repeatedly."""
+    cache = spin_system.basis.op_cache
+    key = (np.asarray(opspec, dtype=np.int64).tobytes(), side, commutator)
+    hit = cache.get(key)
+    if hit is None:
+        hit = _superop_side_build(spin_system, opspec, side, commutator)
+        if len(cache) >= OP_CACHE_LIMIT:
+            del cache[next(iter(cache))]
+        cache[key] = hit
+    return hit
+
+
+def _superop_side_build(
     spin_system: SpinSystem, opspec: np.ndarray, side: str, commutator: bool = False
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     basis = spin_system.basis.basis
@@ -291,29 +309,30 @@ def _superop_side(
         keep = (path_in.sum(axis=1) != 0) & (path_out.sum(axis=1) != 0)
         path_in, path_out, path_coeff = path_in[keep], path_out[keep], path_coeff[keep]
 
-    # Label every basis row by its pattern on the active spins and on the passive spins
-    passive = np.setdiff1d(np.arange(basis.shape[1]), active)
-    active_patterns, active_id = np.unique(basis[:, active], axis=0, return_inverse=True)
-    _, passive_id = np.unique(basis[:, passive], axis=0, return_inverse=True)
-    active_id, passive_id = active_id.ravel(), passive_id.ravel()
-    lookup = {tuple(p): i for i, p in enumerate(active_patterns)}
-    order = np.argsort(active_id, kind="stable")
-    sorted_ids = active_id[order]
-    starts = np.searchsorted(sorted_ids, np.arange(len(active_patterns)))
-    stops = np.searchsorted(sorted_ids, np.arange(len(active_patterns)), side="right")
-
+    # Every path maps the rows carrying the input pattern on the active spins onto the rows with the
+    # same passive pattern and the output pattern: the target row hash is the source hash shifted by
+    # the key difference on the active spins, and the target row is found by bisection
+    bas = spin_system.basis
+    table, row_hash, order, sorted_hash = bas.hash_table, bas.row_hash, bas.sort_order, bas.sorted_hash
+    active_cols = basis[:, active]
     rows, cols, vals = [], [], []
     for pin, pout, coeff in zip(path_in, path_out, path_coeff):
-        i_in, i_out = lookup.get(tuple(pin)), lookup.get(tuple(pout))
-        if i_in is None or i_out is None:
-            continue   # the pattern is not in the restricted basis
-        src = order[starts[i_in]:stops[i_in]]
-        dst = order[starts[i_out]:stops[i_out]]
-        # Identity on the passive spins: match rows with the same passive pattern
-        _, src_pos, dst_pos = np.intersect1d(passive_id[src], passive_id[dst], assume_unique=True, return_indices=True)
-        rows.append(dst[dst_pos])
-        cols.append(src[src_pos])
-        vals.append(np.full(len(src_pos), coeff, dtype=complex))
+        src = np.flatnonzero((active_cols == pin).all(axis=1))
+        if src.size == 0:
+            continue
+        # Hash arithmetic is modulo 2**64 by design; array operations wrap silently
+        shift = np.zeros(1, dtype=np.uint64)
+        for a, i, o in zip(active, pin, pout):
+            shift = shift + table[a, o] - table[a, i]
+        target = row_hash[src] + shift
+        pos = np.searchsorted(sorted_hash, target)
+        pos[pos == sorted_hash.size] = 0
+        found = sorted_hash[pos] == target
+        if not found.any():
+            continue     # the output pattern is not in the restricted basis for any of these rows
+        rows.append(order[pos[found]])
+        cols.append(src[found])
+        vals.append(np.full(int(found.sum()), coeff, dtype=complex))
     if not rows:
         return np.zeros(0, dtype=np.int64), np.zeros(0, dtype=np.int64), np.zeros(0, dtype=complex)
     return np.concatenate(rows), np.concatenate(cols), np.concatenate(vals)

@@ -420,6 +420,7 @@ ignored by the simulation, as in Spinach.
 | chemical kinetics (`kinetics`) | first-order exchange; `liquid` passes it as `K` and `acquire` propagates under `H + 1i*K` |
 | parallel `evolution` (Kuprov-Edwards split), `parfor` | serial; the same numbers |
 | GPU via `sys.enable={'gpu'}` | CPU only; `'gpu'` is refused with a pointer to `porting/gpu-notes.md`, where the backend plan lives |
+| `sys.enable={'op_cache','ham_cache','prop_cache'}` | operators are always cached on the basis (`ss.basis.op_cache`, bounded, no option needed); Hamiltonians and propagators are not cached |
 | Liouville-space states | dense 1-D NumPy vectors; stacks are `(nstates, k)` arrays, trajectories `(nstates, nsteps + 1)` as in Spinach |
 
 **Pulse sequences** have Spinach's signature, `sequence(spin_system,

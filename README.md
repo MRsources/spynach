@@ -119,3 +119,9 @@ editing a guide, regenerate its notebook with
 
 `src/spinpy/_isotope_data.py` is generated from Spinach's `spin.m` by
 `porting/tools/gen_isotopes.py`; do not edit it by hand.
+`src/spinpy/grids/*.npz` are generated from Spinach's `kernel/grids` by
+`porting/tools/gen_grids.py`. `porting/tools/bench_strychnine.py` times the
+kernel on the 22-proton strychnine system (12 316 states at `IK-2`,
+proximity level 3): basis 0.04 s, Hamiltonian 0.1 s, Redfield
+relaxation 2.4 s, pulse-acquire 2.1 s, COSY 32 x 64 3.3 s in this
+container.

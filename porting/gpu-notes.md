@@ -59,6 +59,14 @@ small dense kernels, and spinpy keeps the same split.
 - `reduction.path_trace` uses `scipy.sparse.csgraph`; it runs once per
   evolution on the host and does not need a device version.
 
+## Construction-side notes (2026-10-11)
+
+Superoperator assembly (`operators.superop`) is index arithmetic on
+64-bit row hashes with NumPy `searchsorted`, cached per basis; Hamiltonian
+and `Q` blocks are built from concatenated COO triplets. None of this
+belongs on a device: it runs once per system and is already far cheaper
+than propagation at the sizes where a GPU would matter.
+
 ## Open decisions
 
 - **Target device.** CuPy requires CUDA (NVIDIA). On Apple silicon the

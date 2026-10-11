@@ -22,7 +22,7 @@ import numpy as np
 import scipy.sparse as sps
 
 from spinpy.conventions import mat2sphten, wigner
-from spinpy.operators import operator
+from spinpy.operators import human2opspec, operator, superop
 from spinpy.system import SpinSystem
 from spinpy.utilities import Matrix, clean_up
 
@@ -165,31 +165,46 @@ def hamiltonian(spin_system: SpinSystem, operator_type: str = "comm", aniso: boo
         if abs(t.iso) >= tols.liouv_zero
         or (np.abs(t.irr).sum() >= tols.liouv_zero and np.abs(t.ist).sum() >= tols.liouv_zero)
     ]
-    dim = spin_system.basis.nstates if spin_system.basis.formalism == "sphten-liouv" else int(np.prod(spin_system.mults))
-    opers = [operator(spin_system, list(t.ops), list(t.spins), operator_type) for t in rows]
+    liouville = spin_system.basis.formalism == "sphten-liouv"
+    dim = spin_system.basis.nstates if liouville else int(np.prod(spin_system.mults))
+    # Every operator once, as COO triplets; sums of terms are then one sparse construction each,
+    # which sums duplicate entries as MATLAB's sparse() does
+    opers = [_triplets(spin_system, t, operator_type, liouville) for t in rows]
 
-    H = sps.csr_array((dim, dim), dtype=complex)
-    for t, op in zip(rows, opers):
-        if abs(t.iso) > tols.liouv_zero:
-            H = H + t.iso * op
-    H = clean_up(tols, H, tols.liouv_zero)
+    def assemble(coefficients: np.ndarray) -> Matrix:
+        parts = [(c * v, r, k) for c, (r, k, v) in zip(coefficients, opers) if abs(c) > tols.liouv_zero]
+        if not parts:
+            return clean_up(tols, sps.csr_array((dim, dim), dtype=complex), tols.liouv_zero)
+        vals = np.concatenate([x[0] for x in parts])
+        rws = np.concatenate([x[1] for x in parts])
+        cls = np.concatenate([x[2] for x in parts])
+        return clean_up(tols, sps.csr_array(sps.coo_array((vals, (rws, cls)), shape=(dim, dim))), tols.liouv_zero)
+
+    H = assemble(np.array([t.iso for t in rows], dtype=complex))
     if not aniso:
         return H
-
+    ist = np.array([t.ist for t in rows], dtype=complex).reshape(len(rows), 8)
+    irr = np.array([t.irr for t in rows], dtype=complex).reshape(len(rows), 8)
     Q = []
     for rank, block in ((1, RANK1), (2, RANK2)):
         size = 2 * rank + 1
-        Q_rank = [[None] * size for _ in range(size)]
-        for k in range(size):
-            for m in range(size):
-                total = sps.csr_array((dim, dim), dtype=complex)
-                for t, op in zip(rows, opers):
-                    coeff = t.ist[block][k] * t.irr[block][m]
-                    if abs(coeff) > tols.liouv_zero:
-                        total = total + coeff * op
-                Q_rank[k][m] = clean_up(tols, total, tols.liouv_zero)
-        Q.append(Q_rank)
+        Q.append([[assemble(ist[:, block][:, k] * irr[:, block][:, m]) for m in range(size)] for k in range(size)])
     return H, Q
+
+
+def _triplets(spin_system: SpinSystem, t: _Term, operator_type: str, liouville: bool) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """COO triplets of one term's operator, summing the opspecs of composite labels (Lx, Ly)."""
+    if liouville:
+        opspecs, coeffs = human2opspec(spin_system, list(t.ops), list(t.spins))
+        rows, cols, vals = [], [], []
+        for spec, coeff in zip(opspecs, coeffs):
+            r, c, v = superop(spin_system, spec, operator_type)
+            rows.append(r)
+            cols.append(c)
+            vals.append(coeff * v)
+        return np.concatenate(rows), np.concatenate(cols), np.concatenate(vals)
+    coo = sps.coo_array(operator(spin_system, list(t.ops), list(t.spins), operator_type))
+    return coo.row, coo.col, coo.data
 
 
 def orientation(Q: list, euler_angles: Sequence[float]) -> Matrix:

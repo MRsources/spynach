@@ -75,6 +75,7 @@ def basis(spin_system: SpinSystem, bas: dict[str, Any]) -> SpinSystem:
         )
     descriptor = _sphten_basis(spin_system, bas)
     ranks, projs = lin2lm(descriptor)
+    hash_table, row_hash, sort_order, sorted_hash = row_hashes(descriptor, spin_system.mults)
     return replace(
         spin_system,
         basis=Basis(
@@ -83,8 +84,36 @@ def basis(spin_system: SpinSystem, bas: dict[str, Any]) -> SpinSystem:
             basis=descriptor,
             tot_proj=projs.sum(axis=1),
             tot_cord=np.count_nonzero(ranks, axis=1),
+            hash_table=hash_table,
+            row_hash=row_hash,
+            sort_order=sort_order,
+            sorted_hash=sorted_hash,
         ),
     )
+
+
+def row_hashes(descriptor: np.ndarray, mults: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Additive 64-bit hashes of the basis rows, for finding a row from a modified copy of another.
+
+    ``hash_table[spin, index]`` is a fixed pseudo-random key; the hash of a
+    row is the sum (modulo 2**64) of the keys of its entries, so changing
+    the tensor indices on a few spins changes the hash by a known amount.
+    Collisions between distinct rows have probability of order
+    ``nstates**2 / 2**64`` and are checked for.
+    """
+    nspins = descriptor.shape[1]
+    width = int(np.max(mults)) ** 2
+    rng = np.random.default_rng(0x5EED_5EED)
+    hash_table = rng.integers(0, 2**63 - 1, size=(nspins, width), dtype=np.int64).astype(np.uint64) * np.uint64(2) + np.uint64(1)
+    hash_table[:, 0] = 0          # the unit operator contributes nothing, so the all-unit row hashes to zero
+    row_hash = np.zeros(descriptor.shape[0], dtype=np.uint64)
+    for n in range(nspins):
+        row_hash += hash_table[n, descriptor[:, n]]
+    sort_order = np.argsort(row_hash, kind="stable")
+    sorted_hash = row_hash[sort_order]
+    if np.any(sorted_hash[1:] == sorted_hash[:-1]):
+        raise RuntimeError("basis row hash collision; this should not happen, please report it.")
+    return hash_table, row_hash, sort_order, sorted_hash
 
 
 def _zeeman_levels(mults: np.ndarray) -> np.ndarray:

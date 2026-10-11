@@ -22,7 +22,7 @@ field raises ``NotImplementedError`` rather than being ignored.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from typing import Any
 
 import numpy as np
@@ -63,6 +63,16 @@ class Basis:
     basis: np.ndarray
     tot_proj: np.ndarray | None = None   # (nstates,) total coherence order (sphten-liouv)
     tot_cord: np.ndarray | None = None   # (nstates,) spin correlation order (sphten-liouv)
+    # Row hashing for superoperator assembly (sphten-liouv): hash_table[spin, index] holds a random
+    # 64-bit key per (spin, tensor index); row_hash is their sum over the columns of a row, and
+    # sort_order/sorted_hash let a row be found from its hash by bisection (operators.superop)
+    hash_table: np.ndarray | None = None
+    row_hash: np.ndarray | None = None
+    sort_order: np.ndarray | None = None
+    sorted_hash: np.ndarray | None = None
+    # Superoperator triplets by (opspec bytes, side), filled by operators.superop (Spinach's op_cache);
+    # a frozen dataclass may still mutate the dictionary it holds
+    op_cache: dict = field(default_factory=dict, repr=False, compare=False)
 
     @property
     def nstates(self) -> int:

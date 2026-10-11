@@ -193,6 +193,19 @@ propagation; FR-007 fulfilled, 3 parity tests pass (1e-13 or better,
 table in `docs/pulse-sequences.md`). Not ported: the other sequences
 (`dqf_cosy`, `tocsy`, `hmqc`, ...), soft/shaped pulses.
 
+## Step 9: consolidation (decided 2026-10-11)
+
+Status (2026-10-11): profiling on strychnine (22 1H, IK-2, prox 3, 12 316
+states; `porting/tools/bench_strychnine.py`) showed superoperator
+assembly dominating: `np.unique(axis=0)` on the basis per term and side.
+Replaced by per-basis 64-bit row hashes (one sort per basis, bisection per
+path), a bounded per-basis operator cache (`Basis.op_cache`, Spinach's
+`op_cache`), and triplet-based assembly of `H` and the 34 `Q` blocks.
+Hamiltonian 1.3 s -> 0.1 s on 7459 states; strychnine relaxation 4.9 ->
+2.4 s, pulse-acquire 5.3 -> 2.1 s, COSY 6.1 -> 3.3 s. Parity unchanged
+(498 tests). Open: `evolution` device sessions (`porting/gpu-notes.md`),
+Hamiltonian/propagator caches, API review notes below.
+
 ## Later
 
 Symmetry, `doublerot`/`floquet`/`gridfree`, more sequences and shaped
