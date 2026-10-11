@@ -73,10 +73,11 @@ before going further.
 
 ## FR-004: anisotropic interactions (`dump_aniso.m`)
 
-- **Status:** requested 2026-10-11, branch `main`
+- **Status:** fulfilled 2026-10-11, `/fixtures/2.13/`, run log `run_20261011T211740Z.log`; MATLAB R2026b, Spinach `03a88b7e` (2.13), clean; `pytest tests/slice/test_aniso_parity.py`: 25 passed
+- **Requested:** 2026-10-11, branch `main`
 - **Spinach:** clean checkout, 2.13 (`03a88b7e`), as before
 - **Needs:** the same host setup. Five cases, each a few seconds (powder averages over 50- and 100-point grids with 128 points).
 - **Run:** `oracle/run_fixtures.sh` from the `main` checkout (`dump_aniso` is in `dump_scripts`; existing cases are skipped).
 - **Produces:** `aniso_csa_pair`, `aniso_dip_pair`, `aniso_nqi_14n`, `aniso_hc_tensors`, `aniso_esr_nitroxide`
 - **Check:** `SPINPY_FIXTURES=/fixtures pytest tests/slice/test_aniso_parity.py -rs`; nothing should skip.
-- **Result:** _(human: fixture path, MATLAB version, any errors or warnings)_
+- **Result:** done (host, 2026-10-11); five cases written, earlier cases skipped.

@@ -21,8 +21,8 @@ and its propagation against Spinach 2.13 fixtures as well
 (`tests/slice/test_liouv_pa_parity.py`), Hilbert space, and analytic
 exchange line shapes. Anisotropic interactions (shielding and coupling
 tensors, dipolar couplings from coordinates, quadrupolar couplings) with
-the `crystal` and `powder` contexts are ported; their Spinach fixtures
-are requested (FR-004).
+the `crystal` and `powder` contexts are ported and verified against
+Spinach 2.13 fixtures as well (`tests/slice/test_aniso_parity.py`).
 
 ```python
 import numpy as np

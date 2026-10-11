@@ -150,7 +150,8 @@ tensors and coordinates (dipolar couplings, proximity graph);
 contexts with Spinach's grids shipped as `spinpy/grids/*.npz`;
 `esr`/`deer`/`labframe` assumption sets. Verified against closed forms
 (CSA, dipolar angular dependence, quadrupolar) and Hilbert/Liouville
-agreement; FR-004 fixtures requested. Not ported: `pbc`, MAS and the
+agreement; FR-004 fulfilled, 25 parity tests pass (1e-13 or better,
+table in `docs/solid-state.md`). Not ported: `pbc`, MAS and the
 Fokker-Planck contexts, `needs`, callable `rho0`.
 
 ## Step 6: relaxation
