@@ -1,6 +1,8 @@
 # spinpy: notes for agents
 
-Read `HANDOFF.md` for goals and design decisions, `README.md` for status.
+Read `HANDOFF.md` for goals and design decisions, `README.md` for status,
+`porting/ROADMAP.md` for the current step, and `porting/design-notes.md`
+for the Liouville-space kernel design (literature and Spinach source review).
 
 ## User documentation is part of every change
 
