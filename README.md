@@ -64,6 +64,7 @@ spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))
 | `relaxation.m`, `equilibrium.m`, `thermalize.m` | `spinpy.relaxation`, `spinpy.equilibrium`, `spinpy.thermalize` | Redfield (isotropic, axial, rhombic diffusion; diagonalisation-free integral), `t1_t2`, `damp`; `rlx_keep`, `rlx_dfs`; `zero`/`IME`/`dibari` thermalisation |
 | `liquid.m`, `crystal.m`, `powder.m`, `singlerot.m`, `fourdif.m`, `acquire.m` | `spinpy.liquid`, `spinpy.crystal`, `spinpy.powder`, `spinpy.singlerot`, `spinpy.contexts.fourdif`, `spinpy.acquire` | both formalisms (MAS in Liouville space); relaxation and exchange kinetics; powder averages over Spinach's grids (shipped as `spinpy/grids`); MAS in Fokker-Planck form with the Fourier spectral derivative; no decoupling |
 | `ft_axis.m`, `axis_1d.m`, `plot_1d.m`, `plot_2d.m`, `contspacing.m`, `apodisation.m` | `spinpy.plotting`, `spinpy.apodisation` | all axis units; interactive Plotly 1D and 2D contour figures; window functions except `bad-z*`; no `derivative` |
+| `etc/molecules/strychnine.m` | `spinpy.molecules.strychnine` | the 22-proton system (shifts, couplings, coordinates); 13C/15N not ported |
 | `cosy.m`, `noesy.m`, `hsqc.m`, `decouple.m`, `homospoil.m`, `dilute.m`, `kill_spin.m` | `spinpy.cosy`, `spinpy.noesy`, `spinpy.hsqc`, `spinpy.decouple`, `spinpy.homospoil`, `spinpy.dilute`, `spinpy.kill_spin` | COSY, States-TPPI NOESY, echo-antiecho HSQC; analytical decoupling; isotopomer sums |
 
 Anything not ported raises `NotImplementedError`; inputs are never silently
@@ -120,7 +121,11 @@ editing a guide, regenerate its notebook with
 `src/spinpy/_isotope_data.py` is generated from Spinach's `spin.m` by
 `porting/tools/gen_isotopes.py`; do not edit it by hand.
 `src/spinpy/grids/*.npz` are generated from Spinach's `kernel/grids` by
-`porting/tools/gen_grids.py`. `porting/tools/bench_strychnine.py` times the
+`porting/tools/gen_grids.py`. `examples/` holds full-size translations of
+Spinach example scripts for side-by-side comparison with MATLAB (see
+[`docs/README.md`](docs/README.md#example-scripts)); `comparison/` holds the
+protocol for timed, profiled Spinach-vs-spinpy runs with an HTML report
+([`comparison/README.md`](comparison/README.md)). `porting/tools/bench_strychnine.py` times the
 kernel on the 22-proton strychnine system (12 316 states at `IK-2`,
 proximity level 3): basis 0.04 s, Hamiltonian 0.1 s, Redfield
 relaxation 2.4 s, pulse-acquire 2.1 s, COSY 32 x 64 3.3 s in this

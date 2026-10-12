@@ -74,7 +74,11 @@ dimension (`("exp", 6)`, `("sqcos",)`, `("gauss", k)`, `("kaiser",
 beta)`, `("cos",)`, `("sin",)`, `("sqsin",)`, `("crisp",)`, `("none",)`)
 and halves the first point of each processed dimension, as Spinach does
 before a Fourier transform. The 2-D spectrum is `fftshift(fft2(fid,
-zerofill))`, and `plot_2d` draws it with Spinach's contour spacing:
+zerofill))`, and `plot_2d` draws it with Spinach's contour spacing
+(one Plotly trace per sign; spectra longer than `max_points=512` per axis
+are binned first, keeping the largest-magnitude value of each bin, so a
+2048 x 2048 spectrum gives a figure of a few MB; `max_points=None` draws
+every point):
 `ncont` levels between fractions `delta[0..1]` of the maximum (positive,
 red) and `delta[2..3]` of the minimum (negative, blue), spaced as the
 `k`-th power of a linear grid, both axes decreasing to the right and up:

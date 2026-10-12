@@ -5,7 +5,8 @@ Read `HANDOFF.md` for goals and design decisions, `README.md` for status,
 for the Liouville-space kernel design (literature and Spinach source review).
 GPU acceleration is deferred: `porting/gpu-notes.md` lists the entry points;
 keep the hot loops going through `spinpy.backend` and mark new device-relevant
-lines with `# GPU:`.
+lines with `# GPU:`. `comparison/README.md` is the protocol for timed and
+profiled Spinach-vs-spinpy runs (MATLAB on the host, spinpy here, HTML report).
 
 ## User documentation is part of every change
 

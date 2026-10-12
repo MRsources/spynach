@@ -22,6 +22,24 @@ notebooks in `docs/notebooks/` are rebuilt from the guides, so edits to them
 are overwritten; if you run one there, `git restore docs/notebooks/` discards
 the changed outputs.
 
+## Example scripts
+
+`examples/` at the repository root mirrors Spinach's `examples/` tree.
+Each script is a translation of the Spinach example of the same name at
+the Spinach size (the guides above run reduced versions in seconds), and
+is meant for a side-by-side comparison with MATLAB: it writes its FIDs
+and spectrum as `.npy` files and its figure as `.html` into `out/` next
+to itself (git-ignored), and `--compare FILE.mat` reports the normwise
+relative error against a `.mat` file saved by the Spinach script (the
+script's docstring gives the lines to add in MATLAB). The scripts are not
+run by the test suite. For a timed and profiled comparison of both sides
+with an HTML report, use the protocol in
+[`comparison/README.md`](../comparison/README.md).
+
+| script | Spinach example | full size in this container |
+|---|---|---|
+| `examples/nmr_liquids/noesy_strychnine.py` | `examples/nmr_liquids/noesy_strychnine.m` (22 protons, `IK-2`, Redfield, 500 ms NOESY) | 2 min 50 s at 512 x 512 points (12 316 states, 4 cores); `--npoints 64 --zerofill 256` runs in 15 s |
+
 ## Conventions for contributors
 
 **Every user-facing change ships with user documentation in the same

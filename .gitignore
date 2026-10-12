@@ -8,3 +8,5 @@ scratch/
 .venv-mac/
 .DS_Store
 spinach-publications/
+examples/**/out/
+comparison/runs/

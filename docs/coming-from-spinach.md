@@ -112,6 +112,12 @@ eight spins the Hilbert space has dimension 256, and the full-length run
 takes about 30 s on four CPU cores. Set `"npoints": 16384` and
 `"zerofill": 65536` to reproduce the Spinach example exactly.
 
+Translations at the Spinach size live in `examples/` (see
+[docs/README.md](README.md#example-scripts)):
+`examples/nmr_liquids/noesy_strychnine.py` is `noesy_strychnine.m`
+line by line (22 protons, `IK-2`, Redfield relaxation, 512 x 512 points)
+and compares its FIDs and spectrum with a `.mat` file saved from MATLAB.
+
 `kfigure(); plot_1d(spin_system,real(spectrum),parameters)` becomes a
 call to `spinpy.plotting.plot_1d`, which reads the same parameters and
 returns an interactive figure (see
@@ -203,6 +209,12 @@ for J in (140.0, 145.0, 150.0):
   `inter.coordinates` (Angstrom) gives the same point dipolar couplings
   as `dipolar.m`, half the tensor in both `[n][k]` and `[k][n]`, and the
   same proximity matrix. See the [solid-state guide](solid-state.md).
+- **Molecule files:** Spinach's `etc/molecules/strychnine.m` is
+  `spinpy.molecules.strychnine(["1H"])`, returning `(sys, inter)` with the
+  same shifts, couplings and coordinates (0-based spin numbers in the
+  same order; `sys["magnet"]` is set by the caller as in Spinach). Only
+  the proton data is ported; `["1H", "13C"]` raises `NotImplementedError`.
+  The other molecule files are not ported.
 - **Chemical subsystems:** `inter.chem.parts`, `inter.chem.concs`, and
   `inter.chem.rates` carry over with 0-based spin indices in `parts`; the
   validation is Spinach's (every spin in one part, no couplings between
@@ -223,12 +235,15 @@ assert exch.chem.parts == ((0,), (1,))
 ```
 
 **Not ported yet** (each raises `NotImplementedError` naming the field):
-`sys.output`, `sys.enable` (GPU and other options), `sys.disable`,
-`sys.parallel`, `sys.scratch`, `inter.pbc` (periodic images of the
+`sys.output`, `sys.enable`/`sys.disable` tokens other than the
+propagation ones listed under [Calculation modalities](#calculation-modalities)
+(so `'gpu'`, `'greedy'`, `'caching'`, ... are refused; `'greedy'` only
+changes Spinach's parallelisation and can be dropped), `sys.parallel`,
+`sys.scratch`, `inter.pbc` (periodic images of the
 dipolar couplings), `inter.giant`, `inter.suscept`,
 `inter.order_matrix`, the Lindblad/DNP/SRFK/SRSK relaxation fields,
 `inter.chem.flux_rate`/`flux_type` (magnetisation flux), `inter.chem.rp_*`
-(radical pair kinetics), `inter.temperature`, and bosonic modes
+(radical pair kinetics), and bosonic modes
 (cavities, phonons, transmons). The `kinetics` superoperator itself is
 not ported yet either; see [Calculation modalities](#calculation-modalities).
 
@@ -413,7 +428,7 @@ ignored by the simulation, as in Spinach.
 | `reduce`, `zte`, `path_trace` (trajectory-level reduction), `sys.disable={'zte','pt','dss','merge','krylov','trajlevel'}`, `sys.enable={'krylov'}` | the same, Liouville space; permutation symmetry not ported |
 | `step` (single generator and 2/3-point Lie quadratures), `krylov` | the same in Liouville space; Hilbert-space `step` for one generator |
 | `pulse`, `shaped_pulse_*` | not ported; use `propagator` or `step` |
-| `apodisation`, `plot_2d`, `dilute`/`kill_spin`, `decouple`, `homospoil` | the same; `apodisation(fid, [("exp", 6)])` takes tuples instead of nested cells, `plot_2d` draws a Plotly contour figure with the same `ncont, delta, k, ncol, m, signs` arguments |
+| `apodisation`, `plot_2d`, `dilute`/`kill_spin`, `decouple`, `homospoil` | the same; `apodisation(fid, [("exp", 6)])` takes tuples instead of nested cells, `plot_2d` draws a Plotly contour figure with the same `ncont, delta, k, ncol, m, signs` arguments, binning spectra longer than `max_points=512` per axis (largest magnitude per bin) so that the HTML stays small |
 | `propagator`: Pade `expm` below `small_matrix`, scaled and squared Taylor series above | the same |
 | relaxation (`relaxation`, `equilibrium`, `thermalize`) | Redfield, `t1_t2`, `damp` with the same `inter` fields and policies; see the [relaxation guide](relaxation.md); Lindblad, DNP theories, SRFK/SRSK not ported |
 | chemical kinetics (`kinetics`) | first-order exchange; `liquid` passes it as `K` and `acquire` propagates under `H + 1i*K` |

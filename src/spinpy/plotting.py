@@ -251,6 +251,7 @@ def plot_2d(
     title: str | None = None,
     theme: str = "light",
     height: int = 560,
+    max_points: int | None = 512,
 ):
     """Interactive contour plot of a real 2D spectrum, after Spinach's ``plot_2d``.
 
@@ -262,6 +263,13 @@ def plot_2d(
     parameters) are accepted for compatibility and ``m`` steepens the
     colour gradient. Both axes decrease to the right/top as in Spinach.
     Returns a ``plotly.graph_objects.Figure``.
+
+    The figure embeds the matrix it draws, so a dimension longer than
+    ``max_points`` is reduced first: consecutive points are binned and
+    each bin keeps its value of largest magnitude (peaks and signs are
+    preserved, the contour levels are those of the full spectrum). A
+    2048 x 2048 spectrum reduces to 512 x 512 and a few MB of HTML;
+    ``max_points=None`` draws every point.
     """
     try:
         import plotly.graph_objects as go
@@ -278,6 +286,9 @@ def plot_2d(
     axis_f1, axis_f2, label_f1, label_f2 = axis_2d(spin_system, spectrum, parameters)
     smax, smin = float(spectrum.max()), float(spectrum.min())
     _, pos, neg = contspacing(smax, smin, delta, k, signs, ncont)
+    if max_points is not None:
+        spectrum, axis_f2 = _bin_extremes(spectrum, axis_f2, int(max_points), axis=0)
+        spectrum, axis_f1 = _bin_extremes(spectrum, axis_f1, int(max_points), axis=1)
     fig = go.Figure()
     reds, blues = ("#b3261e", "#f2b8b5"), ("#1d4ed8", "#bfdbfe")
 
@@ -285,15 +296,24 @@ def plot_2d(
         a, b = (int(start[i:i + 2], 16) for i in (1, 3, 5)), (int(end[i:i + 2], 16) for i in (1, 3, 5))
         return "#%02x%02x%02x" % tuple(int(round(x + (y - x) * fraction)) for x, y in zip(a, b))
 
+    # One trace per sign: the spectrum is mapped through a monotone piecewise-linear function that sends
+    # the n-th contour level to n, so Plotly's uniform levels 0, 1, ..., reproduce Spinach's non-uniform
+    # ones exactly, and the colour scale over the level index gives each contour its own shade.
     z = spectrum.T   # Plotly draws z[y, x]; x is F2 (rows of the spectrum), y is F1
     for levels, (strong, weak) in ((pos, reds), (neg, blues)):
-        for n, level in enumerate(levels):
-            fraction = (1 - n / max(len(levels) - 1, 1)) ** (1 / m)
-            fig.add_contour(
-                x=axis_f2, y=axis_f1, z=z, showscale=False, hoverinfo="skip",
-                contours={"type": "constraint", "operation": "=", "value": float(level), "showlabels": False},
-                line={"color": shade(weak, strong, fraction), "width": 1.2}, showlegend=False,
-            )
+        if not len(levels):
+            continue
+        nlev = len(levels)
+        colours = [shade(weak, strong, (1 - n / max(nlev - 1, 1)) ** (1 / m)) for n in range(nlev)]
+        colorscale = [(n / max(nlev - 1, 1), colour) for n, colour in enumerate(colours)]
+        if nlev == 1:
+            colorscale = [(0.0, colours[0]), (1.0, colours[0])]
+        fig.add_contour(
+            x=axis_f2, y=axis_f1, z=_level_index(z, levels), showscale=False, hoverinfo="skip",
+            zmin=0, zmax=nlev - 1, autocontour=False,
+            contours={"type": "levels", "coloring": "lines", "start": 0, "end": nlev - 1, "size": 1, "showlabels": False},
+            colorscale=colorscale, line={"width": 1.2}, showlegend=False,
+        )
     if not len(pos) and not len(neg):
         fig.add_annotation(text="all-zero spectrum", x=0.5, y=0.5, xref="paper", yref="paper", showarrow=False)
     axis = {"showgrid": True, "gridcolor": c["grid"], "zeroline": False, "showline": True, "linecolor": c["axis"],
@@ -313,6 +333,45 @@ def plot_2d(
         dragmode="zoom", showlegend=False,
     )
     return fig
+
+
+def _level_index(z: np.ndarray, levels: np.ndarray) -> np.ndarray:
+    """Monotone map sending ``levels[n]`` to ``n`` (piecewise linear between levels, extended linearly outside).
+
+    Values more than one level spacing beyond the end levels are clamped to
+    -1 and ``len(levels)``, outside the range of contours that are drawn.
+    """
+    order = np.argsort(levels)
+    xs, ys = np.asarray(levels, dtype=float)[order], np.arange(len(levels), dtype=float)[order]
+    span = xs[-1] - xs[0] if len(xs) > 1 else max(abs(xs[0]), 1.0)
+    step = (xs[1] - xs[0]) if len(xs) > 1 else span
+    last = (xs[-1] - xs[-2]) if len(xs) > 1 else span
+    xs = np.concatenate([[xs[0] - step], xs, [xs[-1] + last]])
+    ys = np.concatenate([[ys[0] + (ys[0] - ys[1] if len(ys) > 1 else -1)], ys, [ys[-1] + (ys[-1] - ys[-2] if len(ys) > 1 else 1)]])
+    return np.interp(z, xs, ys)
+
+
+def _bin_extremes(spectrum: np.ndarray, axis_values: np.ndarray, max_points: int, axis: int) -> tuple[np.ndarray, np.ndarray]:
+    """Reduce ``spectrum`` along ``axis`` to at most ``max_points`` bins, keeping each bin's largest-magnitude value.
+
+    The axis coordinate of a bin is the mean of its points. Returns the
+    spectrum unchanged when it is short enough.
+    """
+    n = spectrum.shape[axis]
+    if max_points < 1:
+        raise ValueError("max_points must be a positive integer or None.")
+    if n <= max_points:
+        return spectrum, axis_values
+    step = -(-n // max_points)
+    nbins = -(-n // step)
+    pad = nbins * step - n
+    moved = np.moveaxis(spectrum, axis, 0)
+    padded = np.concatenate([moved, np.zeros((pad,) + moved.shape[1:], dtype=moved.dtype)]) if pad else moved
+    binned = padded.reshape(nbins, step, *moved.shape[1:])
+    pick = np.argmax(np.abs(binned), axis=1)
+    reduced = np.take_along_axis(binned, pick[:, None, ...], axis=1)[:, 0, ...]
+    coords = np.concatenate([np.asarray(axis_values, dtype=float), np.full(pad, np.nan)]).reshape(nbins, step)
+    return np.moveaxis(reduced, 0, axis), np.nanmean(coords, axis=1)
 
 
 def plot_fid(

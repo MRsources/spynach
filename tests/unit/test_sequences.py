@@ -186,5 +186,5 @@ def test_plot_2d_and_contours():
     spectrum[20, 10] = 1.0
     spectrum[40, 20] = -0.5
     fig = plot_2d(ss, spectrum, {"spins": ["1H"], "offset": 1200.0, "sweep": 2000.0, "axis_units": "ppm"})
-    assert len(fig.data) == 40
+    assert len(fig.data) == 2 and fig.data[0].contours.end == 19 and fig.data[1].contours.end == 19   # one trace per sign, 20 levels each
     assert fig.layout.xaxis.range[0] > fig.layout.xaxis.range[1]      # reversed axes
