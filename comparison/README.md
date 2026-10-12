@@ -24,6 +24,14 @@ comparison/
   runs/<run>/report.html         the report
 ```
 
+**What is versioned.** `comparison/runs/` is committed except for the
+large files: `data.mat`, `data.npz` and the interactive `figure_*.html`
+are ignored, as are runs tagged `quick`. So every report, with its
+timings, profiles, provenance, PNG figures and console logs, is in git and
+a rerun shows up as a diff; the arrays behind a report live only on the
+machine that made them, and the report's "interactive figure" links work
+there only. Rerun the side in question to regenerate them.
+
 `<run>` is `<case>[-gpu][-<tag>]`: the case name, `-gpu` when the run was
 made with the GPU switch, and `-<tag>` when a tag was given (use the same
 switch and tag on both sides). CPU and GPU comparisons of the same case

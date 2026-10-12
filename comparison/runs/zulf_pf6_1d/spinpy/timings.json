@@ -1,0 +1,37 @@
+{
+  "stages": [
+    {
+      "label": "create",
+      "seconds": 0.002068215000690543
+    },
+    {
+      "label": "basis",
+      "seconds": 0.01007853099872591
+    },
+    {
+      "label": "hamiltonian",
+      "seconds": 0.08037087499906193
+    },
+    {
+      "label": "operators",
+      "seconds": 0.055685839999569
+    },
+    {
+      "label": "pulse",
+      "seconds": 0.04917427800137375
+    },
+    {
+      "label": "acquisition",
+      "seconds": 35.31316446500023
+    },
+    {
+      "label": "processing",
+      "seconds": 0.0004913769989798311
+    },
+    {
+      "label": "plot",
+      "seconds": 0.1093424229984521
+    }
+  ],
+  "total_s": 35.62785623399941
+}

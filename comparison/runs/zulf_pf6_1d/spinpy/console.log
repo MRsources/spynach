@@ -1,0 +1,10 @@
+== zulf_pf6_1d (spinpy at /workspace) -> /workspace/comparison/runs/zulf_pf6_1d/spinpy
+create                                0.0 s
+basis                                 0.0 s
+hamiltonian                           0.1 s
+operators                             0.1 s
+pulse                                 0.0 s
+acquisition                          35.3 s
+processing                            0.0 s
+plot                                  0.1 s
+total                                35.6 s

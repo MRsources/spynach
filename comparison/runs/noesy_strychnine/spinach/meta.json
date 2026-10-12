@@ -1,0 +1,15 @@
+{
+  "side": "spinach",
+  "case": "noesy_strychnine",
+  "created_utc": "2026-10-12T16:23:40Z",
+  "spinach_root": "/Users/alexej/Documents/PROG/spinpy-spinach",
+  "spinach_commit": "03a88b7e912ffbb3122dd24829cc5d216209c804",
+  "spinach_describe": "2.13",
+  "spinach_dirty": false,
+  "matlab_version": "26.2.0.3386108 (R2026b)",
+  "platform": "MACA64",
+  "hostname": "MacBook-Pro-8.local",
+  "cores": 12,
+  "pool_workers": 11,
+  "options": {}
+}

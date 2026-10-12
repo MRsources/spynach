@@ -9,4 +9,9 @@ scratch/
 .DS_Store
 spinach-publications/
 examples/**/out/
-comparison/runs/
+# comparison runs: reports, timings, profiles, provenance, PNG figures and console
+# logs are versioned; the data dumps and interactive figures are not
+comparison/runs/**/data.mat
+comparison/runs/**/data.npz
+comparison/runs/**/figure_*.html
+comparison/runs/*-quick*/
