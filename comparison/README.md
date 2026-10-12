@@ -168,3 +168,4 @@ Rules that keep the report meaningful:
 | case | Spinach example | notes |
 |---|---|---|
 | `noesy_strychnine` | `examples/nmr_liquids/noesy_strychnine.m` | 22 protons, `IK-2`, Redfield, 500 ms NOESY; options `npoints`, `zerofill`, `gpu`; stages `create`, `basis`, `liquid/noesy`, `processing`, `plot`; arrays `fid_cos`, `fid_sin`, `spectrum`; figure `noesy` |
+| `zulf_pf6_1d` | `user_ml/ZULF_PF6_1D.m` (contributed) | 31P + 6 x 19F at 2.7 uT, complete basis (16 384 states), lab frame, pulse and 16 384-point acquisition (propagator path after state-space reduction); options `npoints`, `zerofill`, `rho_file`, `gpu`; stages `create`, `basis`, `hamiltonian`, `operators`, `pulse`, `acquisition`, `processing`, `plot`; arrays `rho0`, `rho_pulse`, `fid`, `spectrum`, `coil_x`, `coil_z`; figure `spectrum` |

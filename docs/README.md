@@ -24,7 +24,9 @@ the changed outputs.
 
 ## Example scripts
 
-`examples/` at the repository root mirrors Spinach's `examples/` tree.
+`examples/` at the repository root mirrors Spinach's `examples/` tree;
+`examples/user_ml/` holds translations of the contributed scripts in
+`user_ml/` (see its README).
 Each script is a translation of the Spinach example of the same name at
 the Spinach size (the guides above run reduced versions in seconds), and
 is meant for a side-by-side comparison with MATLAB: it writes its FIDs
@@ -39,6 +41,7 @@ with an HTML report, use the protocol in
 | script | Spinach example | full size in this container |
 |---|---|---|
 | `examples/nmr_liquids/noesy_strychnine.py` | `examples/nmr_liquids/noesy_strychnine.m` (22 protons, `IK-2`, Redfield, 500 ms NOESY) | 2 min 50 s at 512 x 512 points (12 316 states, 4 cores); `--npoints 64 --zerofill 256` runs in 15 s |
+| `examples/user_ml/zulf_pf6_1d.py` | `user_ml/ZULF_PF6_1D.m` (contributed: PF6- at 2.7 uT, adiabatic-drop state from file, selective pulse, 16 384-point ZULF spectrum) | 36 s at 16 384 points (16 384 states; state-space reduction brings the subspaces below `krylov_tol`, so the propagator path is used) |
 
 ## Conventions for contributors
 

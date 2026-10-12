@@ -13,7 +13,8 @@
 %% Settings
 repo_dir='/Users/alexej/Documents/PROG/spinpy';             % spinpy checkout holding comparison/cases
 spinach_dir='/Users/alexej/Documents/PROG/spinpy-spinach';  % Spinach checkout
-cases={'noesy_strychnine'};                                 % case directories to run
+%cases={'noesy_strychnine','zulf_pf6_1d'};                                 % case directories to run
+cases={'zulf_pf6_1d'};
 gpu=false;                                                  % true: sys.enable={'gpu'} in every case, results in runs/<case>-gpu[-<tag>]/
 tag='';                                                     % run name suffix: runs/<case>[-gpu]-<tag>/; '' for runs/<case>[-gpu]/
 options=struct();                                           % per-case options, e.g. options.noesy_strychnine.npoints=64;

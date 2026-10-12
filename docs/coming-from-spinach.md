@@ -459,6 +459,8 @@ Spinach's arguments; the other processing helpers are a line of NumPy.
 | `fftshift(fft(fid,zerofill))` | `np.fft.fftshift(np.fft.fft(fid, zerofill))` |
 | `apodisation(spin_system,fid,{{'exp',k}})` | `fid[0] /= 2; fid *= np.exp(-k * np.linspace(0, 1, fid.size))` |
 | `apodisation(spin_system,fid,{{'gauss',k}})` | `fid[0] /= 2; fid *= np.exp(-k * np.linspace(0, 1, fid.size) ** 2)` |
+| legacy `apodization(fid,'exp-1d',k)` (pre-2.9 scripts) | `spinpy.apodisation(fid, [("exp", k)])`, the 2.13 form, which also halves the first point |
+| `csvread('rho.csv')` of a complex column | `np.array([complex(s.replace('i', 'j')) for s in lines])`; see `examples/user_ml/zulf_pf6_1d.py` |
 | `[ax,ax_label]=axis_1d(spin_system,parameters)` | `ax, ax_label = axis_1d(spin_system, parameters)` |
 | `ft_axis(offset,sweep,npoints)` | `ft_axis(offset, sweep, npoints)` |
 | `kfigure(); plot_1d(spin_system,spectrum,parameters)` | `plot_1d(spin_system, spectrum, parameters)` |

@@ -98,3 +98,16 @@ def test_profile_records_layout():
     records = run_spinpy.profile_records(pr, 5)
     assert set(records) == {"by_total", "by_self"} and len(records["by_total"]) <= 5
     assert {"function", "file", "calls", "total_s", "self_s"} <= set(records["by_total"][0])
+
+
+def test_zulf_case_and_matlab_csv_loader(tmp_path):
+    assert "zulf_pf6_1d" in run_spinpy.all_cases()
+    assert (ROOT / "comparison/cases/zulf_pf6_1d/zulf_pf6_1d_spinach.m").exists()
+    example = run_spinpy.load_example("user_ml/zulf_pf6_1d")
+    csv = tmp_path / "rho.csv"
+    csv.write_text("1\n0\n3.0231e-06+1.3835e-20i\n-2.6325e-08-1.2e-21i\n")
+    rho = example.load_matlab_csv(csv)
+    assert rho.shape == (4,) and rho.dtype == complex
+    np.testing.assert_allclose(rho, [1, 0, 3.0231e-06 + 1.3835e-20j, -2.6325e-08 - 1.2e-21j])
+    full = example.load_matlab_csv(example.RHO_PATH)
+    assert full.shape == (4**7,) and full[0] == 1   # unit-state component of the adiabatic-drop state
