@@ -140,6 +140,12 @@ example scripts were translated from it, and Spinach's copyright and
 permission notice is reproduced in `LICENSE`. Keep that notice with any
 copy or substantial portion of this software.
 
+The translation from MATLAB to Python was carried out largely by an AI
+coding agent (Claude, Anthropic) under the direction of Alexej Jerschow,
+who reviewed the results; commits made by the agent are marked as such in
+the git history. Correctness rests on the test suite's comparison with
+Spinach reference data, not on the method of authorship (see `LICENSE`).
+
 Results obtained with spinpy should cite Spinach: H. J. Hogben,
 M. Krzystyniak, G. T. P. Charnock, P. J. Hore, I. Kuprov, *Spinach: a
 software library for simulation of spin dynamics in large spin systems*,

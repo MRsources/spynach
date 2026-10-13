@@ -2,6 +2,10 @@ MIT License
 
 Copyright (c) 2026 Alexej Jerschow
 
+spinpy is a Python reimplementation of the Spinach spin dynamics kernel
+(https://spindynamics.org). This licence derives from the Spinach MIT
+licence (see below).
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -24,10 +28,8 @@ SOFTWARE.
 Spinach
 =======
 
-spinpy is a Python reimplementation of the Spinach spin dynamics kernel
-(https://spindynamics.org). Its sources, tests, molecule data, isotope table,
-spherical grids and example scripts were written by reading and translating
-Spinach. Spinach is distributed under the MIT License with the following
+The sources, tests, molecule data, isotope table, spherical grids and
+example scripts of spinpy were written by reading and translating Spinach. Spinach is distributed under the MIT License with the following
 notice, which is reproduced here as that licence requires and must be kept
 with any copy or substantial portion of this software.
 
@@ -39,3 +41,13 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+
+Use of AI in the translation
+============================
+
+The translation of Spinach from MATLAB to Python was carried out largely by
+an AI coding agent (Claude, Anthropic) working under the direction of
+Alexej Jerschow, who set the goals, reviewed the results and holds the
+copyright above. Commits made by the agent are marked as such in the git
+history. Correctness rests on the test suite, which compares spinpy with
+reference data computed by Spinach, not on the method of authorship.
