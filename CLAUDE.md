@@ -7,6 +7,9 @@ GPU acceleration is deferred: `porting/gpu-notes.md` lists the entry points;
 keep the hot loops going through `spinpy.backend` and mark new device-relevant
 lines with `# GPU:`. `comparison/README.md` is the protocol for timed and
 profiled Spinach-vs-spinpy runs (MATLAB on the host, spinpy here, HTML report).
+`LICENSE` is MIT and carries the Spinach notice: material translated from
+Spinach keeps that attribution, and contributed scripts in `user_ml/` keep
+their author's name.
 
 ## User documentation is part of every change
 

@@ -1,7 +1,7 @@
 # spinpy
 
 A Python reimplementation of the [Spinach](https://spindynamics.org) spin
-dynamics kernel (MIT licence), verified stage by stage against the MATLAB
+dynamics kernel (MIT licence, see `LICENSE`), verified stage by stage against the MATLAB
 original. **Start with the [Hilbert-space guide](docs/hilbert-space.md)**; if you use
 Spinach, also read [Coming from Spinach](docs/coming-from-spinach.md). Each
 guide has a runnable Jupyter notebook in [`docs/notebooks/`](docs/notebooks/). See `HANDOFF.md` for goals and design decisions, and
@@ -130,3 +130,23 @@ kernel on the 22-proton strychnine system (12 316 states at `IK-2`,
 proximity level 3): basis 0.04 s, Hamiltonian 0.1 s, Redfield
 relaxation 2.4 s, pulse-acquire 2.1 s, COSY 32 x 64 3.3 s in this
 container.
+
+## Licence and attribution
+
+spinpy is released under the MIT licence (`LICENSE`). It is derived from
+[Spinach](https://spindynamics.org) by Ilya Kuprov and co-workers, also MIT
+licensed: the kernel, molecule data, isotope table, spherical grids and
+example scripts were translated from it, and Spinach's copyright and
+permission notice is reproduced in `LICENSE`. Keep that notice with any
+copy or substantial portion of this software.
+
+Results obtained with spinpy should cite Spinach: H. J. Hogben,
+M. Krzystyniak, G. T. P. Charnock, P. J. Hore, I. Kuprov, *Spinach: a
+software library for simulation of spin dynamics in large spin systems*,
+J. Magn. Reson. 208, 179 (2011), together with the method papers that the
+Spinach documentation lists for the features used (restricted state
+spaces, relaxation theories, Fokker-Planck contexts).
+
+Scripts contributed by users in `user_ml/` remain the copyright of their
+authors and are redistributed, with their agreement, under the same MIT
+licence (see `user_ml/README.md`).
