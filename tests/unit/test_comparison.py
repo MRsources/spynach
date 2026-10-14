@@ -23,6 +23,16 @@ def test_parse_options_and_cases():
     assert (ROOT / "comparison/cases/noesy_strychnine/noesy_strychnine_spinach.m").exists()
 
 
+def test_provenance_helpers(monkeypatch):
+    blas = run_respinach.blas_info()
+    assert set(blas) == {"numpy", "scipy"} and all(isinstance(v, str) and v for v in blas.values())
+    for var in run_respinach.THREAD_VARIABLES:
+        monkeypatch.delenv(var, raising=False)
+    assert run_respinach.thread_env() == {}
+    monkeypatch.setenv("VECLIB_MAXIMUM_THREADS", "1")
+    assert run_respinach.thread_env() == {"VECLIB_MAXIMUM_THREADS": "1"}
+
+
 def test_timer_records_and_rejects_nesting():
     timer = run_respinach.Timer()
     with timer("a"):

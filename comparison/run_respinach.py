@@ -1,7 +1,8 @@
 """Runs the respinach side of the comparison cases in comparison/cases.
 
-    OPENBLAS_NUM_THREADS=4 PYTHONPATH=src python comparison/run_respinach.py [case ...] [--gpu] [--tag NAME]
-        [--option key=value ...] [--no-profile] [--top N] [--report]
+    scripts/mac-compare.sh [case ...] [--gpu] [--tag NAME] [--option key=value ...]      (on the macOS host)
+        [--no-profile] [--top N] [--report]
+    OPENBLAS_NUM_THREADS=4 PYTHONPATH=src python comparison/run_respinach.py ...         (in the container)
 
 Each case runs with timed stages under cProfile and writes
 comparison/runs/<case>[-gpu][-<tag>]/respinach/ with data.npz, timings.json, profile.json,
@@ -123,6 +124,26 @@ def _git(*args: str) -> str:
         return "unknown"
 
 
+THREAD_VARIABLES = ("OPENBLAS_NUM_THREADS", "VECLIB_MAXIMUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS")
+
+
+def blas_info() -> dict:
+    """BLAS library NumPy and SciPy were built against (scipy-openblas in the container, accelerate on a macOS host)."""
+    out = {}
+    for name in ("numpy", "scipy"):
+        try:
+            config = __import__(name).show_config(mode="dicts")
+            out[name] = config["Build Dependencies"]["blas"]["name"]
+        except Exception:
+            out[name] = "unknown"
+    return out
+
+
+def thread_env() -> dict:
+    """The BLAS thread-count variables set in the environment; empty means library defaults."""
+    return {var: os.environ[var] for var in THREAD_VARIABLES if var in os.environ}
+
+
 def make_meta(case: str, options: dict) -> dict:
     import scipy
 
@@ -138,7 +159,7 @@ def make_meta(case: str, options: dict) -> dict:
         "respinach_version": getattr(respinach, "__version__", "0.0.1"),
         "python_version": platform.python_version(), "numpy_version": np.__version__, "scipy_version": scipy.__version__,
         "platform": platform.platform(), "hostname": socket.gethostname(),
-        "cores": os.cpu_count(), "openblas_num_threads": os.environ.get("OPENBLAS_NUM_THREADS"),
+        "cores": os.cpu_count(), "blas": blas_info(), "thread_env": thread_env(),
         "gpu": bool(options.get("gpu", False)), "gpu_device": "",
         "options": options,
     }

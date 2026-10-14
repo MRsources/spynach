@@ -2,9 +2,11 @@
 
 A reusable protocol for timing, profiling and comparing a Spinach
 calculation with its respinach translation, ending in one HTML report per run.
-The Spinach side runs in MATLAB on the host; the respinach side runs in the
-container (or anywhere respinach is installed); the report is built from the
-files both sides leave behind. Nothing here is executed by the test suite
+The Spinach side runs in MATLAB on the host. The respinach side runs on
+the same host for the timings that go into a report
+(`scripts/mac-compare.sh`), or in the container for development checks;
+the report is built from the files both sides leave behind and its
+provenance cards say where each side ran. Nothing here is executed by the test suite
 except the report and runner helpers (`tests/unit/test_comparison.py`).
 
 ## Layout
@@ -17,10 +19,10 @@ comparison/
   matlab/run_comparison.m        MATLAB runner (settings block at the top): profiler, dumps, figures
   matlab/lib/                    cmp_timer, cmp_profile, cmp_meta, cmp_json, cmp_option
   run_spinach.sh                 runs run_comparison.m in MATLAB batch mode
-  run_respinach.py                  respinach runner: cProfile, dumps, figures
+  run_respinach.py               respinach runner: cProfile, dumps, figures (scripts/mac-compare.sh runs it on the host)
   report.py                      builds runs/<run>/report.html from the two sides
   runs/<run>/spinach/            MATLAB outputs (git-ignored)
-  runs/<run>/respinach/             respinach outputs (git-ignored)
+  runs/<run>/respinach/          respinach outputs (git-ignored)
   runs/<run>/report.html         the report
 ```
 
@@ -43,7 +45,7 @@ holds:
 |---|---|
 | `timings.json` | `stages` (label, seconds, in order) and `total_s` (wall clock of the whole case) |
 | `profile.json` | `by_total` and `by_self`: the top functions with `calls`, `total_s` (with callees), `self_s` |
-| `meta.json` | provenance: Spinach commit and dirty flag, MATLAB version, pool size; respinach commit, Python/NumPy/SciPy versions, `OPENBLAS_NUM_THREADS`; host, cores, case options |
+| `meta.json` | provenance: Spinach commit and dirty flag, MATLAB version, BLAS and LAPACK libraries, computational threads, pool size; respinach commit, Python/NumPy/SciPy versions, the BLAS each was built against (`blas`), the thread-count variables set in the environment (`thread_env`, empty for library defaults); host, platform, cores, case options |
 | `data.mat` / `data.npz` | every array the case returned, same names on both sides (`-v7` MAT file, readable by SciPy) |
 | `figure_<name>.png` | the figures the case returned (respinach also writes `figure_<name>.html`, the interactive Plotly figure) |
 | `console.log` | everything printed during the run, including Spinach's report output |
@@ -64,19 +66,28 @@ holds:
    `runs/<run>/spinach/`. Figures are saved from invisible figure windows,
    so batch mode works.
 
-2. **respinach side, in the container.**
+2. **respinach side, on the host.**
+
+   ```
+   scripts/mac-compare.sh noesy_strychnine --report
+   ```
+
+   runs the case in `.venv-mac` (uv syncs it with the `compare` extra
+   first, see `README.md`), writes `runs/noesy_strychnine/respinach/`
+   and, with `--report`, builds the report. The same runner works in the
+   container for development checks,
 
    ```
    OPENBLAS_NUM_THREADS=4 PYTHONPATH=src python comparison/run_respinach.py noesy_strychnine --report
    ```
 
-   writes `runs/noesy_strychnine/respinach/` and, with `--report`, builds the
-   report. `--gpu` selects the GPU run (`runs/noesy_strychnine-gpu/`). `--tag quick --option npoints=64 --option zerofill=256` runs a
+   but a report meant to compare speed should have both sides from the
+   same machine. `--gpu` selects the GPU run (`runs/noesy_strychnine-gpu/`). `--tag quick --option npoints=64 --option zerofill=256` runs a
    reduced case into `runs/noesy_strychnine-quick/`; option values are
    parsed as JSON and passed to the case's `run()` as keyword arguments.
    Without case names every case runs. The PNG figures need Kaleido or
-   Matplotlib (`pip install -e ".[compare]"`); without either only the
-   HTML figures are written.
+   Matplotlib (`pip install -e ".[compare]"` in the container; the host
+   script installs it); without either only the HTML figures are written.
 
 3. **Report.** `python comparison/report.py noesy_strychnine` (a run name
    under `runs/`, or a path) writes `runs/noesy_strychnine/report.html`:
@@ -108,12 +119,19 @@ reference.
 
 ## Reading the numbers
 
-- **Timings** are wall clock per stage. Spinach uses its parallel pool
-  (`pool_workers` in `meta.json`) and respinach is serial, so compare like
-  with like: a 4-CPU container against an 8-worker pool measures
-  throughput per machine, not per core. Spinach's first run after
-  starting MATLAB includes pool start-up and JIT warm-up inside `create`;
-  run the cases twice and keep the second run when that matters.
+- **Timings** are wall clock per stage, both sides on the same machine.
+  Each side runs as shipped: Spinach uses its parallel pool
+  (`pool_workers` in `meta.json`) and MATLAB's multithreaded BLAS;
+  respinach is a single Python process whose dense kernels run on the
+  threads of the BLAS NumPy and SciPy were built against (`blas` and
+  `thread_env` in `meta.json`: Apple Accelerate with library defaults on
+  the Mac, OpenBLAS pinned to the CPU quota in the container). The ratio
+  is therefore throughput per machine for each implementation, not a
+  per-core comparison. Runs made in the container are development
+  checks: its CPU quota is a fraction of the host's and the provenance
+  cards show the mismatch. Spinach's first run after starting MATLAB
+  includes pool start-up and JIT warm-up inside `create`; run the cases
+  twice and keep the second run when that matters.
 - **Profiles**: the MATLAB `self_s` list is the kernel hot spots
   (`profile('info')` with built-ins included in the `by_total` list); the
   Python list comes from cProfile, where C extensions such as SciPy sparse

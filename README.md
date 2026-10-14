@@ -112,6 +112,9 @@ To test on a macOS host outside the container, install
 does not work on the host, so the script keeps a separate `.venv-mac` and
 syncs it with `pyproject.toml` before every run. Source edits need no
 reinstall. Point VS Code's interpreter at `.venv-mac/bin/python`.
+`scripts/mac-compare.sh` runs the respinach side of a comparison case in
+the same environment (with the `compare` extra), so that both sides of a
+report are timed on the same machine.
 
 Every user-facing change comes with user documentation in the same
 commit; see [`docs/README.md`](docs/README.md) for the conventions. After

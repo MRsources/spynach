@@ -6,7 +6,8 @@ for the Liouville-space kernel design (literature and Spinach source review).
 GPU acceleration is deferred: `porting/gpu-notes.md` lists the entry points;
 keep the hot loops going through `respinach.backend` and mark new device-relevant
 lines with `# GPU:`. `comparison/README.md` is the protocol for timed and
-profiled Spinach-vs-respinach runs (MATLAB on the host, respinach here, HTML report).
+profiled Spinach-vs-respinach runs (both sides timed on the host, respinach also
+runnable here for checks, HTML report).
 `LICENSE` is MIT and carries the Spinach notice: material translated from
 Spinach keeps that attribution, and contributed scripts in `user_ml/` keep
 their author's name.

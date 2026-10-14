@@ -142,12 +142,13 @@ def meta_table(sides: dict) -> str:
     keys = {
         "spinach": [("created_utc", "run date (UTC)"), ("spinach_describe", "Spinach version"), ("spinach_commit", "commit"),
                     ("spinach_dirty", "local modifications"), ("matlab_version", "MATLAB"), ("hostname", "host"),
-                    ("platform", "platform"), ("cores", "cores"), ("pool_workers", "parallel pool workers"),
+                    ("platform", "platform"), ("cores", "cores"), ("blas", "BLAS"), ("comp_threads", "computational threads"),
+                    ("pool_workers", "parallel pool workers"),
                     ("gpu", "GPU requested"), ("gpu_device", "GPU device"), ("options", "case options")],
         "respinach": [("created_utc", "run date (UTC)"), ("respinach_describe", "respinach version"), ("respinach_commit", "commit"),
                    ("respinach_dirty", "local modifications"), ("python_version", "Python"), ("numpy_version", "NumPy"),
                    ("scipy_version", "SciPy"), ("hostname", "host"), ("platform", "platform"), ("cores", "cores"),
-                   ("openblas_num_threads", "OPENBLAS_NUM_THREADS"), ("gpu", "GPU requested"), ("gpu_device", "GPU device"),
+                   ("blas", "BLAS"), ("thread_env", "thread settings"), ("gpu", "GPU requested"), ("gpu_device", "GPU device"),
                    ("options", "case options"), ("error", "not run")],
     }
     parts = []
@@ -161,6 +162,8 @@ def meta_table(sides: dict) -> str:
         else:
             for key, label in keys[side]:
                 value = info["meta"].get(key)
+                if key == "thread_env" and value == {}:
+                    value = "library defaults"
                 value = json.dumps(value) if isinstance(value, (dict, list)) else value
                 rows += f"<tr><th>{esc(label)}</th><td class=\"mono\">{esc('' if value is None else value)}</td></tr>"
         parts.append(f'<div class="card"><h3>{side}</h3><table>{rows}</table></div>')

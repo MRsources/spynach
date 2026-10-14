@@ -1,6 +1,7 @@
 % Provenance record of a Spinach comparison run: meta=cmp_meta(case_name,options).
 % Records the Spinach commit and dirty state, the MATLAB version, the
-% machine, the parallel pool size, the GPU switch and device, and the
+% machine, the BLAS and LAPACK libraries and the computational thread
+% count, the parallel pool size, the GPU switch and device, and the
 % case options.
 function meta=cmp_meta(case_name,options)
 spinach_root=fileparts(fileparts(which('create')));
@@ -23,6 +24,9 @@ meta.matlab_version=version();
 meta.platform=computer();
 [~,host]=system('hostname'); meta.hostname=strtrim(host);
 try, meta.cores=feature('numcores'); catch, meta.cores=maxNumCompThreads(); end
+try, meta.blas=strtrim(version('-blas')); catch, meta.blas='unknown'; end
+try, meta.lapack=strtrim(version('-lapack')); catch, meta.lapack='unknown'; end
+meta.comp_threads=maxNumCompThreads();
 meta.pool_workers=workers;
 meta.gpu=cmp_option(options,'gpu',false);
 meta.gpu_device='';
