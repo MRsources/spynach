@@ -172,3 +172,90 @@ def test_relaxation_inputs_are_validated():
     with pytest.raises(NotImplementedError, match="sphten-liouv"):
         respinach.relaxation(hs)
     assert respinach.relaxation(respinach.basis(respinach.create(base, {}), LIOUV)).count_nonzero() == 0
+
+
+def quadrupolar_pair(theories, **extra):
+    """1H-14N pair with a 14N quadrupolar tensor and a 50 Hz scalar coupling; 14N relaxes fast."""
+    inter = {"zeeman": {"scalar": [0.0, 0.0]}, "coordinates": [[0, 0, 0], [0, 0, 1.0]],
+             "coupling": {"scalar": [[0, 50.0], [0, 0]], "eigs": [[None, None], [None, [1e6, 1e6, -2e6]]],
+                          "euler": [[None, None], [None, [0, 0, 0]]]},
+             "relaxation": theories, "rlx_keep": "secular", "equilibrium": "zero", "tau_c": [[1e-9]], **extra}
+    return respinach.basis(respinach.create({"isotopes": ["1H", "14N"], "magnet": 11.75}, inter), LIOUV)
+
+
+def test_srsk_adds_abragam_rates_to_the_coupled_spin():
+    base = quadrupolar_pair(["redfield"])
+    with_srsk = quadrupolar_pair(["redfield", "SRSK"], srsk_sources=[1])
+    R_base, R = respinach.relaxation(base), respinach.relaxation(with_srsk)
+    Lz, Lp = respinach.state(base, ["Lz"], [0]), respinach.state(base, ["L+"], [0])
+    Nz, Np = respinach.state(base, ["Lz"], [1]), respinach.state(base, ["L+"], [1])
+    T1k, T2k = 1 / rate(R_base, Nz, Nz), 1 / rate(R_base, Np, Np)
+    A, Sk, dw = 2 * np.pi * 50.0, 1.0, base.basefrqs[0] - base.basefrqs[1]
+    R1add = (2 / 3) * A**2 * Sk * (Sk + 1) * T2k / (1 + dw**2 * T2k**2)
+    R2add = (1 / 3) * A**2 * Sk * (Sk + 1) * (T1k + T2k / (1 + dw**2 * T2k**2))
+    assert np.isclose(rate(R, Lz, Lz), rate(R_base, Lz, Lz) + R1add, rtol=1e-9)
+    assert np.isclose(rate(R, Lp, Lp), rate(R_base, Lp, Lp) + R2add, rtol=1e-9)
+    assert np.isclose(rate(R, Nz, Nz), rate(R_base, Nz, Nz))          # the source spin itself is untouched
+    # too slow a source: the quadrupolar coupling a hundred times smaller
+    slow = quadrupolar_pair(["redfield", "SRSK"], srsk_sources=[1])
+    slow = respinach.create({"isotopes": ["1H", "14N"], "magnet": 11.75},
+                            {"zeeman": {"scalar": [0.0, 0.0]}, "coordinates": [[0, 0, 0], [0, 0, 1.0]],
+                             "coupling": {"scalar": [[0, 50.0], [0, 0]], "eigs": [[None, None], [None, [1e4, 1e4, -2e4]]],
+                                          "euler": [[None, None], [None, [0, 0, 0]]]},
+                             "relaxation": ["redfield", "SRSK"], "srsk_sources": [1], "rlx_keep": "secular",
+                             "equilibrium": "zero", "tau_c": [[1e-9]]})
+    with pytest.raises(ValueError, match="source spin relaxation is too slow"):
+        respinach.relaxation(respinach.basis(slow, LIOUV))
+
+
+def test_srfk_is_the_scalar_redfield_integral():
+    from respinach.relaxation import expmint
+
+    ss = respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1},
+                          {"zeeman": {"scalar": [0.0, 2.0]}, "relaxation": ["SRFK"], "rlx_keep": "labframe",
+                           "equilibrium": "zero", "srfk_tau_c": [[1.0, 1e-3]], "srfk_mdepth": [[None, 15.0], [None, None]]})
+    ss = respinach.basis(ss, LIOUV)
+    R = dense(respinach.relaxation(ss))
+    assert R.shape == (16, 16) and np.abs(R.imag).max() == 0 and R[0, 0] == 0
+    assert np.all(np.diag(R) <= 0) and np.diag(R).min() < -1
+    # the explicit formula of rlx_scalar.m
+    H0 = respinach.hamiltonian(respinach.assume(ss, "labframe"), "comm")
+    J = respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1}, {"coupling": {"scalar": [[0, 15.0], [0, 0]]}})
+    H1 = respinach.hamiltonian(respinach.assume(respinach.basis(J, LIOUV), "labframe", "couplings"), "comm")
+    H0, H1 = dense((H0 + H0.conj().T) / 2), dense((H1 + H1.conj().T) / 2)
+    from respinach.utilities import clean_up
+
+    tau, upper = 1e-3, 2 * 1e-3 * np.log(1 / ss.tols.rlx_integration)
+    H0c = dense(clean_up(ss.tols, H0, 1e-2 / upper))            # the coarse grid of rlx_scalar.m
+    expected = -H1 @ dense(expmint(ss, H0c, H1.conj().T, H0c + (1j / tau) * np.eye(16), upper))
+    assert_matches(R, expected.real, rtol=1e-9, atol=1e-12, name="SRFK")
+    # validity: a modulation slower than the relaxation it causes is refused
+    too_slow = respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1},
+                                {"zeeman": {"scalar": [0.0, 2.0]}, "relaxation": ["SRFK"], "rlx_keep": "labframe",
+                                 "equilibrium": "zero", "srfk_tau_c": [[1.0, 1.0]], "srfk_mdepth": [[None, 150.0], [None, None]]})
+    with pytest.raises(ValueError, match="srfk_tau_c validity"):
+        respinach.relaxation(respinach.basis(too_slow, LIOUV))
+
+
+def test_scalar_relaxation_inputs_are_validated():
+    sys_ = {"isotopes": ["1H", "14N"], "magnet": 11.75}
+    base = {"zeeman": {"scalar": [0.0, 0.0]}, "rlx_keep": "secular", "equilibrium": "zero"}
+    with pytest.raises(ValueError, match="srfk_tau_c"):
+        respinach.create(sys_, {**base, "relaxation": ["SRFK"], "srfk_mdepth": [[None, 1.0], [None, None]]})
+    with pytest.raises(ValueError, match="srfk_mdepth"):
+        respinach.create(sys_, {**base, "relaxation": ["SRFK"], "srfk_tau_c": [[1.0, 1e-3]]})
+    with pytest.raises(ValueError, match="2-element"):
+        respinach.create(sys_, {**base, "relaxation": ["SRFK"], "srfk_tau_c": [[1.0]], "srfk_mdepth": [[None, 1.0], [None, None]]})
+    with pytest.raises(ValueError, match="non-negative"):
+        respinach.create(sys_, {**base, "relaxation": ["SRFK"], "srfk_tau_c": [[1.0, -1e-3]], "srfk_mdepth": [[None, 1.0], [None, None]]})
+    with pytest.raises(ValueError, match="requires SRFK"):
+        respinach.create(sys_, {**base, "relaxation": ["damp"], "damp_rate": 1.0, "srfk_tau_c": [[1.0, 1e-3]]})
+    with pytest.raises(ValueError, match="srsk_sources"):
+        respinach.create(sys_, {**base, "relaxation": ["redfield", "SRSK"], "tau_c": [[1e-9]]})
+    with pytest.raises(ValueError, match="between 0 and 1"):
+        respinach.create(sys_, {**base, "relaxation": ["redfield", "SRSK"], "tau_c": [[1e-9]], "srsk_sources": [2]})
+    with pytest.raises(ValueError, match="requires SRSK"):
+        respinach.create(sys_, {**base, "relaxation": ["redfield"], "tau_c": [[1e-9]], "srsk_sources": [1]})
+    ss = respinach.create(sys_, {**base, "relaxation": ["redfield", "SRSK"], "tau_c": [[1e-9]], "srsk_sources": [1]})
+    with pytest.raises(NotImplementedError, match="sphten-liouv"):
+        respinach.relaxation(respinach.basis(ss, HILB))

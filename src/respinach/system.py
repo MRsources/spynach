@@ -13,9 +13,10 @@ tensors, or eigenvalues with Euler angles, atomic coordinates (point
 dipolar couplings and the proximity graph), and the chemical subsystem
 description (``inter['chem']``: parts, concentrations, first-order
 exchange rates), and the relaxation settings (``inter['relaxation']`` with
-the ``'damp'``, ``'t1_t2'`` and ``'redfield'`` theories, ``rlx_keep``,
-``equilibrium``, ``tau_c``, ``temperature``, ``damp_rate``,
-``r1_rates``/``r2_rates``, ``rlx_dfs``). Every other ``sys`` or ``inter``
+the ``'damp'``, ``'t1_t2'``, ``'redfield'``, ``'SRFK'`` and ``'SRSK'``
+theories, ``rlx_keep``, ``equilibrium``, ``tau_c``, ``temperature``,
+``damp_rate``, ``r1_rates``/``r2_rates``, ``rlx_dfs``, ``srfk_tau_c``,
+``srfk_mdepth``, ``srsk_sources``). Every other ``sys`` or ``inter``
 field raises ``NotImplementedError`` rather than being ignored.
 """
 
@@ -40,9 +41,10 @@ DISABLE_TOKENS = {"zte", "pt", "dss", "merge", "krylov", "trajlevel"}
 INTER_FIELDS = {
     "zeeman", "coupling", "chem", "coordinates",
     "relaxation", "rlx_keep", "equilibrium", "tau_c", "temperature", "damp_rate", "r1_rates", "r2_rates", "rlx_dfs",
+    "srfk_tau_c", "srfk_mdepth", "srsk_sources",
 }
-RELAXATION_THEORIES = {"damp", "t1_t2", "redfield"}
-UNPORTED_THEORIES = {"lindblad", "nottingham", "weizmann", "SRFK", "SRSK", "naka-zwan"}
+RELAXATION_THEORIES = {"damp", "t1_t2", "redfield", "SRFK", "SRSK"}
+UNPORTED_THEORIES = {"lindblad", "nottingham", "weizmann", "naka-zwan"}
 ZEEMAN_FIELDS = {"scalar", "matrix", "eigs", "euler"}
 COUPLING_FIELDS = {"scalar", "matrix", "eigs", "euler"}
 CHEM_FIELDS = {"parts", "concs", "rates"}
@@ -119,6 +121,14 @@ class Relaxation:
     of one to three rotational correlation times (s) per chemical
     subsystem; ``r1_rates``/``r2_rates`` one scalar or 3x3 tensor (Hz) per
     spin; ``damp_rate`` a scalar or 3x3 tensor (Hz).
+
+    Scalar relaxation of the first kind (``'SRFK'``): ``srfk_tau_c`` holds
+    ``(weight, tau)`` pairs of the exponential components of the coupling
+    modulation correlation function (s), ``srfk_mdepth`` the root mean
+    square modulation depths (Hz) of the scalar couplings in an
+    ``nspins x nspins`` layout, ``None`` where a pair is not modulated.
+    Scalar relaxation of the second kind (``'SRSK'``): ``srsk_sources``
+    lists the 0-based indices of the fast-relaxing source spins.
     """
 
     theories: tuple[str, ...] = ()
@@ -130,6 +140,9 @@ class Relaxation:
     damp_rate: np.ndarray | None = None
     r1_rates: tuple[np.ndarray, ...] = ()
     r2_rates: tuple[np.ndarray, ...] = ()
+    srfk_tau_c: tuple[tuple[float, float], ...] = ()
+    srfk_mdepth: tuple[tuple[float | None, ...], ...] = ()
+    srsk_sources: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True, eq=False)
@@ -235,7 +248,8 @@ def _relaxation_settings(nspins: int, chem: Chemistry, inter: dict[str, Any]) ->
     if temperature < 0:
         raise ValueError("inter['temperature'] must be non-negative.")
     if not theories:
-        for name in ("rlx_keep", "equilibrium", "tau_c", "damp_rate", "r1_rates", "r2_rates", "rlx_dfs"):
+        for name in ("rlx_keep", "equilibrium", "tau_c", "damp_rate", "r1_rates", "r2_rates", "rlx_dfs",
+                     "srfk_tau_c", "srfk_mdepth", "srsk_sources"):
             if name in inter:
                 raise ValueError(f"inter['{name}'] requires a relaxation theory in inter['relaxation'].")
         return Relaxation(temperature=temperature)
@@ -284,9 +298,48 @@ def _relaxation_settings(nspins: int, chem: Chemistry, inter: dict[str, Any]) ->
             raise ValueError("R1 and R2 rates must be specified in inter['r1_rates'] and inter['r2_rates'] with extended T1,T2 theory.")
         r1_rates = _rate_list(inter["r1_rates"], nspins, "r1_rates")
         r2_rates = _rate_list(inter["r2_rates"], nspins, "r2_rates")
+
+    srfk_tau_c: tuple[tuple[float, float], ...] = ()
+    srfk_mdepth: tuple[tuple[float | None, ...], ...] = ()
+    if "SRFK" in theories:
+        if "srfk_tau_c" not in inter:
+            raise ValueError("SRFK requires modulation correlation time to be specified in inter['srfk_tau_c'] variable.")
+        if "srfk_mdepth" not in inter:
+            raise ValueError("SRFK requires modulation depths to be specified in inter['srfk_mdepth'] variable.")
+        components = []
+        for component in inter["srfk_tau_c"]:
+            pair = np.asarray(component, dtype=float).reshape(-1)
+            if pair.size != 2 or not np.all(np.isreal(component)):
+                raise ValueError("inter['srfk_tau_c'] must be a list of 2-element [weight, tau] pairs.")
+            if pair[1] < 0:
+                raise ValueError("correlation times in inter['srfk_tau_c'] must be non-negative.")
+            components.append((float(pair[0]), float(pair[1])))
+        srfk_tau_c = tuple(components)
+        depths = _check_square(inter["srfk_mdepth"], nspins, "inter['srfk_mdepth']")
+        srfk_mdepth = tuple(
+            tuple(None if depths[n][k] is None else float(depths[n][k]) for k in range(nspins)) for n in range(nspins)
+        )
+    else:
+        for name in ("srfk_tau_c", "srfk_mdepth"):
+            if name in inter:
+                raise ValueError(f"inter['{name}'] requires SRFK relaxation theory.")
+
+    srsk_sources: tuple[int, ...] = ()
+    if "SRSK" in theories:
+        if "srsk_sources" not in inter:
+            raise ValueError("SRSK requires source spin list in inter['srsk_sources'] variable.")
+        sources = np.atleast_1d(np.asarray(inter["srsk_sources"]))
+        if sources.ndim != 1 or sources.size == 0 or not np.issubdtype(sources.dtype, np.integer):
+            raise ValueError("inter['srsk_sources'] must be a list of 0-based spin indices.")
+        if np.any(sources < 0) or np.any(sources >= nspins) or len(set(sources.tolist())) != sources.size:
+            raise ValueError(f"inter['srsk_sources'] must hold unique spin indices between 0 and {nspins - 1}.")
+        srsk_sources = tuple(int(k) for k in sources)
+    elif "srsk_sources" in inter:
+        raise ValueError("inter['srsk_sources'] requires SRSK relaxation theory.")
     return Relaxation(
         theories=theories, keep=inter["rlx_keep"], equilibrium=inter["equilibrium"], dfs=dfs,
         temperature=temperature, tau_c=tau_c, damp_rate=damp_rate, r1_rates=r1_rates, r2_rates=r2_rates,
+        srfk_tau_c=srfk_tau_c, srfk_mdepth=srfk_mdepth, srsk_sources=srsk_sources,
     )
 
 
@@ -568,6 +621,8 @@ def kill_spin(spin_system: SpinSystem, hit_list: Sequence[int]) -> SpinSystem:
             rlx,
             r1_rates=tuple(rlx.r1_rates[n] for n in keep) if rlx.r1_rates else (),
             r2_rates=tuple(rlx.r2_rates[n] for n in keep) if rlx.r2_rates else (),
+            srfk_mdepth=tuple(tuple(rlx.srfk_mdepth[n][k] for k in keep) for n in keep) if rlx.srfk_mdepth else (),
+            srsk_sources=tuple(keep.index(k) for k in rlx.srsk_sources if k in keep),
         ),
         basis=None,
         assumptions=None,

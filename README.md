@@ -27,7 +27,10 @@ the `crystal` and `powder` contexts are ported and verified against
 Spinach 2.13 fixtures as well (`tests/slice/test_aniso_parity.py`).
 Relaxation (Redfield theory, T1/T2 and damping models, thermalisation)
 is ported and verified against Spinach 2.13 fixtures
-(`tests/slice/test_relax_parity.py`) and the Solomon equations.
+(`tests/slice/test_relax_parity.py`) and the Solomon equations; scalar
+relaxation of the first and second kind (`SRFK`, `SRSK`) is ported and
+checked against Abragam's expressions and the explicit integral
+(`tests/slice/test_scalar_parity.py` once FR-008 is fulfilled).
 Magic angle spinning in Fokker-Planck form (`singlerot`) is ported and
 verified against Spinach 2.13 fixtures (`tests/slice/test_mas_parity.py`),
 rotor echoes and the fast-spinning limit.
@@ -63,7 +66,7 @@ spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))
 | `propagator.m`, `step.m`, `krylov.m` | `respinach.propagator`, `respinach.step`, `respinach.krylov` | dense Pade below `small_matrix`, scaled-squared Taylor above; Taylor action on vectors with 1-, 2-, 3-point Lie quadratures |
 | `evolution.m` | `respinach.evolution` | `zeeman-hilb`: `observable`; `sphten-liouv`: `observable`, `final`, `trajectory`, `multichannel`, `refocus`, destination state screening, Krylov path |
 | `reduce.m`, `zte.m`, `path_trace.m` | `respinach.reduce`, `respinach.zte`, `respinach.path_trace` | zero track elimination, path tracing with subspace merging; no symmetry |
-| `relaxation.m`, `equilibrium.m`, `thermalize.m` | `respinach.relaxation`, `respinach.equilibrium`, `respinach.thermalize` | Redfield (isotropic, axial, rhombic diffusion; diagonalisation-free integral), `t1_t2`, `damp`; `rlx_keep`, `rlx_dfs`; `zero`/`IME`/`dibari` thermalisation |
+| `relaxation.m`, `equilibrium.m`, `thermalize.m` | `respinach.relaxation`, `respinach.equilibrium`, `respinach.thermalize` | Redfield (isotropic, axial, rhombic diffusion; diagonalisation-free integral), `t1_t2`, `damp`, `SRFK` (`rlx_scalar.m`), `SRSK`; `rlx_keep`, `rlx_dfs`; `zero`/`IME`/`dibari` thermalisation |
 | `liquid.m`, `crystal.m`, `powder.m`, `singlerot.m`, `fourdif.m`, `acquire.m` | `respinach.liquid`, `respinach.crystal`, `respinach.powder`, `respinach.singlerot`, `respinach.contexts.fourdif`, `respinach.acquire` | both formalisms (MAS in Liouville space); relaxation and exchange kinetics; powder averages over Spinach's grids (shipped as `respinach/grids`); MAS in Fokker-Planck form with the Fourier spectral derivative; no decoupling |
 | `ft_axis.m`, `axis_1d.m`, `plot_1d.m`, `plot_2d.m`, `contspacing.m`, `apodisation.m` | `respinach.plotting`, `respinach.apodisation` | all axis units; interactive Plotly 1D and 2D contour figures; window functions except `bad-z*`; no `derivative` |
 | `etc/molecules/strychnine.m` | `respinach.molecules.strychnine` | the 22-proton system (shifts, couplings, coordinates); 13C/15N not ported |

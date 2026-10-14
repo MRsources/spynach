@@ -34,7 +34,7 @@ system relaxes to. The fields and their meanings are Spinach's:
 
 | key | meaning |
 |---|---|
-| `relaxation` | `["redfield"]`, `["t1_t2"]`, `["damp"]`, or combinations |
+| `relaxation` | `["redfield"]`, `["t1_t2"]`, `["damp"]`, `["SRFK"]`, `["SRSK"]`, or combinations |
 | `rlx_keep` | `"labframe"` (everything), `"secular"`, `"kite"`, `"diagonal"` |
 | `equilibrium` | `"zero"` (relax to nothing), `"IME"`, `"dibari"` |
 | `tau_c` | one list of 1, 2 or 3 rotational correlation times (s) per chemical subsystem, for Redfield theory |
@@ -42,6 +42,9 @@ system relaxes to. The fields and their meanings are Spinach's:
 | `rlx_dfs` | `"ignore"` (default) or `"keep"` the dynamic frequency shifts |
 | `r1_rates`, `r2_rates` | per spin, Hz, scalar or 3x3 tensor, for `t1_t2` |
 | `damp_rate` | Hz, scalar or 3x3 tensor, for `damp` |
+| `srfk_tau_c` | list of `[weight, tau]` components (s) of the coupling modulation correlation function, for `SRFK` |
+| `srfk_mdepth` | nspins x nspins nested list of root mean square modulation depths (Hz), `None` where a coupling is not modulated, for `SRFK` |
+| `srsk_sources` | list of 0-based indices of the fast-relaxing source spins, for `SRSK` |
 
 The settings are kept in `ss.rlx`. `relaxation(ss)` then returns the
 superoperator `R` in Hz; it enters the Liouvillian as `L = H + 1j * R +
@@ -156,6 +159,77 @@ assert R_t[row([1, 3]), row([1, 3])] == -12.5         # L+(H) L-(C): R2(H) + R2(
 assert R_t[0, 0] == 0                                  # the unit state never relaxes
 ```
 
+## Scalar relaxation of the first and second kind
+
+Two mechanisms act through scalar couplings rather than through the
+anisotropic interactions that Redfield theory integrates. Both are
+Liouville-space theories and combine with the others in
+`inter["relaxation"]`; Spinach evaluates them after Redfield theory and
+so does respinach.
+
+**First kind** (`"SRFK"`): a scalar coupling that jumps with a chemical
+process (the nitrogen inversion of aziridines modulates the H-N
+couplings on a millisecond scale) is a stochastic perturbation `H1(t)`
+with correlation function `sum_i w_i exp(-t/tau_i)`. The superoperator is
+the same Redfield integral as above with the lab-frame Hamiltonian as
+`H0` and the modulation-depth Hamiltonian as `H1` (Spinach's
+`rlx_scalar`): `R -= w * H1 int_0^T exp(i H0 t) H1 exp(-i (H0 - i/tau) t) dt`.
+`srfk_mdepth[n][k]` gives the root mean square depth in Hz of the
+coupling between spins `n` and `k` (0-based), `srfk_tau_c` the components
+`[weight, tau]`. The validity condition `T1, T2 >> tau` is checked as for
+Redfield theory:
+
+```python
+srfk = respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1},
+                        {"zeeman": {"scalar": [0.0, 2.0]}, "relaxation": ["SRFK"], "rlx_keep": "kite",
+                         "equilibrium": "zero", "srfk_tau_c": [[1.0, 1e-3]],
+                         "srfk_mdepth": [[None, 15.0], [None, None]]})
+srfk = respinach.basis(srfk, {"formalism": "sphten-liouv", "approximation": "none"})
+R_s = dense(respinach.relaxation(srfk)).real
+assert R_s[0, 0] == 0 and np.all(np.diag(R_s) <= 0)
+print(f"largest SRFK rate {-np.diag(R_s).min():.2f} Hz from a 15 Hz modulation with tau = 1 ms")
+```
+
+**Second kind** (`"SRSK"`): a spin that relaxes very fast on its own
+(a quadrupolar nucleus) broadens the spins scalar-coupled to it. For each
+source spin `k` in `srsk_sources`, `T1` and `T2` are read off the
+superoperator built so far, and every spin `n` of a different isotope
+coupled to it with `A = 2 pi J` receives Abragam's rates
+`R1 += (2/3) A^2 S(S+1) T2 / (1 + dw^2 T2^2)` and
+`R2 += (1/3) A^2 S(S+1) (T1 + T2 / (1 + dw^2 T2^2))`, `dw` the
+difference of the two Larmor frequencies, which then enter through the
+extended T1/T2 model. The theory requires the source to relax much
+faster than the coupling (`2 pi / T1, 2 pi / T2 > 10 |A|`), and
+`relaxation` refuses otherwise:
+
+```python
+def hn_pair(theories, **extra):
+    inter = {"zeeman": {"scalar": [0.0, 0.0]}, "coordinates": [[0, 0, 0], [0, 0, 1.0]],
+             "coupling": {"scalar": [[0, 50.0], [0, 0]], "eigs": [[None, None], [None, [1e6, 1e6, -2e6]]],
+                          "euler": [[None, None], [None, [0, 0, 0]]]},
+             "relaxation": theories, "rlx_keep": "secular", "equilibrium": "zero", "tau_c": [[1e-9]], **extra}
+    ss = respinach.create({"isotopes": ["1H", "14N"], "magnet": 11.75}, inter)
+    return respinach.basis(ss, {"formalism": "sphten-liouv", "approximation": "none"})
+
+R_base = dense(respinach.relaxation(hn_pair(["redfield"])))
+R_srsk = dense(respinach.relaxation(hn_pair(["redfield", "SRSK"], srsk_sources=[1])))
+hn = hn_pair(["redfield"])
+Lp_H, Lp_N, Lz_N = respinach.state(hn, ["L+"], [0]), respinach.state(hn, ["L+"], [1]), respinach.state(hn, ["Lz"], [1])
+```
+
+```python
+self_rate = lambda M, v: -np.vdot(v, M @ v).real / np.vdot(v, v).real
+T1, T2 = 1 / self_rate(R_base, Lz_N), 1 / self_rate(R_base, Lp_N)
+A, dw = 2 * np.pi * 50.0, hn.basefrqs[0] - hn.basefrqs[1]
+R2_add = (1 / 3) * A**2 * 2 * (T1 + T2 / (1 + dw**2 * T2**2))      # S(S+1) = 2 for 14N
+assert np.isclose(self_rate(R_srsk, Lp_H), self_rate(R_base, Lp_H) + R2_add, rtol=1e-9)
+print(f"14N T1 = {T1 * 1e6:.1f} us, T2 = {T2 * 1e6:.1f} us; proton R2 gains {R2_add:.3f} Hz")
+```
+
+Both appear in Spinach's `examples/relaxation_theory/maz_noesy_2.m`, the
+methylaziridine NOESY translated in `examples/relaxation_theory/maz_noesy_2.py`
+and run as the `maz_noesy_2` comparison case.
+
 ## Thermal equilibrium and thermalisation
 
 `equilibrium(ss)` returns the thermal state at `inter["temperature"]`
@@ -224,8 +298,7 @@ the pulse sequence together with `H` and `K`. A system without
 
 ## What is not ported yet
 
-- the Lindblad, Nottingham and Weizmann DNP theories, scalar relaxation
-  of the first and second kind (`SRFK`, `SRSK`), the Nakajima-Zwanzig
+- the Lindblad, Nottingham and Weizmann DNP theories, the Nakajima-Zwanzig
   evaluation of the Redfield kernel, and orientation functions for rates;
 - relaxation in Hilbert space other than `damp`;
 - bosonic mode dissipators.
@@ -235,7 +308,11 @@ the pulse sequence together with `H` and `K`. A system without
 `tests/unit/test_relaxation.py` checks Redfield rates against the Solomon
 equations, the T1/T2 and damping models against their definitions, the
 equilibrium state against the Boltzmann distribution, both thermalisation
-methods, and the transient NOE against the two-spin Solomon solution.
+methods, the transient NOE against the two-spin Solomon solution, SRSK
+against Abragam's expressions and SRFK against the explicit integral.
+`tests/slice/test_scalar_parity.py` compares the SRFK and SRSK
+superoperators, equilibrium states and NOE trajectories of three systems
+with Spinach 2.13 fixtures (FR-008).
 `tests/slice/test_relax_parity.py` compares `R` (isotropic and at an
 orientation), equilibrium states, both thermalised superoperators and
 NOE trajectories of five systems (heteronuclear and homonuclear NOE

@@ -11,7 +11,14 @@ Ported theories (``inter['relaxation']``):
 * ``'t1_t2'``: the extended T1/T2 model, a diagonal superoperator with
   per-spin longitudinal and transverse rates summed over the spins each
   basis state correlates;
-* ``'damp'``: non-selective damping of every state except the unit state.
+* ``'damp'``: non-selective damping of every state except the unit state;
+* ``'SRFK'``: scalar relaxation of the first kind, a Redfield integral over
+  the scalar couplings modulated by chemical exchange (``rlx_scalar.m``):
+  ``-w H1 int_0^T exp(iH0 t) H1 exp(-iH0 t) exp(-t/tau) dt`` per component
+  of the modulation correlation function;
+* ``'SRSK'``: scalar relaxation of the second kind, Abragam's R1 and R2
+  contributions to the spins scalar-coupled to a fast-relaxing source
+  spin, added through the extended T1/T2 model.
 
 Then the retention policy ``rlx_keep`` (``'diagonal'``, ``'kite'``,
 ``'secular'``, ``'labframe'``), the dynamic frequency shift policy, and the
@@ -24,6 +31,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Sequence
+from dataclasses import replace
 
 import numpy as np
 import scipy.sparse as sps
@@ -33,6 +41,7 @@ from respinach.conventions import euler2dcm
 from respinach.hamiltonian import hamiltonian, orientation
 from respinach.operators import lin2lm
 from respinach.propagation import propagator, step
+from respinach.states import state
 from respinach.system import SpinSystem
 from respinach.utilities import Matrix, clean_up
 
@@ -55,7 +64,7 @@ def relaxation(spin_system: SpinSystem, euler_angles: Sequence[float] | None = N
     if not rlx.theories:
         return R
     if formalism != "sphten-liouv" and set(rlx.theories) != {"damp"}:
-        raise NotImplementedError("Redfield and T1/T2 relaxation theories are only available in the sphten-liouv formalism.")
+        raise NotImplementedError("Redfield, T1/T2, SRFK and SRSK relaxation theories are only available in the sphten-liouv formalism.")
 
     if "t1_t2" in rlx.theories:
         R = R + _t1_t2(spin_system, euler_angles)
@@ -65,6 +74,10 @@ def relaxation(spin_system: SpinSystem, euler_angles: Sequence[float] | None = N
         for tau in rlx.tau_c:
             if max_rate > 0 and 1 / max_rate < tau.max():
                 raise ValueError("T1,2>>tau_c validity condition violation in Redfield theory")
+    if "SRFK" in rlx.theories:
+        R = R + _srfk(spin_system)
+    if "SRSK" in rlx.theories:
+        R = R + _srsk(spin_system, R)
 
     if rlx.dfs == "ignore":
         R = R.real if sps.issparse(R) else np.real(R)
@@ -276,6 +289,89 @@ def _corrfun(spin_system: SpinSystem, rank: int, k: int, m: int, p: int, q: int)
             weights = np.array([(1 / 5) * (k == p) * h[j, m] * h[j, q] for j in range(5)])
         out.append((weights, rates))
     return out
+
+
+def _srfk(spin_system: SpinSystem) -> Matrix:
+    """Scalar relaxation of the first kind (the SRFK block of ``relaxation.m`` and ``rlx_scalar.m``).
+
+    ``H0`` is the lab-frame Hamiltonian commutation superoperator; ``H1``
+    the one of the modulated scalar couplings alone, each
+    ``2*pi*mdepth`` (rad/s) times the unit tensor, with every other
+    interaction removed.
+    """
+    rlx, tols = spin_system.rlx, spin_system.tols
+    log.info("scalar relaxation of the first kind...")
+    H0 = hamiltonian(assume(spin_system, "labframe"), "comm")
+    nspins = spin_system.nspins
+    modulated = tuple(
+        tuple(None if rlx.srfk_mdepth[n][k] is None else 2 * np.pi * rlx.srfk_mdepth[n][k] * np.eye(3) for k in range(nspins))
+        for n in range(nspins)
+    )
+    local = replace(spin_system, coupling_matrix=modulated)
+    H1 = hamiltonian(assume(local, "labframe", "couplings"), "comm")
+    H0 = (H0 + H0.conj().T) / 2
+    H1 = (H1 + H1.conj().T) / 2
+    dim = H0.shape[0]
+    RS: Matrix = sps.csr_array((dim, dim), dtype=complex)
+    log.info("integrating the SRFK component...")
+    for weight, tau in rlx.srfk_tau_c:
+        if weight == 0 or tau == 0:
+            continue
+        upper_limit = 2 * tau * np.log(1 / tols.rlx_integration)
+        H0c = clean_up(tols, H0, 1e-2 / upper_limit)
+        C = H0c + (1j / tau) * sps.eye_array(dim, dtype=complex, format="csr")
+        RS = RS - weight * (H1 @ expmint(spin_system, H0c, H1.conj().T, C, upper_limit))
+    max_rate = np.abs(_diag(RS)).max() if dim else 0.0
+    for _, tau in rlx.srfk_tau_c:
+        if max_rate > 0 and 1 / max_rate < tau:
+            log.info("1/max(diag(R)) = %g, srfk_tau_c = %g", 1 / max_rate, tau)
+            raise ValueError("T1,2>>srfk_tau_c validity condition violation in Redfield theory")
+    log.info("SRFK terms have been incorporated.")
+    return RS
+
+
+def _srsk(spin_system: SpinSystem, R: Matrix) -> Matrix:
+    """Scalar relaxation of the second kind (the SRSK block of ``relaxation.m``).
+
+    The T1 and T2 of each source spin are read from ``R`` as built so far;
+    Abragam's expressions give R1 and R2 contributions to every spin of a
+    different isotope that is scalar-coupled to it, and those rates enter
+    through a recursive call with the extended T1/T2 model.
+    """
+    rlx = spin_system.rlx
+    log.info("scalar relaxation of the second kind...")
+    nspins = spin_system.nspins
+    R1 = np.zeros(nspins)
+    R2 = np.zeros(nspins)
+    for k in rlx.srsk_sources:
+        Lz_k = state(spin_system, ["Lz"], [k])
+        Lp_k = state(spin_system, ["L+"], [k])
+        Lz_k = Lz_k / np.linalg.norm(Lz_k)
+        Lp_k = Lp_k / np.linalg.norm(Lp_k)
+        T1k = -1 / np.vdot(Lz_k, R @ Lz_k).real
+        T2k = -1 / np.vdot(Lp_k, R @ Lp_k).real
+        Sk = (spin_system.mults[k] - 1) / 2
+        log.info("SRSK from spin %d (%s, T1=%g s, T2=%g s):", k, spin_system.isotopes[k], T1k, T2k)
+        for n in range(nspins):
+            if n in rlx.srsk_sources or spin_system.isotopes[n] == spin_system.isotopes[k]:
+                continue
+            A = sum(np.trace(C) / 3 for C in (spin_system.coupling_matrix[n][k], spin_system.coupling_matrix[k][n]) if C is not None)
+            if (2 * np.pi / T1k) < 10 * abs(A) or (2 * np.pi / T2k) < 10 * abs(A):
+                raise ValueError("SRSK theory is not applicable: source spin relaxation is too slow")
+            delta_omega = spin_system.basefrqs[n] - spin_system.basefrqs[k]
+            R1add = (2 / 3) * A**2 * Sk * (Sk + 1) * (T2k / (1 + delta_omega**2 * T2k**2))
+            R2add = (1 / 3) * A**2 * Sk * (Sk + 1) * (T1k + T2k / (1 + delta_omega**2 * T2k**2))
+            R1[n] += R1add
+            R2[n] += R2add
+            if R1add > spin_system.tols.liouv_zero or R2add > spin_system.tols.liouv_zero:
+                log.info("  > onto spin %d (%s): +%g Hz to R1, +%g Hz to R2", n, spin_system.isotopes[n], R1add, R2add)
+    local = replace(spin_system, rlx=replace(
+        rlx, theories=("t1_t2",), r1_rates=tuple(np.float64(r) for r in R1), r2_rates=tuple(np.float64(r) for r in R2),
+    ))
+    log.info("recursive call for SRSK relaxation terms...")
+    RS = relaxation(local)
+    log.info("SRSK relaxation theory terms have been incorporated.")
+    return RS
 
 
 def _t1_t2(spin_system: SpinSystem, euler_angles: Sequence[float] | None) -> sps.csr_array:

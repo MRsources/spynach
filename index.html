@@ -176,7 +176,7 @@ footer { border-top: 1px solid var(--line); padding-block: 1.6rem; font-size: 0.
   <div>
     <p>respinach derives from <a href="https://spindynamics.org">Spinach</a> 2.13, the spin dynamics package of Ilya Kuprov and co-workers, released under the MIT licence. The translation keeps the Spinach attribution and notice in <a href="https://github.com/ajerschow/respinach/blob/main/LICENSE">LICENSE</a>, and keeps Spinach's function names, parameter structures and tolerances so that an existing Spinach script maps onto respinach line by line.</p>
     <p>The deliberate differences are small: spin indices are 0-based, product and sum operators are told apart by the type of the first argument, spin system objects are immutable, and time series are 1-D arrays. The guide <a href="https://github.com/ajerschow/respinach/blob/main/docs/coming-from-spinach.md">Coming from Spinach</a> lists, feature by feature, what is the same, what differs and what is not yet ported.</p>
-    <p>The translation from MATLAB to Python was carried out largely by an AI coding agent working under the direction of Alexej Jerschow, who set the goals and reviewed the results; correctness rests on the test suite against Spinach reference data, not on the method of authorship (see the licence file).</p>
+    <p>The translation from MATLAB to Python was carried out largely by an AI coding agent working under the direction of Alexej Jerschow, who set the goals and reviewed the results; correctness rests on the test suite against Spinach reference data.</p>
   </div>
 </section>
 
@@ -190,7 +190,7 @@ footer { border-top: 1px solid var(--line); padding-block: 1.6rem; font-size: 0.
           <li>Liquid-state pulse-acquire in Hilbert space (<code>zeeman-hilb</code>)</li>
           <li>Liouville space (<code>sphten-liouv</code>): restricted basis, superoperators, states, propagation with zero track elimination and path tracing, chemical exchange</li>
           <li>Anisotropic interactions with the <code>crystal</code> and <code>powder</code> contexts and Spinach's grids</li>
-          <li>Redfield relaxation, T1/T2 and damping models, thermalisation</li>
+          <li>Redfield relaxation, scalar relaxation of the first and second kind, T1/T2 and damping models, thermalisation</li>
           <li>Magic angle spinning in Fokker-Planck form (<code>singlerot</code>)</li>
           <li>COSY, NOESY, HSQC with isotopomer dilution, apodisation, 2D plotting</li>
         </ul>

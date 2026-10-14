@@ -93,6 +93,17 @@ before going further.
 - **Check:** `RESPINACH_FIXTURES=/fixtures pytest tests/slice/test_relax_parity.py -rs`; nothing should skip.
 - **Result:** done (host, 2026-10-11); five cases written, earlier cases skipped.
 
+## FR-008: scalar relaxation of the first and second kind (`dump_scalar.m`)
+
+- **Status:** requested
+- **Requested:** 2026-10-14, branch `main`
+- **Spinach:** clean checkout, 2.13 (`03a88b7e`), as before
+- **Needs:** the same host setup as FR-005 (`sys.disable={'hygiene','asyredf'}`, serial Redfield path). Three cases, seconds each.
+- **Run:** `oracle/run_fixtures.sh` from the `main` checkout (`dump_scalar` is in `dump_scripts`; existing cases are skipped).
+- **Produces:** `scalar_srfk_pair` (SRFK alone, `examples/relaxation_theory/scalar_relaxation_1.m`), `scalar_srsk_hn` (Redfield + SRSK from a quadrupolar 14N onto a coupled proton), `scalar_srfk_srsk_3spin` (Redfield + SRFK + SRSK with CSA and a quadrupolar tensor at an orientation)
+- **Check:** `RESPINACH_FIXTURES=/fixtures pytest tests/slice/test_scalar_parity.py -rs`; nothing should skip.
+- **Result:** pending.
+
 ## FR-006: magic angle spinning, Fokker-Planck form (`dump_mas.m`)
 
 - **Status:** fulfilled 2026-10-11, `/fixtures/2.13/`, run log `run_20261011T221502Z.log`; MATLAB R2026b, Spinach `03a88b7e` (2.13), clean; `pytest tests/slice/test_mas_parity.py`: 16 passed

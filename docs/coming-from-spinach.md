@@ -241,7 +241,7 @@ propagation ones listed under [Calculation modalities](#calculation-modalities)
 changes Spinach's parallelisation and can be dropped), `sys.parallel`,
 `sys.scratch`, `inter.pbc` (periodic images of the
 dipolar couplings), `inter.giant`, `inter.suscept`,
-`inter.order_matrix`, the Lindblad/DNP/SRFK/SRSK relaxation fields,
+`inter.order_matrix`, the Lindblad/DNP relaxation fields,
 `inter.chem.flux_rate`/`flux_type` (magnetisation flux), `inter.chem.rp_*`
 (radical pair kinetics), and bosonic modes
 (cavities, phonons, transmons). The `kinetics` superoperator itself is
@@ -430,7 +430,7 @@ ignored by the simulation, as in Spinach.
 | `pulse`, `shaped_pulse_*` | not ported; use `propagator` or `step` |
 | `apodisation`, `plot_2d`, `dilute`/`kill_spin`, `decouple`, `homospoil` | the same; `apodisation(fid, [("exp", 6)])` takes tuples instead of nested cells, `plot_2d` draws a Plotly contour figure with the same `ncont, delta, k, ncol, m, signs` arguments, binning spectra longer than `max_points=512` per axis (largest magnitude per bin) so that the HTML stays small |
 | `propagator`: Pade `expm` below `small_matrix`, scaled and squared Taylor series above | the same |
-| relaxation (`relaxation`, `equilibrium`, `thermalize`) | Redfield, `t1_t2`, `damp` with the same `inter` fields and policies; see the [relaxation guide](relaxation.md); Lindblad, DNP theories, SRFK/SRSK not ported |
+| relaxation (`relaxation`, `equilibrium`, `thermalize`) | Redfield, `t1_t2`, `damp`, `SRFK`, `SRSK` with the same `inter` fields and policies (`srsk_sources` and the `srfk_mdepth` indices are 0-based); see the [relaxation guide](relaxation.md); Lindblad, DNP theories, Nakajima-Zwanzig not ported |
 | chemical kinetics (`kinetics`) | first-order exchange; `liquid` passes it as `K` and `acquire` propagates under `H + 1i*K` |
 | parallel `evolution` (Kuprov-Edwards split), `parfor` | serial; the same numbers |
 | GPU via `sys.enable={'gpu'}` | CPU only; `'gpu'` is refused with a pointer to `porting/gpu-notes.md`, where the backend plan lives |

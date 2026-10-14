@@ -173,6 +173,22 @@ anisotropic damping (`diagonal`). Variables:
 | `/rlx/R_zero`, `/rlx/R_ime`, `/rlx/R_dibari` | the superoperator with `equilibrium='zero'` and its two thermalisations |
 | `/states/rho_inverted`, `/noe/multichannel` | spin 1 inverted, and `evolution(...,1i*R,coil,rho,dt,nsteps,'multichannel')` with `Lz` of every spin as coils |
 
+### `dump_scalar.m`: scalar relaxation
+
+Three cases `scalar_<name>` (FR-008): SRFK alone on two protons with a
+15 Hz modulated coupling (`kite`), Redfield plus SRSK from a fast-relaxing
+quadrupolar 14N onto a scalar-coupled proton (`secular`), and all three
+theories on a three-spin system with CSA and a quadrupolar tensor at an
+orientation (`kite`). Variables:
+
+| path | content |
+|------|---------|
+| `/bas/basis` | basis descriptor |
+| `/rlx/R` | `relaxation(spin_system)` with every theory |
+| `/rlx/R_base` | the same without `SRFK`/`SRSK` (absent for the SRFK-only case) |
+| `/ham/HL`, `/states/rho_eq` | lab-frame left-side Hamiltonian and `equilibrium(spin_system,HL)` |
+| `/states/rho_inverted`, `/noe/multichannel` | spin 1 inverted, and the `multichannel` evolution under `1i*R` with `Lz` of every spin as coils |
+
 ### `dump_mas.m`: magic angle spinning (`singlerot`)
 
 Four cases `mas_<name>` (FR-006): the CSA, dipolar and 2H quadrupolar MAS
