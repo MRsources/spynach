@@ -138,21 +138,25 @@ end
 % The amplitudes that trajan.m plots, as an array with one row per class
 function result=trajan_data(spin_system,traj,property)
 unit=unit_state(spin_system); traj=traj-(unit*unit')*traj;
+basis=full(spin_system.bas.basis);
 switch property
     case 'correlation_order'
-        orders=sum(logical(spin_system.bas.basis),2);
+        orders=sum(logical(basis),2);
         classes=setdiff(unique(orders),0);
-        masks=arrayfun(@(o) orders==o,classes,'UniformOutput',false);
     case 'coherence_order'
-        [~,M]=lin2lm(spin_system.bas.basis); orders=sum(M,2);
+        [~,M]=lin2lm(basis); orders=sum(M,2);
         classes=unique(orders);
-        masks=arrayfun(@(o) orders==o,classes,'UniformOutput',false);
     case 'total_each_spin'
-        masks=arrayfun(@(n) spin_system.bas.basis(:,n)~=0,1:spin_system.comp.nspins,'UniformOutput',false);
+        orders=[]; classes=1:spin_system.comp.nspins;
 end
-result=zeros(numel(masks),size(traj,2));
-for n=1:numel(masks)
-    subspace_trajectory=traj(masks{n},:);
+result=zeros(numel(classes),size(traj,2));
+for n=1:numel(classes)
+    if strcmp(property,'total_each_spin')
+        mask=(basis(:,classes(n))~=0);
+    else
+        mask=(orders==classes(n));
+    end
+    subspace_trajectory=traj(mask,:);
     result(n,:)=sqrt(sum(subspace_trajectory.*conj(subspace_trajectory),1));
 end
 end
