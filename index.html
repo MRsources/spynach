@@ -294,6 +294,16 @@ spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))</code></pre>
         </dl>
         <a href="comparison/runs/li_exchange_equilibrium/report.html">Open the report</a>
       </div>
+      <div class="card">
+        <h3>maz_noesy_2</h3>
+        <p>Methylaziridine, 7 protons + 14N with DFT shielding tensors and the 14N quadrupole: Redfield theory with scalar relaxation of the first and second kind, IK-2 basis (19 314 states), 2 s NOESY.</p>
+        <dl>
+          <dt>FID agreement</dt><dd>1.2e-10 relative</dd>
+          <dt>liquid/noesy stage</dt><dd>841 s Spinach on the Mac; 2020 s respinach in the 4-core container</dd>
+          <dt>where the time goes</dt><dd>the SRFK integral: 26 squarings of a 38 628-dimensional sparse matrix</dd>
+        </dl>
+        <a href="comparison/runs/maz_noesy_2/report.html">Open the report</a>
+      </div>
     </div>
     <p>Both runs: Apple silicon Mac, 12 cores; MATLAB R2026b with an 11-worker pool; Python 3.12 with NumPy and SciPy on Accelerate. The protocol, including how to add a case, is in <a href="https://github.com/ajerschow/respinach/blob/main/comparison/README.md">comparison/README.md</a>.</p>
   </div>
