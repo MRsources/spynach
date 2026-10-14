@@ -125,3 +125,51 @@ def test_liquid_builds_the_kinetics_superoperator():
 
     respinach.liquid(ls, grab, {"spins": ["1H"]}, "nmr")
     assert_matches(seen["K"], respinach.kinetics(ls), rtol=0, atol=0)
+
+
+def test_equilibrate_solves_the_kinetic_equilibrium():
+    K = np.array([[-50.0, 950.0], [50.0, -950.0]])
+    c = respinach.equilibrate(K, np.array([0.3, 0.7]))
+    assert np.allclose(c, [0.95, 0.05]) and np.isclose(c.sum(), 1.0)
+    assert np.allclose(K @ c, 0)
+    # independent reaction groups keep their own totals; a zero vector stays zero
+    K2 = np.block([[K, np.zeros((2, 2))], [np.zeros((2, 2)), np.array([[-1.0, 1.0], [1.0, -1.0]])]])
+    c2 = respinach.equilibrate(K2, np.array([1.0, 1.0, 4.0, 0.0]))
+    assert np.allclose(c2, [1.9, 0.1, 2.0, 2.0])
+    assert np.array_equal(respinach.equilibrate(K, np.zeros(2)), np.zeros(2))
+    assert np.array_equal(respinach.equilibrate(np.zeros((2, 2)), np.array([1.0, 3.0])), [1.0, 3.0])   # no reactions
+    with pytest.raises(ValueError, match="conservation of matter"):
+        respinach.equilibrate(np.array([[-1.0, 0.0], [0.0, -1.0]]), np.array([1.0, 1.0]))
+    with pytest.raises(ValueError, match="dimension mismatch"):
+        respinach.equilibrate(K, np.array([1.0, 1.0, 1.0]))
+
+
+def test_trajan_and_stateinfo():
+    ss = respinach.basis(system(["1H", "13C"], zeeman={"scalar": [0.0, 0.0]}, coupling={"scalar": [[0, 140.0], [0, 0]]}), LIOUV)
+    Lz_H, Lp_C = respinach.state(ss, ["Lz"], [0]), respinach.state(ss, ["L+"], [1])
+    LzLz = respinach.state(ss, ["Lz", "Lz"], [0, 1])
+    unit = np.zeros(16, dtype=complex)
+    unit[0] = 1
+    traj = np.stack([Lz_H + 3 * unit, Lp_C + LzLz], axis=1)
+    corr, labels = respinach.trajan(ss, traj, "correlation_order")
+    assert labels == ["1-spin", "2-spin"]
+    assert np.allclose(corr[:, 0], [np.linalg.norm(Lz_H), 0])                      # the unit state is projected out
+    assert np.allclose(corr[:, 1], [np.linalg.norm(Lp_C), np.linalg.norm(LzLz)])
+    coh, labels = respinach.trajan(ss, traj, "coherence_order")
+    assert labels == ["-2", "-1", "0", "+1", "+2"]
+    assert np.allclose(coh[:, 1], [0, 0, np.linalg.norm(LzLz), np.linalg.norm(Lp_C), 0])
+    total, labels = respinach.trajan(ss, traj, "total_each_spin")
+    assert labels == ["1H (0)", "13C (1)"]
+    assert np.allclose(total[:, 1], [np.linalg.norm(LzLz), np.linalg.norm(np.concatenate([Lp_C, LzLz]))])
+    local, _ = respinach.trajan(ss, traj, "local_each_spin")
+    assert np.allclose(local[:, 1], [0, np.linalg.norm(Lp_C)])
+    with pytest.raises(ValueError, match="unknown property"):
+        respinach.trajan(ss, traj, "populations")
+    with pytest.raises(NotImplementedError):
+        respinach.trajan(ss, traj, "level_populations")
+    info = respinach.stateinfo(ss, traj[:, 1], 2)
+    assert [index for _, _, index in info] == sorted(np.argsort(-np.abs(traj[:, 1]))[:2].tolist(), key=lambda i: -abs(traj[i, 1]))
+    assert info[0][1] == traj[info[0][2], 1]
+    assert all(lm == (0, 0) or lm[0] > 0 for state, _, _ in info for lm in state)
+    with pytest.raises(ValueError, match="exceeds"):
+        respinach.stateinfo(ss, traj[:, 1], 17)

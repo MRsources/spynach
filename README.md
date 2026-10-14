@@ -61,7 +61,8 @@ spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))
 | `assume.m` | `respinach.assume` | `nmr`, `esr`, `deer`, `deer-zz`, `labframe`, with `zeeman`/`couplings` retention |
 | `hamiltonian.m`, `orientation.m`, `frqoffset.m` | `respinach.hamiltonian`, `respinach.orientation`, `respinach.frqoffset` | isotropic part and the rank-1/rank-2 irreducible components `Q` (CSA, anisotropic couplings, quadrupolar); in `sphten-liouv` as `left`/`right`/`comm`/`acomm` superoperators |
 | `euler2dcm.m`, `mat2sphten.m`, `wigner.m`, `eeqq2nqi.m` | `respinach.conventions` | the same conventions |
-| `kinetics.m` | `respinach.kinetics` | first-order exchange between chemical subsystems |
+| `kinetics.m`, `equilibrate.m` | `respinach.kinetics`, `respinach.equilibrate` | first-order exchange between chemical subsystems; equilibrium concentrations |
+| `trajan.m`, `stateinfo.m` | `respinach.trajan`, `respinach.stateinfo`, `respinach.plotting.plot_trajan` | correlation-order, coherence-order and per-spin amplitudes along a trajectory; the largest coefficients of a state (no `level_populations`) |
 | `correlation.m`, `coherence.m` | `respinach.correlation`, `respinach.coherence` | `sphten-liouv` |
 | `propagator.m`, `step.m`, `krylov.m` | `respinach.propagator`, `respinach.step`, `respinach.krylov` | dense Pade below `small_matrix`, scaled-squared Taylor above; Taylor action on vectors with 1-, 2-, 3-point Lie quadratures |
 | `evolution.m` | `respinach.evolution` | `zeeman-hilb`: `observable`; `sphten-liouv`: `observable`, `final`, `trajectory`, `multichannel`, `refocus`, destination state screening, Krylov path |

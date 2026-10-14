@@ -370,7 +370,10 @@ assert np.allclose(H - H_zeeman, 2 * np.pi * 145.0 * LzSz.toarray())  # weak 1H-
   `'left'`, `'right'`, `'comm'` (default) or `'acomm'` returns the
   superoperator built from the same term table; `frqoffset` adds
   `2*pi*offset*[Lz, .]`; `kinetics(ss)` is the exchange superoperator of
-  `kinetics.m` with the `L = H + 1i*R + 1i*K` convention; `correlation`
+  `kinetics.m` with the `L = H + 1i*R + 1i*K` convention, `equilibrate`
+  solves the kinetic equilibrium as `equilibrate.m`; `trajan` returns the
+  amplitudes that `trajan.m` plots (`plot_trajan` draws them) and
+  `stateinfo` lists a state's largest coefficients; `correlation`
   and `coherence` zero the same states.
 - **Different:** Spinach's `[H,Q]=hamiltonian(...)` becomes
   `H, Q = hamiltonian(ss, aniso=True)`; `Q[0]`/`Q[1]` are the rank-1 and

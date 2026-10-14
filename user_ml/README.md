@@ -8,6 +8,7 @@ the timed, profiled Spinach-vs-respinach protocol and its report).
 | script | author | translation | comparison case | inputs |
 |---|---|---|---|---|
 | `ZULF_PF6_1D.m` | Florin Teleanu, 2024 | `examples/user_ml/zulf_pf6_1d.py` | `zulf_pf6_1d` | `rho_adiabatic_drop.csv` (state after the adiabatic drop, MATLAB `csvwrite` format) |
+| `Li_exchange_equilibrium.m` | Florin Teleanu, 2026 | `examples/user_ml/li_exchange_equilibrium.py` | `li_exchange_equilibrium` | none |
 
 Notes on `ZULF_PF6_1D.m`: it targets a pre-2.9 Spinach. On 2.13 the
 comparison case applies two fixes, mirrored in the translation:
@@ -16,6 +17,12 @@ comparison case applies two fixes, mirrored in the translation:
 The `csvread` path is replaced by the file in this directory. The
 commented-out saturation-transfer scan at the end of the script
 (`shaped_pulse_af`, `zerofield`) is not translated.
+
+Notes on `Li_exchange_equilibrium.m`: it runs on 2.13 as written. The
+comparison case keeps the script's time axis (`linspace(0,1,...)` over a
+2 s trajectory), saves the four subplots as four figures, returns the
+amplitudes that `trajan` plots as arrays, and makes the step counts of
+the two evolutions options (`nsteps_ex`, `nsteps_eq`) for quick checks.
 
 ## Licence
 

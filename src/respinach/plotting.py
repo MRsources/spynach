@@ -481,3 +481,76 @@ def _figure(theme: str, title: str | None, height: int, traces: list[tuple[str, 
         fig.add_scatter(y=y, name=name, mode="lines", line={"color": SERIES[theme][n], "width": 2},
                         hovertemplate=f"{name}: %{{y:.4g}}<extra></extra>" if name else "%{y:.4g}<extra></extra>")
     return fig
+
+
+def plot_time_series(
+    time_axis: np.ndarray,
+    series: np.ndarray | Sequence[np.ndarray],
+    *,
+    names: Sequence[str] | None = None,
+    xlabel: str = "time / s",
+    ylabel: str = "amplitude",
+    title: str | None = None,
+    theme: str = "light",
+    height: int = 360,
+):
+    """Interactive line plot of one or more real series against a common axis (MATLAB's ``plot(t, y)``).
+
+    ``series`` is a 1-D array, a 2-D array with one series per row, or a
+    list of 1-D arrays, each as long as ``time_axis``. More than eight
+    series get an evenly spaced hue cycle, as Spinach's ``trajan`` draws.
+    """
+    import colorsys
+
+    rows = [np.asarray(series)] if isinstance(series, np.ndarray) and series.ndim == 1 else [np.asarray(r).real for r in series]
+    rows = [r.real for r in rows]
+    time_axis = np.asarray(time_axis, dtype=float)
+    if any(r.ndim != 1 or r.size != time_axis.size for r in rows):
+        raise ValueError("every series must be a 1-D array as long as time_axis.")
+    if names is None:
+        names = [f"series {n + 1}" for n in range(len(rows))] if len(rows) > 1 else [""]
+    if len(names) != len(rows):
+        raise ValueError(f"{len(names)} names given for {len(rows)} series.")
+    fig = _figure(theme, title, height, [])
+    if theme not in CHROME:
+        raise ValueError(f"theme must be 'light' or 'dark', not {theme!r}.")
+    palette = SERIES[theme] if len(rows) <= len(SERIES[theme]) else [
+        "#%02x%02x%02x" % tuple(int(255 * v) for v in colorsys.hsv_to_rgb((n + 1) / len(rows), 0.75, 0.75)) for n in range(len(rows))
+    ]
+    for n, (name, y) in enumerate(zip(names, rows)):
+        fig.add_scatter(x=time_axis, y=y, name=name, mode="lines", line={"color": palette[n], "width": 2},
+                        hovertemplate=f"{name}: %{{y:.4g}}<extra></extra>" if name else "%{y:.4g}<extra></extra>")
+    fig.update_layout(showlegend=len(rows) > 1)
+    fig.update_xaxes(title_text=xlabel, range=[float(time_axis.min()), float(time_axis.max())], hoverformat=".4g")
+    fig.update_yaxes(title_text=ylabel)
+    return fig
+
+
+def plot_trajan(
+    spin_system: SpinSystem,
+    traj: np.ndarray,
+    property: str,
+    time_axis: np.ndarray | None = None,
+    *,
+    title: str | None = None,
+    theme: str = "light",
+    height: int = 360,
+):
+    """Trajectory analysis plot, after Spinach's ``trajan``: the amplitudes from :func:`respinach.trajan` against time.
+
+    Without ``time_axis`` the x axis is the trajectory point number. The
+    y range is padded by five percent of the largest amplitude, as in Spinach.
+    """
+    from respinach.states import trajan
+
+    result, labels = trajan(spin_system, traj, property)
+    x = np.arange(result.shape[1]) if time_axis is None else np.asarray(time_axis, dtype=float)
+    ylabel = {"correlation_order": "correlation order amplitude", "coherence_order": "coherence order amplitude",
+              "total_each_spin": "density touching each spin", "local_each_spin": "density local to each spin"}[property]
+    heading = {"correlation_order": "correlation orders", "coherence_order": "coherence orders",
+               "total_each_spin": "spin populations", "local_each_spin": "spin populations"}[property]
+    fig = plot_time_series(x, result, names=labels, xlabel="time / s" if time_axis is not None else "trajectory point",
+                           ylabel=ylabel, title=title or heading, theme=theme, height=height)
+    top = float(result.max()) if result.size else 1.0
+    fig.update_yaxes(range=[-0.05 * top, 1.05 * top])
+    return fig

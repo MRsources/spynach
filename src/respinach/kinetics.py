@@ -45,3 +45,41 @@ def kinetics(spin_system: SpinSystem) -> sps.csr_array:
     return sps.csr_array(
         sps.coo_array((np.concatenate(vals), (np.concatenate(rows), np.concatenate(cols))), shape=(nstates, nstates))
     )
+
+
+def equilibrate(K: np.ndarray, c0: np.ndarray) -> np.ndarray:
+    """Equilibrium concentrations of the first-order kinetics ``dc/dt = K c`` (port of ``equilibrate.m``).
+
+    ``K`` must conserve matter (zero column sums). Each connected group of
+    reactions is solved separately: the total concentration of the group is
+    kept and ``K c = 0`` is imposed. The result keeps the shape of ``c0``.
+    """
+    from scipy.sparse.csgraph import connected_components
+
+    K = np.asarray(K, dtype=float)
+    if K.ndim != 2 or K.shape[0] != K.shape[1]:
+        raise ValueError("K must be a real square matrix.")
+    if not np.all(np.abs(K.sum(axis=0)) < 10 * np.finfo(float).eps):
+        raise ValueError("K violates conservation of matter: column sums must be zero.")
+    c0 = np.asarray(c0, dtype=float)
+    if c0.ndim != 1 or np.any(c0 < 0):
+        raise ValueError("c0 must be a vector of non-negative real numbers.")
+    if c0.size != K.shape[1]:
+        raise ValueError("dimension mismatch between K and c0")
+    if np.linalg.norm(c0) == 0:
+        return c0.copy()
+    n_groups, labels = connected_components((K != 0) | (K != 0).T, directed=False)
+    if n_groups > 1:
+        c = np.zeros_like(c0)
+        for group in range(n_groups):
+            members = np.flatnonzero(labels == group)
+            c[members] = equilibrate(K[np.ix_(members, members)], c0[members])
+        return c
+    rate_scale = np.abs(K).max()
+    if rate_scale > 0:
+        K = K / rate_scale
+    A = np.vstack([np.ones((1, K.shape[1])), K])
+    b = np.concatenate([[c0.sum()], np.zeros(K.shape[0])])
+    if np.linalg.cond(A) > 1 / np.sqrt(np.finfo(float).eps):
+        raise ValueError("kinetic matrix does not constrain the equilibrium.")
+    return np.linalg.lstsq(A, b, rcond=None)[0]

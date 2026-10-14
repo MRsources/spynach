@@ -44,6 +44,7 @@ with an HTML report, use the protocol in
 |---|---|---|
 | `examples/nmr_liquids/noesy_strychnine.py` | `examples/nmr_liquids/noesy_strychnine.m` (22 protons, `IK-2`, Redfield, 500 ms NOESY) | 2 min 50 s at 512 x 512 points (12 316 states, 4 cores); `--npoints 64 --zerofill 256` runs in 15 s |
 | `examples/relaxation_theory/maz_noesy_2.py` | `examples/relaxation_theory/maz_noesy_2.m` (methylaziridine, 7 protons + 14N, CSA tensors, 14N quadrupole, Redfield with scalar relaxation of the first and second kind, `IK-2`, 2 s NOESY) | 31 min in this container at 256 x 256 points (19 314 states), nearly all of it the SRFK integral, which exponentiates a 38 628-dimensional auxiliary matrix with 26 squarings as Spinach does; `--npoints` only shortens the NOESY stage |
+| `examples/user_ml/li_exchange_equilibrium.py` | `user_ml/Li_exchange_equilibrium.m` (contributed: two-site 7Li exchange with quadrupolar and shift tensors, thermal state equilibrated under exchange, IME-thermalised Redfield relaxation, 2 s trajectory analysed with `trajan` and `stateinfo`) | about a second at full size (31 states: the two sites are separate chemical subsystems) |
 | `examples/user_ml/zulf_pf6_1d.py` | `user_ml/ZULF_PF6_1D.m` (contributed: PF6- at 2.7 uT, adiabatic-drop state from file, selective pulse, 16 384-point ZULF spectrum) | 36 s at 16 384 points (16 384 states; state-space reduction brings the subspaces below `krylov_tol`, so the propagator path is used) |
 
 ## Conventions for contributors

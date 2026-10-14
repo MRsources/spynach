@@ -131,3 +131,22 @@ def test_plot_2d_levels_and_binning():
     assert fig.data[0].contours.end == 19 and fig.data[1].contours.end == 19
     fig_full = plot_2d(ss, z[450:550, 250:350], pars, 20, (0.05, 0.5, 0.05, 0.5), 2, 256, 6, "positive", max_points=None)
     assert len(fig_full.data) == 1 and fig_full.data[0].z.shape == (100, 100)
+
+
+def test_time_series_and_trajan_plots():
+    pytest.importorskip("plotly")
+    from respinach.plotting import plot_time_series, plot_trajan
+
+    t = np.linspace(0, 1, 5)
+    fig = plot_time_series(t, [np.ones(5), np.arange(5.0)], names=["a", "b"], xlabel="time (s)", ylabel="y")
+    assert len(fig.data) == 2 and fig.layout.xaxis.title.text == "time (s)"
+    many = plot_time_series(t, np.ones((12, 5)))
+    assert len(many.data) == 12 and len({tr.line.color for tr in many.data}) == 12     # beyond the fixed palette
+    with pytest.raises(ValueError, match="as long as"):
+        plot_time_series(t, np.ones(4))
+    ls = respinach.basis(respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1}, {}),
+                         {"formalism": "sphten-liouv", "approximation": "none"})
+    traj = np.stack([respinach.state(ls, ["Lz"], [0]), respinach.state(ls, ["L+"], [1])], axis=1)
+    fig = plot_trajan(ls, traj, "coherence_order", np.array([0.0, 0.5]))
+    assert len(fig.data) == 5 and fig.layout.title.text == "coherence orders"
+    assert plot_trajan(ls, traj, "total_each_spin").layout.xaxis.title.text == "trajectory point"

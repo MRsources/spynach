@@ -333,6 +333,17 @@ assert K[0, 0] == 0                                        # the unit state is u
 L = respinach.hamiltonian(exch_nmr) + 1j * K
 ```
 
+`equilibrate(rates, concs)` is Spinach's helper for the concentrations
+the kinetics relax to: it keeps the total of every connected group of
+reactions and solves `K c = 0`, so it is the natural sanity check (or
+source) of `inter["chem"]["concs"]`:
+
+```python
+rates = np.array([[-50.0, 950.0], [50.0, -950.0]])
+assert np.allclose(respinach.equilibrate(rates, np.array([1.0, 50 / 950])), [1.0, 50 / 950])
+assert np.allclose(respinach.equilibrate(rates, np.array([0.5, 0.5])), [0.95, 0.05])
+```
+
 ## Analytical filters
 
 In this basis the correlation order and the coherence order of every
@@ -421,6 +432,24 @@ L_hilb = respinach.frqoffset(hc_hilb_nmr, respinach.hamiltonian(hc_hilb_nmr), {"
 rho_hilb = respinach.state(hc_hilb_nmr, "L+", "1H")
 fid_hilb = respinach.evolution(hc_hilb_nmr, L_hilb, rho_hilb, rho_hilb, 1 / 500, 63, "observable")
 assert np.allclose(4 * fid, fid_hilb, rtol=1e-9)
+```
+
+Two tools of Spinach's look at states and trajectories in this basis.
+`trajan(ss, traj, property)` returns, for every class of basis states
+(`"correlation_order"`, `"coherence_order"`, `"total_each_spin"`,
+`"local_each_spin"`), the 2-norm of the trajectory restricted to that
+class at every point, with the unit state projected out, plus the legend
+text of the rows; `respinach.plotting.plot_trajan` draws it against a
+time axis. `stateinfo(ss, rho, n)` lists the `n` largest coefficients of
+a state with the `(l, m)` of every spin, as Spinach reports them:
+
+```python
+traj = respinach.evolution(hc_nmr, L, None, rho, 1 / 500, 63, "trajectory")
+amplitudes, labels = respinach.trajan(hc_nmr, traj, "coherence_order")
+assert labels == ["-2", "-1", "0", "+1", "+2"] and amplitudes.shape == (5, 64)
+assert np.allclose(amplitudes[3, 0], np.linalg.norm(rho[1:]))          # L+(H) starts as pure +1 coherence
+largest = respinach.stateinfo(hc_nmr, traj[:, -1], 2)
+assert all(abs(coefficient) > 0 for _, coefficient, _ in largest)
 ```
 
 ## Pulse-acquire and chemical exchange through `liquid`
