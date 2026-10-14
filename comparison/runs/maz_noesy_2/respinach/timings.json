@@ -2,24 +2,24 @@
   "stages": [
     {
       "label": "create",
-      "seconds": 0.004882494002231397
+      "seconds": 0.005312916997354478
     },
     {
       "label": "basis",
-      "seconds": 0.05718442499710363
+      "seconds": 0.043514917022548616
     },
     {
       "label": "liquid/noesy",
-      "seconds": 2019.9508765360006
+      "seconds": 1701.604523874994
     },
     {
       "label": "processing",
-      "seconds": 0.0132014450027782
+      "seconds": 0.010430791997350752
     },
     {
       "label": "plot",
-      "seconds": 0.16083964499921422
+      "seconds": 0.18110970896668732
     }
   ],
-  "total_s": 2020.2208784469985
+  "total_s": 1701.8968153329915
 }
