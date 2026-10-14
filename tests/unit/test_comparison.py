@@ -33,6 +33,21 @@ def test_provenance_helpers(monkeypatch):
     assert run_respinach.thread_env() == {"VECLIB_MAXIMUM_THREADS": "1"}
 
 
+def test_make_meta_ignores_run_outputs(tmp_path, monkeypatch):
+    scratch = ROOT / "comparison/runs/_meta_test/respinach"
+    scratch.mkdir(parents=True, exist_ok=True)
+    try:
+        (scratch / "console.log").write_text("ran\n")
+        meta = run_respinach.make_meta("demo", {"n": 1})
+    finally:
+        (scratch / "console.log").unlink()
+        scratch.rmdir()
+        scratch.parent.rmdir()
+    assert meta["side"] == "respinach" and meta["case"] == "demo" and meta["options"] == {"n": 1}
+    assert meta["respinach_describe"].endswith("-dirty") == meta["respinach_dirty"]
+    assert set(meta["blas"]) == {"numpy", "scipy"}
+
+
 def test_timer_records_and_rejects_nesting():
     timer = run_respinach.Timer()
     with timer("a"):

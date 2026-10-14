@@ -2,36 +2,36 @@
   "stages": [
     {
       "label": "create",
-      "seconds": 0.002068215000690543
+      "seconds": 0.001968374999705702
     },
     {
       "label": "basis",
-      "seconds": 0.01007853099872591
+      "seconds": 0.012045166979078203
     },
     {
       "label": "hamiltonian",
-      "seconds": 0.08037087499906193
+      "seconds": 0.055669541005045176
     },
     {
       "label": "operators",
-      "seconds": 0.055685839999569
+      "seconds": 0.041182167013175786
     },
     {
       "label": "pulse",
-      "seconds": 0.04917427800137375
+      "seconds": 0.06712212500860915
     },
     {
       "label": "acquisition",
-      "seconds": 35.31316446500023
+      "seconds": 46.87052091700025
     },
     {
       "label": "processing",
-      "seconds": 0.0004913769989798311
+      "seconds": 0.0004928340204060078
     },
     {
       "label": "plot",
-      "seconds": 0.1093424229984521
+      "seconds": 0.04544945800444111
     }
   ],
-  "total_s": 35.62785623399941
+  "total_s": 47.10768679098692
 }

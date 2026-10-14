@@ -149,13 +149,14 @@ def make_meta(case: str, options: dict) -> dict:
 
     import respinach
 
-    status = [line for line in _git("status", "--porcelain").splitlines() if line.strip()]
+    # The run's own outputs under comparison/runs are excluded, otherwise every run would report itself as dirty.
+    status = [line for line in _git("status", "--porcelain", "--", ".", ":(exclude)comparison/runs").splitlines() if line.strip()]
     dirty = any(not line.startswith("??") or line.strip().endswith(".py") for line in status)
     return {
         "side": "respinach", "case": case,
         "created_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "respinach_root": str(ROOT), "respinach_commit": _git("rev-parse", "HEAD"),
-        "respinach_describe": _git("describe", "--tags", "--always", "--dirty"), "respinach_dirty": dirty,
+        "respinach_describe": _git("describe", "--tags", "--always") + ("-dirty" if dirty else ""), "respinach_dirty": dirty,
         "respinach_version": getattr(respinach, "__version__", "0.0.1"),
         "python_version": platform.python_version(), "numpy_version": np.__version__, "scipy_version": scipy.__version__,
         "platform": platform.platform(), "hostname": socket.gethostname(),
