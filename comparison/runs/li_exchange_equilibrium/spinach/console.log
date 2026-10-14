@@ -1,0 +1,689 @@
+== li_exchange_equilibrium (Spinach /Users/alexej/Documents/PROG/respinach-spinach) -> /Users/alexej/Documents/PROG/respinach/comparison/runs/li_exchange_equilibrium/spinach
+Running startup checks...
+[...ison > li_exchange_equilibrium_spinach > create ]  scratch location: /Users/alexej/Documents/PROG/respinach-spinach/scratch
+[..._exchange_equilibrium_spinach > create > banner ]   
+[..._exchange_equilibrium_spinach > create > banner ]  ============================================
+[..._exchange_equilibrium_spinach > create > banner ]  =                                          =
+[..._exchange_equilibrium_spinach > create > banner ]  =               SPINACH v2.13              =
+[..._exchange_equilibrium_spinach > create > banner ]  =                                          =
+[..._exchange_equilibrium_spinach > create > banner ]  =                <a href = "https://spindynamics.org/wiki/index.php?title=Spinach_developer_team">author list</a>               =
+[..._exchange_equilibrium_spinach > create > banner ]  =                                          =
+[..._exchange_equilibrium_spinach > create > banner ]  =               <a href = "https://spindynamics.org/wiki/index.php?title=Main_Page">documentation</a>              =
+[..._exchange_equilibrium_spinach > create > banner ]  =                                          =
+[..._exchange_equilibrium_spinach > create > banner ]  =                   <a href = "https://link.springer.com/book/10.1007/978-3-031-05607-9">book</a>                   =
+[..._exchange_equilibrium_spinach > create > banner ]  =                                          =
+[..._exchange_equilibrium_spinach > create > banner ]  =                MIT License               =
+[..._exchange_equilibrium_spinach > create > banner ]  =                                          =
+[..._exchange_equilibrium_spinach > create > banner ]  ============================================
+[..._exchange_equilibrium_spinach > create > banner ]   
+[...hange_equilibrium_spinach > create > tolerances ]  Drop interaction tensors with 2-norms below (Hz)                 1.00000000e-10       (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Drop Liouvillian elements with norm below (rad/s)                1.00000000e-10       (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Drop relaxation superoperator elements with norm below (Hz)      1.00000000e-10       (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Drop propagator elements with norm below                         1.00000000e-10       (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Drop subspaces with populations below                            1.00000000e-10       (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Drop irreps with populations below                               1.00000000e-10       (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Steady state convergence tolerance                               1.00000000e-08       (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Number of time steps in ZTE sample                               32                   (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  ZTE track drop threshold                                         1.00000000e-24       (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  ZTE off for state vector densities above                         0.5                  (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Drop dipolar couplings over more than (Angstrom)                 100                  (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Krylov propagation for dimensions above                          10000                (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Basis set printing hush threshold                                256                  (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Collect small subspaces into bundles of dimension                1000                 (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Force sparse algebra for matrix density below                    0.15                 (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Force full algebra for matrix dimension below                    200                  (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Rel. acc. for the elements of Redfield superoperator             1.00000000e-04       (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Matrix exponential differentiation algorithm                     auxmat               (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Number of PBC images for DD couplings in PBC systems             2                    (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Number of days before a cache record is deleted                  365                  (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Planck constant (hbar)                                           1.05457182e-34      
+[...hange_equilibrium_spinach > create > tolerances ]  Boltzmann constant (k)                                           1.38064900e-23      
+[...hange_equilibrium_spinach > create > tolerances ]  Free electron g-factor                                           2.00231930e+00      
+[...hange_equilibrium_spinach > create > tolerances ]  Vacuum permeability                                              1.25663706e-06      
+[...hange_equilibrium_spinach > create > tolerances ]  Bohr magneton                                                    9.27401007e-24      
+[...ison > li_exchange_equilibrium_spinach > create ]  job identifier: bb6ebfd6e3fc19482e91b441e9e050a4
+[...ison > li_exchange_equilibrium_spinach > create ]  random number generator shuffled
+[...ison > li_exchange_equilibrium_spinach > create ]  a running Spinach parallel pool found:
+[...ison > li_exchange_equilibrium_spinach > create ]           > parallel profile: Processes
+[...ison > li_exchange_equilibrium_spinach > create ]           > job identifier:   76d89cbcff75b94c1c58419eeaee3e32
+[...ison > li_exchange_equilibrium_spinach > create ]           > worker processes: 11
+[...ison > li_exchange_equilibrium_spinach > create ]  WARNING - this pool will be re-used
+[...ison > li_exchange_equilibrium_spinach > create ]  parallel pool ValueStore cleared.
+[..._exchange_equilibrium_spinach > create > banner ]   
+[..._exchange_equilibrium_spinach > create > banner ]  ============================================
+[..._exchange_equilibrium_spinach > create > banner ]  =                                          =
+[..._exchange_equilibrium_spinach > create > banner ]  =               SPIN SYSTEM                =
+[..._exchange_equilibrium_spinach > create > banner ]  =                                          =
+[..._exchange_equilibrium_spinach > create > banner ]  ============================================
+[..._exchange_equilibrium_spinach > create > banner ]   
+[...ison > li_exchange_equilibrium_spinach > create ]  a total of 2 particles in the simulation, of which 0 have a zero spin.
+[...ison > li_exchange_equilibrium_spinach > create ]  magnetic induction of 1.93 Tesla (-82.175 MHz proton frequency, 54.088 GHz electron frequency).
+[...e_equilibrium_spinach > create > summary_zeeman ]  summary of Zeeman tensors and their anisotropies (ppm for nuclei, g-tensor for electrons)
+[...e_equilibrium_spinach > create > summary_zeeman ]  =======================================================================================================
+[...e_equilibrium_spinach > create > summary_zeeman ]  #    Spin  2S+1                      Matrix                      Tr/3         norm[rank1]  norm[rank2] 
+[...e_equilibrium_spinach > create > summary_zeeman ]  -------------------------------------------------------------------------------------------------------
+[...e_equilibrium_spinach > create > summary_zeeman ]  1    7Li   4      -2.350000e+01  +0.000000e+00  +0.000000e+00
+[...e_equilibrium_spinach > create > summary_zeeman ]                    +0.000000e+00  -2.350000e+01  +0.000000e+00    -1.0000e+00  +0.0000e+00  +4.5000e+01  
+[...e_equilibrium_spinach > create > summary_zeeman ]                    +0.000000e+00  +0.000000e+00  +4.400000e+01
+[...e_equilibrium_spinach > create > summary_zeeman ]   
+[...e_equilibrium_spinach > create > summary_zeeman ]  2    7Li   4      -6.850000e+01  +0.000000e+00  +0.000000e+00
+[...e_equilibrium_spinach > create > summary_zeeman ]                    +0.000000e+00  -6.850000e+01  +0.000000e+00    -1.0000e+00  +0.0000e+00  +1.3500e+02  
+[...e_equilibrium_spinach > create > summary_zeeman ]                    +0.000000e+00  +0.000000e+00  +1.340000e+02
+[...e_equilibrium_spinach > create > summary_zeeman ]  =======================================================================================================
+[...ison > li_exchange_equilibrium_spinach > create ]  WARNING - no giant spin terms supplied, zeros assumed.
+[...quilibrium_spinach > create > summary_chemistry ]  chemical subsystem 1 contains spins: 1
+[...quilibrium_spinach > create > summary_chemistry ]  chemical subsystem 2 contains spins: 2
+[...quilibrium_spinach > create > summary_chemistry ]  inter-subsystem reaction rates:
+[...quilibrium_spinach > create > summary_chemistry ]  ===============================
+[...quilibrium_spinach > create > summary_chemistry ]   N(from)   N(to)    Rate(Hz)   
+[...quilibrium_spinach > create > summary_chemistry ]  -------------------------------
+[...quilibrium_spinach > create > summary_chemistry ]   1         2        +5.000e+01
+[...quilibrium_spinach > create > summary_chemistry ]   2         1        +9.500e+02
+[...quilibrium_spinach > create > summary_chemistry ]  ===============================
+[...ison > li_exchange_equilibrium_spinach > create ]  initializing interaction arrays...
+[...ison > li_exchange_equilibrium_spinach > create ]  WARNING - no coordinates given, point dipolar interactions assumed to be zero.
+[...ison > li_exchange_equilibrium_spinach > create ]  processing coupling data...
+[...quilibrium_spinach > create > summary_couplings ]  summary of coupling tensors and their anisotropies (Hz)
+[...quilibrium_spinach > create > summary_couplings ]  ======================================================================================================
+[...quilibrium_spinach > create > summary_couplings ]  Spin A  Spin B                     Matrix                      Tr/3         norm[rank1]  norm[rank2]  
+[...quilibrium_spinach > create > summary_couplings ]  ------------------------------------------------------------------------------------------------------
+[...quilibrium_spinach > create > summary_couplings ]  1       1       -2.500000e+03  +0.000000e+00  +0.000000e+00
+[...quilibrium_spinach > create > summary_couplings ]                  +0.000000e+00  -2.500000e+03  +0.000000e+00    +0.0000e+00  +0.0000e+00  +5.0000e+03  
+[...quilibrium_spinach > create > summary_couplings ]                  +0.000000e+00  +0.000000e+00  +5.000000e+03
+[...quilibrium_spinach > create > summary_couplings ]   
+[...quilibrium_spinach > create > summary_couplings ]  2       2       -7.500000e+03  +0.000000e+00  +0.000000e+00
+[...quilibrium_spinach > create > summary_couplings ]                  +0.000000e+00  -7.500000e+03  +0.000000e+00    +0.0000e+00  +0.0000e+00  +1.5000e+04  
+[...quilibrium_spinach > create > summary_couplings ]                  +0.000000e+00  +0.000000e+00  +1.500000e+04
+[...quilibrium_spinach > create > summary_couplings ]  ======================================================================================================
+[...ison > li_exchange_equilibrium_spinach > create ]  spin temperature: 298 Kelvin
+[...ison > li_exchange_equilibrium_spinach > create ]  relaxation theory 1: redfield
+[...ison > li_exchange_equilibrium_spinach > create ]  chemical subsystem 1, rotational correlation time(s): 1e-09 seconds
+[...ison > li_exchange_equilibrium_spinach > create ]  chemical subsystem 2, rotational correlation time(s): 1e-09 seconds
+[...ison > li_exchange_equilibrium_spinach > create ]  terms to keep in the relaxation superoperator: secular
+[...ison > li_exchange_equilibrium_spinach > create ]  action to take on dynamic frequency shifts: ignore
+[...ison > li_exchange_equilibrium_spinach > create ]  thermalisation method: zero
+create                                0.8 s
+[...i_exchange_equilibrium_spinach > basis > banner ]   
+[...i_exchange_equilibrium_spinach > basis > banner ]  ============================================
+[...i_exchange_equilibrium_spinach > basis > banner ]  =                                          =
+[...i_exchange_equilibrium_spinach > basis > banner ]  =                BASIS SET                 =
+[...i_exchange_equilibrium_spinach > basis > banner ]  =                                          =
+[...i_exchange_equilibrium_spinach > basis > banner ]  ============================================
+[...i_exchange_equilibrium_spinach > basis > banner ]   
+[...quilibrium_spinach > basis > summary_basis_opts ]  spherical tensor basis set using Liouville space matrix formalism.
+[...quilibrium_spinach > basis > summary_basis_opts ]  starting with complete basis set on all spins...
+[...rison > li_exchange_equilibrium_spinach > basis ]  coupling tensors with norm below 1e-10 Hz will be ignored.
+[...rison > li_exchange_equilibrium_spinach > basis ]  chemical substance 1, 1 spins:
+[...rison > li_exchange_equilibrium_spinach > basis ]      keeping 1 subgraphs with 1 spins each.
+[...rison > li_exchange_equilibrium_spinach > basis ]  chemical substance 2, 1 spins:
+[...rison > li_exchange_equilibrium_spinach > basis ]      keeping 1 subgraphs with 1 spins each.
+[...rison > li_exchange_equilibrium_spinach > basis ]  building basis set descriptor...
+[...rison > li_exchange_equilibrium_spinach > basis ]  eliminating redundant states...
+[...rison > li_exchange_equilibrium_spinach > basis ]  sorting the basis...
+[...rison > li_exchange_equilibrium_spinach > basis ]  chemical substance 1: 15 states.
+[...rison > li_exchange_equilibrium_spinach > basis ]  chemical substance 2: 15 states.
+[...nge_equilibrium_spinach > basis > summary_basis ]  final basis set summary (L,M quantum numbers in irreducible spherical tensor products).
+[...nge_equilibrium_spinach > basis > summary_basis ]  N        1       2
+[...nge_equilibrium_spinach > basis > summary_basis ]  1      (0,0)   (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  2      (0,0)   (1,1)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  3      (0,0)   (1,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  4      (0,0)   (1,-1)  
+[...nge_equilibrium_spinach > basis > summary_basis ]  5      (0,0)   (2,2)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  6      (0,0)   (2,1)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  7      (0,0)   (2,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  8      (0,0)   (2,-1)  
+[...nge_equilibrium_spinach > basis > summary_basis ]  9      (0,0)   (2,-2)  
+[...nge_equilibrium_spinach > basis > summary_basis ]  10     (0,0)   (3,3)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  11     (0,0)   (3,2)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  12     (0,0)   (3,1)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  13     (0,0)   (3,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  14     (0,0)   (3,-1)  
+[...nge_equilibrium_spinach > basis > summary_basis ]  15     (0,0)   (3,-2)  
+[...nge_equilibrium_spinach > basis > summary_basis ]  16     (0,0)   (3,-3)  
+[...nge_equilibrium_spinach > basis > summary_basis ]  17     (1,1)   (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  18     (1,0)   (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  19     (1,-1)  (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  20     (2,2)   (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  21     (2,1)   (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  22     (2,0)   (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  23     (2,-1)  (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  24     (2,-2)  (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  25     (3,3)   (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  26     (3,2)   (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  27     (3,1)   (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  28     (3,0)   (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  29     (3,-1)  (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  30     (3,-2)  (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  31     (3,-3)  (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]   
+[...nge_equilibrium_spinach > basis > summary_basis ]  state space dimension 31 (12.1094% of the full state space).
+[...exchange_equilibrium_spinach > basis > symmetry ]  no symmetry information available.
+[...rison > li_exchange_equilibrium_spinach > basis ]  caching Lie structure tables...
+basis                                 0.2 s
+[...ison > li_exchange_equilibrium_spinach > assume ]  lab frame assumption set - no assumptions:
+[...ison > li_exchange_equilibrium_spinach > assume ]    laboratory frame simulation for electrons,
+[...ison > li_exchange_equilibrium_spinach > assume ]    laboratory frame simulation for nuclei,
+[...ison > li_exchange_equilibrium_spinach > assume ]    all terms for electron Zeeman interactions,
+[...ison > li_exchange_equilibrium_spinach > assume ]    all terms for nuclear Zeeman interactions,
+[...ison > li_exchange_equilibrium_spinach > assume ]    all terms for giant spin model interactions,
+[...ison > li_exchange_equilibrium_spinach > assume ]    all terms for all couplings.
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  building Hamiltonian descriptor...
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  complete isotropic Zeeman interaction for spin 1...
+[...> li_exchange_equilibrium_spinach > hamiltonian ]             (Lz) x -31938487.3442 Hz
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  complete isotropic Zeeman interaction for spin 2...
+[...> li_exchange_equilibrium_spinach > hamiltonian ]             (Lz) x -31938487.3442 Hz
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  2 unique operators in the Hamiltonian descriptor.
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  building individual operators...
+[...equilibrium_spinach > hamiltonian > parfor/spmd ]  2/2 operators done, 19.1819 operators per second.
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  average worker process received 0.016718 MB and sent back 0.00032286 MB
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  operator construction took 0.12072 seconds
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  operator array footprint: 1.6987e-06 GB
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  assembling the Hamiltonian...
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  Hamiltonian assembly took 0.0026761 seconds
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  WARNING - only the isotropic part has been returned.
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  memory footprint of I array: 7.16e-06 GB
+[...ison > li_exchange_equilibrium_spinach > assume ]  generic high-field NMR assumption set:
+[...ison > li_exchange_equilibrium_spinach > assume ]    rotating frame approximation for electrons,
+[...ison > li_exchange_equilibrium_spinach > assume ]    rotating frame approximation for nuclei,
+[...ison > li_exchange_equilibrium_spinach > assume ]    secular terms for electron Zeeman interactions,
+[...ison > li_exchange_equilibrium_spinach > assume ]    secular terms for nuclear Zeeman interactions,
+[...ison > li_exchange_equilibrium_spinach > assume ]    secular terms for giant spin model interactions,
+[...ison > li_exchange_equilibrium_spinach > assume ]    secular coupling terms for spins belonging to the same species,
+[...ison > li_exchange_equilibrium_spinach > assume ]    weak coupling terms for spins belonging to different species,
+[...ison > li_exchange_equilibrium_spinach > assume ]    secular coupling terms for quadratic couplings.
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  building Hamiltonian descriptor...
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  offset isotropic Zeeman interaction for spin 1...
+[...> li_exchange_equilibrium_spinach > hamiltonian ]             (Lz) x 31.9385 Hz
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  offset isotropic Zeeman interaction for spin 2...
+[...> li_exchange_equilibrium_spinach > hamiltonian ]             (Lz) x 31.9385 Hz
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  2 unique operators in the Hamiltonian descriptor.
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  building individual operators...
+[...equilibrium_spinach > hamiltonian > parfor/spmd ]  2/2 operators done, 74.4134 operators per second.
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  average worker process received 0.016718 MB and sent back 0.00044355 MB
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  operator construction took 0.03047 seconds
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  operator array footprint: 2.9951e-06 GB
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  assembling the Hamiltonian...
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  Hamiltonian assembly took 0.001283 seconds
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  WARNING - only the isotropic part has been returned.
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  memory footprint of I array: 7.16e-06 GB
+hamiltonian                           0.3 s
+[...n > li_exchange_equilibrium_spinach > evolution ]  trying to reduce the problem dimension...
+[...n > li_exchange_equilibrium_spinach > evolution ]  destination state screening is not applicable.
+[...change_equilibrium_spinach > evolution > reduce ]  no permutation symmetry information has been supplied.
+[...change_equilibrium_spinach > evolution > reduce ]  attempting zero track elimination...
+[..._equilibrium_spinach > evolution > reduce > zte ]  dropping states with amplitudes below 1e-24 within the first 0.015424 seconds.
+[..._equilibrium_spinach > evolution > reduce > zte ]  a maximum of 32 steps shall be taken, 0.000482 seconds each.
+[..._equilibrium_spinach > evolution > reduce > zte ]  evolution step 0, active space dimension 7
+[..._equilibrium_spinach > evolution > reduce > zte ]  evolution step 1, active space dimension 7
+[..._equilibrium_spinach > evolution > reduce > zte ]  state space dimension reduced from 31 to 7
+[...change_equilibrium_spinach > evolution > reduce ]  path-tracing subspace #1...
+[...brium_spinach > evolution > reduce > path_trace ]  small state space - path tracing skipped.
+[...n > li_exchange_equilibrium_spinach > evolution ]  splitting the space...
+[...n > li_exchange_equilibrium_spinach > evolution ]  evolving subspace 1 of 1...
+[...n > li_exchange_equilibrium_spinach > evolution ]  dim(L)=7, rho stack size 1, 4 substeps in optimal stepping.
+[...n > li_exchange_equilibrium_spinach > evolution ]  building the propagator...
+[...n > li_exchange_equilibrium_spinach > evolution ]  propagating the system on CPU...
+[...n > li_exchange_equilibrium_spinach > evolution ]  propagation finished.
+[...n > li_exchange_equilibrium_spinach > evolution ]  recombining subspaces...
+[...n > li_exchange_equilibrium_spinach > evolution ]  data retrieval finished.
+equilibrium                           0.0 s
+[... > li_exchange_equilibrium_spinach > relaxation ]  Redfield theory (rotational diffusion).
+[... > li_exchange_equilibrium_spinach > relaxation ]  computing the lab frame Hamiltonian superoperator...
+[...hange_equilibrium_spinach > relaxation > assume ]  lab frame assumption set - no assumptions:
+[...hange_equilibrium_spinach > relaxation > assume ]    laboratory frame simulation for electrons,
+[...hange_equilibrium_spinach > relaxation > assume ]    laboratory frame simulation for nuclei,
+[...hange_equilibrium_spinach > relaxation > assume ]    all terms for electron Zeeman interactions,
+[...hange_equilibrium_spinach > relaxation > assume ]    all terms for nuclear Zeeman interactions,
+[...hange_equilibrium_spinach > relaxation > assume ]    all terms for giant spin model interactions,
+[...hange_equilibrium_spinach > relaxation > assume ]    all terms for all couplings.
+[..._equilibrium_spinach > relaxation > hamiltonian ]  building Hamiltonian descriptor...
+[..._equilibrium_spinach > relaxation > hamiltonian ]  complete isotropic Zeeman interaction for spin 1...
+[..._equilibrium_spinach > relaxation > hamiltonian ]             (Lz) x -31938487.3442 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]  complete anisotropic Zeeman interaction for spin 1...
+[..._equilibrium_spinach > relaxation > hamiltonian ]    T[2,+1]:      -0.5*(Lp) x 0 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]    T[2, 0]: sqrt(2/3)*(Lz) x -1760.2442 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]    T[2,-1]:       0.5*(Lm) x 0 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]  complete quadratic coupling for spin 1...
+[..._equilibrium_spinach > relaxation > hamiltonian ]             T(2,+2) x +0.00000e+00 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]             T(2,+1) x +0.00000e+00 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]             T(2, 0) x +6.12372e+03 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]             T(2,-1) x +0.00000e+00 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]             T(2,-2) x +0.00000e+00 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]  complete isotropic Zeeman interaction for spin 2...
+[..._equilibrium_spinach > relaxation > hamiltonian ]             (Lz) x -31938487.3442 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]  complete anisotropic Zeeman interaction for spin 2...
+[..._equilibrium_spinach > relaxation > hamiltonian ]    T[2,+1]:      -0.5*(Lp) x 0 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]    T[2, 0]: sqrt(2/3)*(Lz) x -5280.7326 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]    T[2,-1]:       0.5*(Lm) x 0 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]  complete quadratic coupling for spin 2...
+[..._equilibrium_spinach > relaxation > hamiltonian ]             T(2,+2) x +0.00000e+00 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]             T(2,+1) x +0.00000e+00 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]             T(2, 0) x +1.83712e+04 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]             T(2,-1) x +0.00000e+00 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]             T(2,-2) x +0.00000e+00 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]  16 unique operators in the Hamiltonian descriptor.
+[..._equilibrium_spinach > relaxation > hamiltonian ]  building individual operators...
+[...pinach > relaxation > hamiltonian > parfor/spmd ]  16/16 operators done, 109.9743 operators per second.
+[..._equilibrium_spinach > relaxation > hamiltonian ]  average worker process received 0.095726 MB and sent back 0.0032713 MB
+[..._equilibrium_spinach > relaxation > hamiltonian ]  operator construction took 0.14924 seconds
+[..._equilibrium_spinach > relaxation > hamiltonian ]  operator array footprint: 2.2084e-05 GB
+[..._equilibrium_spinach > relaxation > hamiltonian ]  assembling the Hamiltonian...
+[..._equilibrium_spinach > relaxation > hamiltonian ]  Hamiltonian assembly took 0.016586 seconds
+[..._equilibrium_spinach > relaxation > hamiltonian ]  maximum spherical rank in the giant spin Hamiltonian: 0
+[..._equilibrium_spinach > relaxation > hamiltonian ]  memory footprint of I array: 7.16e-06 GB
+[..._equilibrium_spinach > relaxation > hamiltonian ]  memory footprint of Q array: 4.717e-05 GB
+[... > li_exchange_equilibrium_spinach > relaxation ]  parallel evaluation path...
+[..._spinach > relaxation > redfield_integral_async ]  queuing up L=2, k=+2, m=+0, p=+2, q=+0, chemical species 1...
+[..._spinach > relaxation > redfield_integral_async ]  queuing up L=2, k=+2, m=+0, p=+2, q=+0, chemical species 2...
+[..._spinach > relaxation > redfield_integral_async ]  queuing up L=2, k=+1, m=+0, p=+1, q=+0, chemical species 1...
+[..._spinach > relaxation > redfield_integral_async ]  queuing up L=2, k=+1, m=+0, p=+1, q=+0, chemical species 2...
+[..._spinach > relaxation > redfield_integral_async ]  queuing up L=2, k=+0, m=+0, p=+0, q=+0, chemical species 1...
+[..._spinach > relaxation > redfield_integral_async ]  queuing up L=2, k=+0, m=+0, p=+0, q=+0, chemical species 2...
+[..._spinach > relaxation > redfield_integral_async ]  queuing up L=2, k=-1, m=+0, p=-1, q=+0, chemical species 1...
+[..._spinach > relaxation > redfield_integral_async ]  queuing up L=2, k=-1, m=+0, p=-1, q=+0, chemical species 2...
+[..._spinach > relaxation > redfield_integral_async ]  queuing up L=2, k=-2, m=+0, p=-2, q=+0, chemical species 1...
+[..._spinach > relaxation > redfield_integral_async ]  queuing up L=2, k=-2, m=+0, p=-2, q=+0, chemical species 2...
+[..._spinach > relaxation > redfield_integral_async ]  getting data from workers...
+[... > li_exchange_equilibrium_spinach > relaxation ]  Redfield superoperator build time: 0.53376 seconds
+[... > li_exchange_equilibrium_spinach > relaxation ]  full relaxation superoperator density 7.7003%, nnz 74, sparsity 1
+[... > li_exchange_equilibrium_spinach > relaxation ]  dynamic frequency shifts have been ignored.
+[... > li_exchange_equilibrium_spinach > relaxation ]  secular approximation wrt Zeeman Hamiltonian...
+[... > li_exchange_equilibrium_spinach > relaxation ]  non-secular cross-relaxation terms have been ignored.
+[... > li_exchange_equilibrium_spinach > relaxation ]  thermalisation method: none, relaxation to unit state
+[... > li_exchange_equilibrium_spinach > relaxation ]  final relaxation superoperator density 7.7003%, nnz(R)=74, sparsity 0
+[... > li_exchange_equilibrium_spinach > relaxation ]  memory footprint of the relaxation superoperator: 1.432e-05 GB
+relaxation                            0.5 s
+[...n > li_exchange_equilibrium_spinach > evolution ]  trying to reduce the problem dimension...
+[...n > li_exchange_equilibrium_spinach > evolution ]  destination state screening is not applicable.
+[...change_equilibrium_spinach > evolution > reduce ]  no permutation symmetry information has been supplied.
+[...change_equilibrium_spinach > evolution > reduce ]  attempting zero track elimination...
+[..._equilibrium_spinach > evolution > reduce > zte ]  dropping states with amplitudes below 1e-24 within the first 0.015232 seconds.
+[..._equilibrium_spinach > evolution > reduce > zte ]  a maximum of 32 steps shall be taken, 0.00047601 seconds each.
+[..._equilibrium_spinach > evolution > reduce > zte ]  evolution step 0, active space dimension 7
+[..._equilibrium_spinach > evolution > reduce > zte ]  evolution step 1, active space dimension 7
+[..._equilibrium_spinach > evolution > reduce > zte ]  state space dimension reduced from 31 to 7
+[...change_equilibrium_spinach > evolution > reduce ]  path-tracing subspace #1...
+[...brium_spinach > evolution > reduce > path_trace ]  small state space - path tracing skipped.
+[...n > li_exchange_equilibrium_spinach > evolution ]  splitting the space...
+[...n > li_exchange_equilibrium_spinach > evolution ]  evolving subspace 1 of 1...
+[...n > li_exchange_equilibrium_spinach > evolution ]  building the propagator...
+[...n > li_exchange_equilibrium_spinach > evolution ]  propagating the system on CPU...
+[...n > li_exchange_equilibrium_spinach > evolution ]  propagation finished.
+[...n > li_exchange_equilibrium_spinach > evolution ]  recombining subspaces...
+[...n > li_exchange_equilibrium_spinach > evolution ]  data retrieval finished.
+trajectory                            0.1 s
+== li_exchange_equilibrium (Spinach /Users/alexej/Documents/PROG/respinach-spinach) -> /Users/alexej/Documents/PROG/respinach/comparison/runs/li_exchange_equilibrium/spinach
+Running startup checks...
+[...ison > li_exchange_equilibrium_spinach > create ]  scratch location: /Users/alexej/Documents/PROG/respinach-spinach/scratch
+[..._exchange_equilibrium_spinach > create > banner ]   
+[..._exchange_equilibrium_spinach > create > banner ]  ============================================
+[..._exchange_equilibrium_spinach > create > banner ]  =                                          =
+[..._exchange_equilibrium_spinach > create > banner ]  =               SPINACH v2.13              =
+[..._exchange_equilibrium_spinach > create > banner ]  =                                          =
+[..._exchange_equilibrium_spinach > create > banner ]  =                <a href = "https://spindynamics.org/wiki/index.php?title=Spinach_developer_team">author list</a>               =
+[..._exchange_equilibrium_spinach > create > banner ]  =                                          =
+[..._exchange_equilibrium_spinach > create > banner ]  =               <a href = "https://spindynamics.org/wiki/index.php?title=Main_Page">documentation</a>              =
+[..._exchange_equilibrium_spinach > create > banner ]  =                                          =
+[..._exchange_equilibrium_spinach > create > banner ]  =                   <a href = "https://link.springer.com/book/10.1007/978-3-031-05607-9">book</a>                   =
+[..._exchange_equilibrium_spinach > create > banner ]  =                                          =
+[..._exchange_equilibrium_spinach > create > banner ]  =                MIT License               =
+[..._exchange_equilibrium_spinach > create > banner ]  =                                          =
+[..._exchange_equilibrium_spinach > create > banner ]  ============================================
+[..._exchange_equilibrium_spinach > create > banner ]   
+[...hange_equilibrium_spinach > create > tolerances ]  Drop interaction tensors with 2-norms below (Hz)                 1.00000000e-10       (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Drop Liouvillian elements with norm below (rad/s)                1.00000000e-10       (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Drop relaxation superoperator elements with norm below (Hz)      1.00000000e-10       (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Drop propagator elements with norm below                         1.00000000e-10       (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Drop subspaces with populations below                            1.00000000e-10       (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Drop irreps with populations below                               1.00000000e-10       (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Steady state convergence tolerance                               1.00000000e-08       (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Number of time steps in ZTE sample                               32                   (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  ZTE track drop threshold                                         1.00000000e-24       (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  ZTE off for state vector densities above                         0.5                  (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Drop dipolar couplings over more than (Angstrom)                 100                  (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Krylov propagation for dimensions above                          10000                (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Basis set printing hush threshold                                256                  (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Collect small subspaces into bundles of dimension                1000                 (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Force sparse algebra for matrix density below                    0.15                 (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Force full algebra for matrix dimension below                    200                  (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Rel. acc. for the elements of Redfield superoperator             1.00000000e-04       (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Matrix exponential differentiation algorithm                     auxmat               (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Number of PBC images for DD couplings in PBC systems             2                    (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Number of days before a cache record is deleted                  365                  (safe default)
+[...hange_equilibrium_spinach > create > tolerances ]  Planck constant (hbar)                                           1.05457182e-34      
+[...hange_equilibrium_spinach > create > tolerances ]  Boltzmann constant (k)                                           1.38064900e-23      
+[...hange_equilibrium_spinach > create > tolerances ]  Free electron g-factor                                           2.00231930e+00      
+[...hange_equilibrium_spinach > create > tolerances ]  Vacuum permeability                                              1.25663706e-06      
+[...hange_equilibrium_spinach > create > tolerances ]  Bohr magneton                                                    9.27401007e-24      
+[...ison > li_exchange_equilibrium_spinach > create ]  job identifier: 2bcd3a12afc6c645ed1836d112d4fcd5
+[...ison > li_exchange_equilibrium_spinach > create ]  random number generator shuffled
+[...ison > li_exchange_equilibrium_spinach > create ]  a running Spinach parallel pool found:
+[...ison > li_exchange_equilibrium_spinach > create ]           > parallel profile: Processes
+[...ison > li_exchange_equilibrium_spinach > create ]           > job identifier:   4eeb6af943e221a556f14be256709c6d
+[...ison > li_exchange_equilibrium_spinach > create ]           > worker processes: 11
+[...ison > li_exchange_equilibrium_spinach > create ]  WARNING - this pool will be re-used
+[...ison > li_exchange_equilibrium_spinach > create ]  parallel pool ValueStore cleared.
+[..._exchange_equilibrium_spinach > create > banner ]   
+[..._exchange_equilibrium_spinach > create > banner ]  ============================================
+[..._exchange_equilibrium_spinach > create > banner ]  =                                          =
+[..._exchange_equilibrium_spinach > create > banner ]  =               SPIN SYSTEM                =
+[..._exchange_equilibrium_spinach > create > banner ]  =                                          =
+[..._exchange_equilibrium_spinach > create > banner ]  ============================================
+[..._exchange_equilibrium_spinach > create > banner ]   
+[...ison > li_exchange_equilibrium_spinach > create ]  a total of 2 particles in the simulation, of which 0 have a zero spin.
+[...ison > li_exchange_equilibrium_spinach > create ]  magnetic induction of 1.93 Tesla (-82.175 MHz proton frequency, 54.088 GHz electron frequency).
+[...e_equilibrium_spinach > create > summary_zeeman ]  summary of Zeeman tensors and their anisotropies (ppm for nuclei, g-tensor for electrons)
+[...e_equilibrium_spinach > create > summary_zeeman ]  =======================================================================================================
+[...e_equilibrium_spinach > create > summary_zeeman ]  #    Spin  2S+1                      Matrix                      Tr/3         norm[rank1]  norm[rank2] 
+[...e_equilibrium_spinach > create > summary_zeeman ]  -------------------------------------------------------------------------------------------------------
+[...e_equilibrium_spinach > create > summary_zeeman ]  1    7Li   4      -2.350000e+01  +0.000000e+00  +0.000000e+00
+[...e_equilibrium_spinach > create > summary_zeeman ]                    +0.000000e+00  -2.350000e+01  +0.000000e+00    -1.0000e+00  +0.0000e+00  +4.5000e+01  
+[...e_equilibrium_spinach > create > summary_zeeman ]                    +0.000000e+00  +0.000000e+00  +4.400000e+01
+[...e_equilibrium_spinach > create > summary_zeeman ]   
+[...e_equilibrium_spinach > create > summary_zeeman ]  2    7Li   4      -6.850000e+01  +0.000000e+00  +0.000000e+00
+[...e_equilibrium_spinach > create > summary_zeeman ]                    +0.000000e+00  -6.850000e+01  +0.000000e+00    -1.0000e+00  +0.0000e+00  +1.3500e+02  
+[...e_equilibrium_spinach > create > summary_zeeman ]                    +0.000000e+00  +0.000000e+00  +1.340000e+02
+[...e_equilibrium_spinach > create > summary_zeeman ]  =======================================================================================================
+[...ison > li_exchange_equilibrium_spinach > create ]  WARNING - no giant spin terms supplied, zeros assumed.
+[...quilibrium_spinach > create > summary_chemistry ]  chemical subsystem 1 contains spins: 1
+[...quilibrium_spinach > create > summary_chemistry ]  chemical subsystem 2 contains spins: 2
+[...quilibrium_spinach > create > summary_chemistry ]  inter-subsystem reaction rates:
+[...quilibrium_spinach > create > summary_chemistry ]  ===============================
+[...quilibrium_spinach > create > summary_chemistry ]   N(from)   N(to)    Rate(Hz)   
+[...quilibrium_spinach > create > summary_chemistry ]  -------------------------------
+[...quilibrium_spinach > create > summary_chemistry ]   1         2        +5.000e+01
+[...quilibrium_spinach > create > summary_chemistry ]   2         1        +9.500e+02
+[...quilibrium_spinach > create > summary_chemistry ]  ===============================
+[...ison > li_exchange_equilibrium_spinach > create ]  initializing interaction arrays...
+[...ison > li_exchange_equilibrium_spinach > create ]  WARNING - no coordinates given, point dipolar interactions assumed to be zero.
+[...ison > li_exchange_equilibrium_spinach > create ]  processing coupling data...
+[...quilibrium_spinach > create > summary_couplings ]  summary of coupling tensors and their anisotropies (Hz)
+[...quilibrium_spinach > create > summary_couplings ]  ======================================================================================================
+[...quilibrium_spinach > create > summary_couplings ]  Spin A  Spin B                     Matrix                      Tr/3         norm[rank1]  norm[rank2]  
+[...quilibrium_spinach > create > summary_couplings ]  ------------------------------------------------------------------------------------------------------
+[...quilibrium_spinach > create > summary_couplings ]  1       1       -2.500000e+03  +0.000000e+00  +0.000000e+00
+[...quilibrium_spinach > create > summary_couplings ]                  +0.000000e+00  -2.500000e+03  +0.000000e+00    +0.0000e+00  +0.0000e+00  +5.0000e+03  
+[...quilibrium_spinach > create > summary_couplings ]                  +0.000000e+00  +0.000000e+00  +5.000000e+03
+[...quilibrium_spinach > create > summary_couplings ]   
+[...quilibrium_spinach > create > summary_couplings ]  2       2       -7.500000e+03  +0.000000e+00  +0.000000e+00
+[...quilibrium_spinach > create > summary_couplings ]                  +0.000000e+00  -7.500000e+03  +0.000000e+00    +0.0000e+00  +0.0000e+00  +1.5000e+04  
+[...quilibrium_spinach > create > summary_couplings ]                  +0.000000e+00  +0.000000e+00  +1.500000e+04
+[...quilibrium_spinach > create > summary_couplings ]  ======================================================================================================
+[...ison > li_exchange_equilibrium_spinach > create ]  spin temperature: 298 Kelvin
+[...ison > li_exchange_equilibrium_spinach > create ]  relaxation theory 1: redfield
+[...ison > li_exchange_equilibrium_spinach > create ]  chemical subsystem 1, rotational correlation time(s): 1e-09 seconds
+[...ison > li_exchange_equilibrium_spinach > create ]  chemical subsystem 2, rotational correlation time(s): 1e-09 seconds
+[...ison > li_exchange_equilibrium_spinach > create ]  terms to keep in the relaxation superoperator: secular
+[...ison > li_exchange_equilibrium_spinach > create ]  action to take on dynamic frequency shifts: ignore
+[...ison > li_exchange_equilibrium_spinach > create ]  thermalisation method: zero
+create                                0.7 s
+[...i_exchange_equilibrium_spinach > basis > banner ]   
+[...i_exchange_equilibrium_spinach > basis > banner ]  ============================================
+[...i_exchange_equilibrium_spinach > basis > banner ]  =                                          =
+[...i_exchange_equilibrium_spinach > basis > banner ]  =                BASIS SET                 =
+[...i_exchange_equilibrium_spinach > basis > banner ]  =                                          =
+[...i_exchange_equilibrium_spinach > basis > banner ]  ============================================
+[...i_exchange_equilibrium_spinach > basis > banner ]   
+[...quilibrium_spinach > basis > summary_basis_opts ]  spherical tensor basis set using Liouville space matrix formalism.
+[...quilibrium_spinach > basis > summary_basis_opts ]  starting with complete basis set on all spins...
+[...rison > li_exchange_equilibrium_spinach > basis ]  coupling tensors with norm below 1e-10 Hz will be ignored.
+[...rison > li_exchange_equilibrium_spinach > basis ]  chemical substance 1, 1 spins:
+[...rison > li_exchange_equilibrium_spinach > basis ]      keeping 1 subgraphs with 1 spins each.
+[...rison > li_exchange_equilibrium_spinach > basis ]  chemical substance 2, 1 spins:
+[...rison > li_exchange_equilibrium_spinach > basis ]      keeping 1 subgraphs with 1 spins each.
+[...rison > li_exchange_equilibrium_spinach > basis ]  building basis set descriptor...
+[...rison > li_exchange_equilibrium_spinach > basis ]  eliminating redundant states...
+[...rison > li_exchange_equilibrium_spinach > basis ]  sorting the basis...
+[...rison > li_exchange_equilibrium_spinach > basis ]  chemical substance 1: 15 states.
+[...rison > li_exchange_equilibrium_spinach > basis ]  chemical substance 2: 15 states.
+[...nge_equilibrium_spinach > basis > summary_basis ]  final basis set summary (L,M quantum numbers in irreducible spherical tensor products).
+[...nge_equilibrium_spinach > basis > summary_basis ]  N        1       2
+[...nge_equilibrium_spinach > basis > summary_basis ]  1      (0,0)   (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  2      (0,0)   (1,1)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  3      (0,0)   (1,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  4      (0,0)   (1,-1)  
+[...nge_equilibrium_spinach > basis > summary_basis ]  5      (0,0)   (2,2)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  6      (0,0)   (2,1)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  7      (0,0)   (2,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  8      (0,0)   (2,-1)  
+[...nge_equilibrium_spinach > basis > summary_basis ]  9      (0,0)   (2,-2)  
+[...nge_equilibrium_spinach > basis > summary_basis ]  10     (0,0)   (3,3)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  11     (0,0)   (3,2)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  12     (0,0)   (3,1)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  13     (0,0)   (3,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  14     (0,0)   (3,-1)  
+[...nge_equilibrium_spinach > basis > summary_basis ]  15     (0,0)   (3,-2)  
+[...nge_equilibrium_spinach > basis > summary_basis ]  16     (0,0)   (3,-3)  
+[...nge_equilibrium_spinach > basis > summary_basis ]  17     (1,1)   (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  18     (1,0)   (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  19     (1,-1)  (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  20     (2,2)   (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  21     (2,1)   (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  22     (2,0)   (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  23     (2,-1)  (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  24     (2,-2)  (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  25     (3,3)   (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  26     (3,2)   (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  27     (3,1)   (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  28     (3,0)   (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  29     (3,-1)  (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  30     (3,-2)  (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]  31     (3,-3)  (0,0)   
+[...nge_equilibrium_spinach > basis > summary_basis ]   
+[...nge_equilibrium_spinach > basis > summary_basis ]  state space dimension 31 (12.1094% of the full state space).
+[...exchange_equilibrium_spinach > basis > symmetry ]  no symmetry information available.
+[...rison > li_exchange_equilibrium_spinach > basis ]  caching Lie structure tables...
+basis                                 0.2 s
+[...ison > li_exchange_equilibrium_spinach > assume ]  lab frame assumption set - no assumptions:
+[...ison > li_exchange_equilibrium_spinach > assume ]    laboratory frame simulation for electrons,
+[...ison > li_exchange_equilibrium_spinach > assume ]    laboratory frame simulation for nuclei,
+[...ison > li_exchange_equilibrium_spinach > assume ]    all terms for electron Zeeman interactions,
+[...ison > li_exchange_equilibrium_spinach > assume ]    all terms for nuclear Zeeman interactions,
+[...ison > li_exchange_equilibrium_spinach > assume ]    all terms for giant spin model interactions,
+[...ison > li_exchange_equilibrium_spinach > assume ]    all terms for all couplings.
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  building Hamiltonian descriptor...
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  complete isotropic Zeeman interaction for spin 1...
+[...> li_exchange_equilibrium_spinach > hamiltonian ]             (Lz) x -31938487.3442 Hz
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  complete isotropic Zeeman interaction for spin 2...
+[...> li_exchange_equilibrium_spinach > hamiltonian ]             (Lz) x -31938487.3442 Hz
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  2 unique operators in the Hamiltonian descriptor.
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  building individual operators...
+[...equilibrium_spinach > hamiltonian > parfor/spmd ]  2/2 operators done, 30.7316 operators per second.
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  average worker process received 0.016718 MB and sent back 0.00032286 MB
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  operator construction took 0.075414 seconds
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  operator array footprint: 1.6987e-06 GB
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  assembling the Hamiltonian...
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  Hamiltonian assembly took 0.0024761 seconds
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  WARNING - only the isotropic part has been returned.
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  memory footprint of I array: 7.16e-06 GB
+[...ison > li_exchange_equilibrium_spinach > assume ]  generic high-field NMR assumption set:
+[...ison > li_exchange_equilibrium_spinach > assume ]    rotating frame approximation for electrons,
+[...ison > li_exchange_equilibrium_spinach > assume ]    rotating frame approximation for nuclei,
+[...ison > li_exchange_equilibrium_spinach > assume ]    secular terms for electron Zeeman interactions,
+[...ison > li_exchange_equilibrium_spinach > assume ]    secular terms for nuclear Zeeman interactions,
+[...ison > li_exchange_equilibrium_spinach > assume ]    secular terms for giant spin model interactions,
+[...ison > li_exchange_equilibrium_spinach > assume ]    secular coupling terms for spins belonging to the same species,
+[...ison > li_exchange_equilibrium_spinach > assume ]    weak coupling terms for spins belonging to different species,
+[...ison > li_exchange_equilibrium_spinach > assume ]    secular coupling terms for quadratic couplings.
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  building Hamiltonian descriptor...
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  offset isotropic Zeeman interaction for spin 1...
+[...> li_exchange_equilibrium_spinach > hamiltonian ]             (Lz) x 31.9385 Hz
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  offset isotropic Zeeman interaction for spin 2...
+[...> li_exchange_equilibrium_spinach > hamiltonian ]             (Lz) x 31.9385 Hz
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  2 unique operators in the Hamiltonian descriptor.
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  building individual operators...
+[...equilibrium_spinach > hamiltonian > parfor/spmd ]  2/2 operators done, 55.8247 operators per second.
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  average worker process received 0.016718 MB and sent back 0.00044355 MB
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  operator construction took 0.040472 seconds
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  operator array footprint: 2.9951e-06 GB
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  assembling the Hamiltonian...
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  Hamiltonian assembly took 0.0012262 seconds
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  WARNING - only the isotropic part has been returned.
+[...> li_exchange_equilibrium_spinach > hamiltonian ]  memory footprint of I array: 7.16e-06 GB
+hamiltonian                           0.3 s
+[...n > li_exchange_equilibrium_spinach > evolution ]  trying to reduce the problem dimension...
+[...n > li_exchange_equilibrium_spinach > evolution ]  destination state screening is not applicable.
+[...change_equilibrium_spinach > evolution > reduce ]  no permutation symmetry information has been supplied.
+[...change_equilibrium_spinach > evolution > reduce ]  attempting zero track elimination...
+[..._equilibrium_spinach > evolution > reduce > zte ]  dropping states with amplitudes below 1e-24 within the first 0.015424 seconds.
+[..._equilibrium_spinach > evolution > reduce > zte ]  a maximum of 32 steps shall be taken, 0.000482 seconds each.
+[..._equilibrium_spinach > evolution > reduce > zte ]  evolution step 0, active space dimension 7
+[..._equilibrium_spinach > evolution > reduce > zte ]  evolution step 1, active space dimension 7
+[..._equilibrium_spinach > evolution > reduce > zte ]  state space dimension reduced from 31 to 7
+[...change_equilibrium_spinach > evolution > reduce ]  path-tracing subspace #1...
+[...brium_spinach > evolution > reduce > path_trace ]  small state space - path tracing skipped.
+[...n > li_exchange_equilibrium_spinach > evolution ]  splitting the space...
+[...n > li_exchange_equilibrium_spinach > evolution ]  evolving subspace 1 of 1...
+[...n > li_exchange_equilibrium_spinach > evolution ]  dim(L)=7, rho stack size 1, 4 substeps in optimal stepping.
+[...n > li_exchange_equilibrium_spinach > evolution ]  building the propagator...
+[...n > li_exchange_equilibrium_spinach > evolution ]  propagating the system on CPU...
+[...n > li_exchange_equilibrium_spinach > evolution ]  propagation finished.
+[...n > li_exchange_equilibrium_spinach > evolution ]  recombining subspaces...
+[...n > li_exchange_equilibrium_spinach > evolution ]  data retrieval finished.
+equilibrium                           0.0 s
+[... > li_exchange_equilibrium_spinach > relaxation ]  Redfield theory (rotational diffusion).
+[... > li_exchange_equilibrium_spinach > relaxation ]  computing the lab frame Hamiltonian superoperator...
+[...hange_equilibrium_spinach > relaxation > assume ]  lab frame assumption set - no assumptions:
+[...hange_equilibrium_spinach > relaxation > assume ]    laboratory frame simulation for electrons,
+[...hange_equilibrium_spinach > relaxation > assume ]    laboratory frame simulation for nuclei,
+[...hange_equilibrium_spinach > relaxation > assume ]    all terms for electron Zeeman interactions,
+[...hange_equilibrium_spinach > relaxation > assume ]    all terms for nuclear Zeeman interactions,
+[...hange_equilibrium_spinach > relaxation > assume ]    all terms for giant spin model interactions,
+[...hange_equilibrium_spinach > relaxation > assume ]    all terms for all couplings.
+[..._equilibrium_spinach > relaxation > hamiltonian ]  building Hamiltonian descriptor...
+[..._equilibrium_spinach > relaxation > hamiltonian ]  complete isotropic Zeeman interaction for spin 1...
+[..._equilibrium_spinach > relaxation > hamiltonian ]             (Lz) x -31938487.3442 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]  complete anisotropic Zeeman interaction for spin 1...
+[..._equilibrium_spinach > relaxation > hamiltonian ]    T[2,+1]:      -0.5*(Lp) x 0 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]    T[2, 0]: sqrt(2/3)*(Lz) x -1760.2442 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]    T[2,-1]:       0.5*(Lm) x 0 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]  complete quadratic coupling for spin 1...
+[..._equilibrium_spinach > relaxation > hamiltonian ]             T(2,+2) x +0.00000e+00 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]             T(2,+1) x +0.00000e+00 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]             T(2, 0) x +6.12372e+03 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]             T(2,-1) x +0.00000e+00 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]             T(2,-2) x +0.00000e+00 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]  complete isotropic Zeeman interaction for spin 2...
+[..._equilibrium_spinach > relaxation > hamiltonian ]             (Lz) x -31938487.3442 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]  complete anisotropic Zeeman interaction for spin 2...
+[..._equilibrium_spinach > relaxation > hamiltonian ]    T[2,+1]:      -0.5*(Lp) x 0 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]    T[2, 0]: sqrt(2/3)*(Lz) x -5280.7326 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]    T[2,-1]:       0.5*(Lm) x 0 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]  complete quadratic coupling for spin 2...
+[..._equilibrium_spinach > relaxation > hamiltonian ]             T(2,+2) x +0.00000e+00 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]             T(2,+1) x +0.00000e+00 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]             T(2, 0) x +1.83712e+04 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]             T(2,-1) x +0.00000e+00 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]             T(2,-2) x +0.00000e+00 Hz
+[..._equilibrium_spinach > relaxation > hamiltonian ]  16 unique operators in the Hamiltonian descriptor.
+[..._equilibrium_spinach > relaxation > hamiltonian ]  building individual operators...
+[...pinach > relaxation > hamiltonian > parfor/spmd ]  16/16 operators done, 101.4812 operators per second.
+[..._equilibrium_spinach > relaxation > hamiltonian ]  average worker process received 0.095726 MB and sent back 0.0032713 MB
+[..._equilibrium_spinach > relaxation > hamiltonian ]  operator construction took 0.16173 seconds
+[..._equilibrium_spinach > relaxation > hamiltonian ]  operator array footprint: 2.2084e-05 GB
+[..._equilibrium_spinach > relaxation > hamiltonian ]  assembling the Hamiltonian...
+[..._equilibrium_spinach > relaxation > hamiltonian ]  Hamiltonian assembly took 0.015602 seconds
+[..._equilibrium_spinach > relaxation > hamiltonian ]  maximum spherical rank in the giant spin Hamiltonian: 0
+[..._equilibrium_spinach > relaxation > hamiltonian ]  memory footprint of I array: 7.16e-06 GB
+[..._equilibrium_spinach > relaxation > hamiltonian ]  memory footprint of Q array: 4.717e-05 GB
+[... > li_exchange_equilibrium_spinach > relaxation ]  parallel evaluation path...
+[..._spinach > relaxation > redfield_integral_async ]  queuing up L=2, k=+2, m=+0, p=+2, q=+0, chemical species 1...
+[..._spinach > relaxation > redfield_integral_async ]  queuing up L=2, k=+2, m=+0, p=+2, q=+0, chemical species 2...
+[..._spinach > relaxation > redfield_integral_async ]  queuing up L=2, k=+1, m=+0, p=+1, q=+0, chemical species 1...
+[..._spinach > relaxation > redfield_integral_async ]  queuing up L=2, k=+1, m=+0, p=+1, q=+0, chemical species 2...
+[..._spinach > relaxation > redfield_integral_async ]  queuing up L=2, k=+0, m=+0, p=+0, q=+0, chemical species 1...
+[..._spinach > relaxation > redfield_integral_async ]  queuing up L=2, k=+0, m=+0, p=+0, q=+0, chemical species 2...
+[..._spinach > relaxation > redfield_integral_async ]  queuing up L=2, k=-1, m=+0, p=-1, q=+0, chemical species 1...
+[..._spinach > relaxation > redfield_integral_async ]  queuing up L=2, k=-1, m=+0, p=-1, q=+0, chemical species 2...
+[..._spinach > relaxation > redfield_integral_async ]  queuing up L=2, k=-2, m=+0, p=-2, q=+0, chemical species 1...
+[..._spinach > relaxation > redfield_integral_async ]  queuing up L=2, k=-2, m=+0, p=-2, q=+0, chemical species 2...
+[..._spinach > relaxation > redfield_integral_async ]  getting data from workers...
+[... > li_exchange_equilibrium_spinach > relaxation ]  Redfield superoperator build time: 0.57849 seconds
+[... > li_exchange_equilibrium_spinach > relaxation ]  full relaxation superoperator density 7.7003%, nnz 74, sparsity 1
+[... > li_exchange_equilibrium_spinach > relaxation ]  dynamic frequency shifts have been ignored.
+[... > li_exchange_equilibrium_spinach > relaxation ]  secular approximation wrt Zeeman Hamiltonian...
+[... > li_exchange_equilibrium_spinach > relaxation ]  non-secular cross-relaxation terms have been ignored.
+[... > li_exchange_equilibrium_spinach > relaxation ]  thermalisation method: none, relaxation to unit state
+[... > li_exchange_equilibrium_spinach > relaxation ]  final relaxation superoperator density 7.7003%, nnz(R)=74, sparsity 0
+[... > li_exchange_equilibrium_spinach > relaxation ]  memory footprint of the relaxation superoperator: 1.432e-05 GB
+relaxation                            0.6 s
+[...n > li_exchange_equilibrium_spinach > evolution ]  trying to reduce the problem dimension...
+[...n > li_exchange_equilibrium_spinach > evolution ]  destination state screening is not applicable.
+[...change_equilibrium_spinach > evolution > reduce ]  no permutation symmetry information has been supplied.
+[...change_equilibrium_spinach > evolution > reduce ]  attempting zero track elimination...
+[..._equilibrium_spinach > evolution > reduce > zte ]  dropping states with amplitudes below 1e-24 within the first 0.015232 seconds.
+[..._equilibrium_spinach > evolution > reduce > zte ]  a maximum of 32 steps shall be taken, 0.00047601 seconds each.
+[..._equilibrium_spinach > evolution > reduce > zte ]  evolution step 0, active space dimension 7
+[..._equilibrium_spinach > evolution > reduce > zte ]  evolution step 1, active space dimension 7
+[..._equilibrium_spinach > evolution > reduce > zte ]  state space dimension reduced from 31 to 7
+[...change_equilibrium_spinach > evolution > reduce ]  path-tracing subspace #1...
+[...brium_spinach > evolution > reduce > path_trace ]  small state space - path tracing skipped.
+[...n > li_exchange_equilibrium_spinach > evolution ]  splitting the space...
+[...n > li_exchange_equilibrium_spinach > evolution ]  evolving subspace 1 of 1...
+[...n > li_exchange_equilibrium_spinach > evolution ]  building the propagator...
+[...n > li_exchange_equilibrium_spinach > evolution ]  propagating the system on CPU...
+[...n > li_exchange_equilibrium_spinach > evolution ]  propagation finished.
+[...n > li_exchange_equilibrium_spinach > evolution ]  recombining subspaces...
+[...n > li_exchange_equilibrium_spinach > evolution ]  data retrieval finished.
+trajectory                            0.1 s
+Density Operator after equilibrium(H0)
+[...n > li_exchange_equilibrium_spinach > stateinfo ]  state vector 2-norm: 1
+[...n > li_exchange_equilibrium_spinach > stateinfo ]  16 most populated basis states (state, coeff, number)
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....    ....      +1.000e+00    1
+[...n > li_exchange_equilibrium_spinach > stateinfo ]   (1,+0)   ....      +5.751e-06    18
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (1,+0)     +5.751e-06    3
+[...n > li_exchange_equilibrium_spinach > stateinfo ]   (2,+0)   ....      +1.323e-11    22
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (2,+0)     +1.323e-11    7
+[...n > li_exchange_equilibrium_spinach > stateinfo ]   (3,+0)   ....      +1.521e-17    28
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (3,+0)     +1.521e-17    13
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (1,+1)     +0.000e+00    2
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (1,-1)     +0.000e+00    4
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (2,+2)     +0.000e+00    5
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (2,+1)     +0.000e+00    6
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (2,-1)     +0.000e+00    8
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (2,-2)     +0.000e+00    9
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (3,+3)     +0.000e+00    10
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (3,+2)     +0.000e+00    11
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (3,+1)     +0.000e+00    12
+Density Operator after H+1i*K (targeted state)
+[...n > li_exchange_equilibrium_spinach > stateinfo ]  state vector 2-norm: 1
+[...n > li_exchange_equilibrium_spinach > stateinfo ]  16 most populated basis states (state, coeff, number)
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....    ....      +1.000e+00    1
+[...n > li_exchange_equilibrium_spinach > stateinfo ]   (1,+0)   ....      +1.093e-05    18
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (1,+0)     +5.751e-07    3
+[...n > li_exchange_equilibrium_spinach > stateinfo ]   (2,+0)   ....      +2.513e-11    22
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (2,+0)     +1.323e-12    7
+[...n > li_exchange_equilibrium_spinach > stateinfo ]   (3,+0)   ....      +2.891e-17    28
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (3,+0)     +1.521e-18    13
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (1,+1)     +0.000e+00    2
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (1,-1)     +0.000e+00    4
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (2,+2)     +0.000e+00    5
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (2,+1)     +0.000e+00    6
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (2,-1)     +0.000e+00    8
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (2,-2)     +0.000e+00    9
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (3,+3)     +0.000e+00    10
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (3,+2)     +0.000e+00    11
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (3,+1)     +0.000e+00    12
+Density Operator after perturbation + H+1i*R+1i*K
+[...n > li_exchange_equilibrium_spinach > stateinfo ]  state vector 2-norm: 1
+[...n > li_exchange_equilibrium_spinach > stateinfo ]  16 most populated basis states (state, coeff, number)
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....    ....      +1.000e+00    1
+[...n > li_exchange_equilibrium_spinach > stateinfo ]   (1,+0)   ....      +1.093e-05    18
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (1,+0)     +5.751e-07    3
+[...n > li_exchange_equilibrium_spinach > stateinfo ]   (2,+0)   ....      +2.044e-11    22
+[...n > li_exchange_equilibrium_spinach > stateinfo ]   (3,+0)   ....      +8.747e-12    28
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (2,+0)     +1.083e-12    7
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (3,+0)     +4.768e-13    13
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (1,+1)     +0.000e+00    2
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (1,-1)     +0.000e+00    4
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (2,+2)     +0.000e+00    5
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (2,+1)     +0.000e+00    6
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (2,-1)     +0.000e+00    8
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (2,-2)     +0.000e+00    9
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (3,+3)     +0.000e+00    10
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (3,+2)     +0.000e+00    11
+[...n > li_exchange_equilibrium_spinach > stateinfo ]    ....   (3,+1)     +0.000e+00    12
+Unity State population in the targeted state: 1
+analysis                              0.2 s
+plot                                  0.5 s
+total                                 2.6 s

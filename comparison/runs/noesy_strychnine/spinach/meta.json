@@ -1,7 +1,7 @@
 {
   "side": "spinach",
   "case": "noesy_strychnine",
-  "created_utc": "2026-10-12T16:23:40Z",
+  "created_utc": "2026-10-14T17:38:16Z",
   "spinach_root": "/Users/alexej/Documents/PROG/respinach-spinach",
   "spinach_commit": "03a88b7e912ffbb3122dd24829cc5d216209c804",
   "spinach_describe": "2.13",
@@ -10,6 +10,13 @@
   "platform": "MACA64",
   "hostname": "MacBook-Pro-8.local",
   "cores": 12,
+  "blas": "Apple Accelerate BLAS (ILP64)",
+  "lapack": "NAG Performance Components (NPC) Release 1.4.1, supporting Linear Algebra PACKage (LAPACK 3.9.1)",
+  "comp_threads": 12,
   "pool_workers": 11,
-  "options": {}
+  "gpu": false,
+  "gpu_device": "",
+  "options": {
+    "gpu": false
+  }
 }

@@ -284,6 +284,16 @@ spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))</code></pre>
         </dl>
         <a href="comparison/runs/zulf_pf6_1d/report.html">Open the report</a>
       </div>
+      <div class="card">
+        <h3>li_exchange_equilibrium</h3>
+        <p>Two 7Li sites with quadrupolar and shift tensors in chemical exchange: thermal state equilibrated under exchange, Redfield relaxation thermalised to it, a 2 s trajectory analysed by tensor projections and state classes.</p>
+        <dl>
+          <dt>trajectory agreement</dt><dd>4e-13 relative</dd>
+          <dt>states</dt><dd>1e-17 relative or better</dd>
+          <dt>size</dt><dd>31 states, seconds on both sides</dd>
+        </dl>
+        <a href="comparison/runs/li_exchange_equilibrium/report.html">Open the report</a>
+      </div>
     </div>
     <p>Both runs: Apple silicon Mac, 12 cores; MATLAB R2026b with an 11-worker pool; Python 3.12 with NumPy and SciPy on Accelerate. The protocol, including how to add a case, is in <a href="https://github.com/ajerschow/respinach/blob/main/comparison/README.md">comparison/README.md</a>.</p>
   </div>

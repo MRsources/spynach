@@ -1,0 +1,37 @@
+{
+  "stages": [
+    {
+      "label": "create",
+      "seconds": 0.0005806249973829836
+    },
+    {
+      "label": "basis",
+      "seconds": 0.00154983099855599
+    },
+    {
+      "label": "hamiltonian",
+      "seconds": 0.014465438998740865
+    },
+    {
+      "label": "equilibrium",
+      "seconds": 0.003332619999127928
+    },
+    {
+      "label": "relaxation",
+      "seconds": 0.03708499300046242
+    },
+    {
+      "label": "trajectory",
+      "seconds": 0.18531317199813202
+    },
+    {
+      "label": "analysis",
+      "seconds": 0.09870199500073795
+    },
+    {
+      "label": "plot",
+      "seconds": 0.24652959200102487
+    }
+  ],
+  "total_s": 0.5921356770013517
+}
