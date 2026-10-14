@@ -4,7 +4,9 @@ A Python reimplementation of the [Spinach](https://spindynamics.org) spin
 dynamics kernel (MIT licence, see `LICENSE`), verified stage by stage against the MATLAB
 original. **Start with the [Hilbert-space guide](docs/hilbert-space.md)**; if you use
 Spinach, also read [Coming from Spinach](docs/coming-from-spinach.md). Each
-guide has a runnable Jupyter notebook in [`docs/notebooks/`](docs/notebooks/). See `HANDOFF.md` for goals and design decisions, and
+guide has a runnable Jupyter notebook in [`docs/notebooks/`](docs/notebooks/). The project
+page at [ajerschow.github.io/respinach](https://ajerschow.github.io/respinach/) links the
+guides, the notebooks (rendered by nbviewer) and the Spinach comparison reports. See `HANDOFF.md` for goals and design decisions, and
 `oracle/README.md` for the reference-data ("fixture") harness.
 
 ## Status
@@ -120,6 +122,13 @@ Every user-facing change comes with user documentation in the same
 commit; see [`docs/README.md`](docs/README.md) for the conventions. After
 editing a guide, regenerate its notebook with
 `python docs/build_notebooks.py`; `tests/docs/` fails if it is stale.
+
+`index.html` at the repository root is the landing page served by GitHub
+Pages from the root of `main` (Settings > Pages > Deploy from a branch >
+`main`, `/ (root)`; `.nojekyll` keeps Pages from preprocessing the tree).
+It is hand-maintained: when a guide or a comparison case is added, add
+its row or card there. Reports are linked relatively, so they are served
+by Pages; guides and notebooks link to GitHub and nbviewer.
 
 `src/respinach/_isotope_data.py` is generated from Spinach's `spin.m` by
 `porting/tools/gen_isotopes.py`; do not edit it by hand.

@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>respinach</title>
+<meta name="description" content="A Python reimplementation of the Spinach spin dynamics kernel, verified stage by stage against the MATLAB original.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one 68rem column, section eyebrows in mono, a spectrum drawn to scale as the opener, cards only for the two reports. */
+:root {
+  --bg: #f6f7f5;
+  --surface: #ffffff;
+  --fg: #1c2024;
+  --muted: #5c6670;
+  --line: #d9ded8;
+  --accent: #0f6e63;
+  --accent-ink: #0a5047;
+  --code-bg: #eef1ee;
+  --sans: "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15191c; --surface: #1d2226; --fg: #e6e9e4; --muted: #9aa5ad; --line: #2f373d;
+    --accent: #5fc4b4; --accent-ink: #8ad8cb; --code-bg: #101417;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15191c; --surface: #1d2226; --fg: #e6e9e4; --muted: #9aa5ad; --line: #2f373d;
+  --accent: #5fc4b4; --accent-ink: #8ad8cb; --code-bg: #101417;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { font-size: 16px; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: var(--sans); line-height: 1.55; font-size: 1.0625rem;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent-ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:hover { color: var(--accent); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+code, pre { font-family: var(--mono); font-size: 0.875em; }
+code { background: var(--code-bg); padding: 0.08em 0.3em; border-radius: 3px; }
+pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 0.9rem 1rem; overflow-x: auto; margin: 0; line-height: 1.5; }
+pre code { background: none; padding: 0; font-size: 1em; }
+.wrap { max-width: 68rem; margin: 0 auto; padding-inline: 16px; padding-block: 0 3rem; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.15; margin: 0; font-weight: 600; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2.4rem, 6vw, 3.6rem); font-weight: 700; letter-spacing: -0.03em; }
+h2 { font-size: 1.6rem; }
+h3 { font-size: 1.1rem; }
+p { margin: 0; max-width: 42rem; }
+.eyebrow { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-ink); }
+nav.top { display: flex; flex-wrap: wrap; gap: 0.5rem 1.4rem; align-items: baseline; padding-block: 1.1rem; border-bottom: 1px solid var(--line); font-size: 0.95rem; }
+nav.top .brand { font-family: var(--mono); font-weight: 500; color: var(--fg); text-decoration: none; margin-right: auto; }
+nav.top a:not(.brand) { color: var(--muted); text-decoration: none; }
+nav.top a:not(.brand):hover { color: var(--accent-ink); }
+.hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 2rem 3rem; align-items: center; padding-block: 3rem 2.5rem; }
+.hero p.lede { font-size: 1.25rem; color: var(--muted); margin-top: 1rem; }
+.hero .actions { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 1.6rem; }
+.btn { display: inline-block; padding: 0.55rem 1rem; border-radius: 6px; text-decoration: none; font-weight: 500; border: 1px solid var(--accent); color: var(--accent-ink); }
+.btn.primary { background: var(--accent); color: var(--bg); }
+.btn.primary:hover { color: var(--bg); filter: brightness(1.08); }
+figure { margin: 0; min-width: 0; }
+figure svg { width: 100%; height: auto; display: block; }
+figcaption { font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem; font-family: var(--mono); }
+section { padding-block: 2.2rem; border-top: 1px solid var(--line); display: grid; grid-template-columns: 12rem minmax(0, 1fr); gap: 1rem 2.5rem; }
+section > header { display: grid; gap: 0.4rem; align-content: start; }
+section > div { min-width: 0; display: grid; gap: 1rem; }
+ul.plain { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.6rem; max-width: 46rem; }
+ul.plain li { padding-left: 1.1rem; position: relative; }
+ul.plain li::before { content: ""; position: absolute; left: 0; top: 0.68em; width: 0.45rem; height: 0.45rem; border-radius: 50%; background: var(--accent); }
+ul.plain b { font-weight: 600; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1.4rem; }
+table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
+.scroll { overflow-x: auto; }
+th, td { text-align: left; padding: 0.55rem 0.7rem 0.55rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; font-size: 0.8rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td .links { white-space: nowrap; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 1.2rem; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 1.1rem 1.2rem; display: grid; gap: 0.7rem; align-content: start; min-width: 0; }
+.card h3 { font-family: var(--mono); font-weight: 500; font-size: 1rem; }
+.card dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 1rem; font-size: 0.92rem; }
+.card dt { color: var(--muted); }
+.card dd { margin: 0; font-variant-numeric: tabular-nums; }
+.card p { font-size: 0.92rem; color: var(--muted); }
+footer { border-top: 1px solid var(--line); padding-block: 1.6rem; font-size: 0.9rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 0.4rem 1.4rem; }
+@media (max-width: 720px) {
+  .hero { grid-template-columns: 1fr; }
+  section { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: no-preference) { a, .btn { transition: color 120ms ease, filter 120ms ease; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav class="top" aria-label="Site">
+  <a class="brand" href="#">respinach</a>
+  <a href="#quick-start">Quick start</a>
+  <a href="#docs">Documentation</a>
+  <a href="#reports">Parity and timing</a>
+  <a href="https://github.com/ajerschow/respinach">GitHub</a>
+  <a href="https://spindynamics.org">Spinach</a>
+</nav>
+
+<div class="hero">
+  <div>
+    <h1>respinach</h1>
+    <p class="lede">A Python reimplementation of the Spinach spin dynamics kernel, verified stage by stage against the MATLAB original.</p>
+    <div class="actions">
+      <a class="btn primary" href="#quick-start">Quick start</a>
+      <a class="btn" href="https://github.com/ajerschow/respinach/blob/main/docs/hilbert-space.md">Read the first guide</a>
+    </div>
+  </div>
+  <figure aria-label="Simulated proton spectrum of the two-spin quick-start example">
+    <!-- Drawn from the spectrum respinach computes for the quick-start example (1 Hz exponential line broadening, 4096-point zero fill); x: ppm axis from respinach.plotting.axis_1d, y: normalised real part. -->
+    <svg viewBox="0 0 520 250" role="img">
+      <g stroke="var(--line)" stroke-width="1">
+        <line x1="40" y1="200" x2="500" y2="200"/>
+        <line x1="40" y1="135" x2="500" y2="135" stroke-dasharray="2 4"/>
+        <line x1="40" y1="70" x2="500" y2="70" stroke-dasharray="2 4"/>
+      </g>
+      <path fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linejoin="round" d="M500.0,198.5 L485.6,198.5 L471.2,198.5 L456.9,198.5 L442.5,198.5 L428.1,198.5 L413.7,198.5 L399.4,198.5 L385.0,198.5 L370.6,198.5 L356.2,198.5 L341.8,198.3 L333.7,196.1 L333.6,196.0 L333.5,195.8 L333.4,195.5 L333.3,195.3 L333.2,195.1 L333.1,194.7 L333.0,194.4 L332.8,194.0 L332.7,193.6 L332.6,193.0 L332.5,192.4 L332.4,191.7 L332.3,190.8 L332.2,189.7 L332.1,188.4 L332.0,186.9 L331.8,184.9 L331.7,182.3 L331.6,179.1 L331.5,175.1 L331.4,169.6 L331.3,162.2 L331.2,152.7 L331.1,140.2 L330.9,124.6 L330.8,108.1 L330.7,95.9 L330.6,93.8 L330.5,102.7 L330.4,118.4 L330.3,134.8 L330.2,148.4 L330.0,158.9 L329.9,167.1 L329.8,173.2 L329.7,177.7 L329.6,181.1 L329.5,183.9 L329.4,186.1 L329.3,187.7 L329.1,189.1 L329.0,190.3 L328.9,191.2 L328.8,192.0 L328.7,192.6 L328.6,193.2 L328.5,193.7 L328.4,194.0 L328.2,194.4 L328.1,194.7 L328.0,195.0 L327.9,195.2 L327.8,195.4 L327.7,195.6 L327.6,195.8 L327.5,195.9 L327.3,196.0 L327.2,196.2 L323.3,196.1 L323.2,196.1 L323.1,196.0 L323.0,195.8 L322.9,195.6 L322.7,195.5 L322.6,195.3 L322.5,195.1 L322.4,194.8 L322.3,194.6 L322.2,194.3 L322.1,193.9 L322.0,193.5 L321.8,193.1 L321.7,192.6 L321.6,191.9 L321.5,191.1 L321.4,190.4 L321.3,189.4 L321.2,188.1 L321.1,186.6 L320.9,184.9 L320.8,182.7 L320.7,179.8 L320.6,176.1 L320.5,171.6 L320.4,165.5 L320.3,157.3 L320.2,146.4 L320.0,132.4 L319.9,114.5 L319.8,94.1 L319.7,76.8 L319.6,70.0 L319.5,77.2 L319.4,94.6 L319.3,115.0 L319.1,132.9 L319.0,146.8 L318.9,157.5 L318.8,165.8 L318.7,171.8 L318.6,176.3 L318.5,179.9 L318.4,182.8 L318.2,185.0 L318.1,186.7 L318.0,188.2 L317.9,189.5 L317.8,190.5 L317.7,191.3 L317.6,192.1 L317.5,192.7 L317.3,193.2 L317.2,193.7 L317.1,194.1 L317.0,194.5 L316.9,194.8 L316.8,195.0 L316.7,195.3 L316.6,195.5 L316.4,195.7 L316.3,195.9 L316.2,196.1 L316.1,196.2 L313.1,197.8 L298.7,198.4 L284.3,198.5 L269.9,198.5 L255.6,198.5 L241.2,198.4 L226.8,197.9 L223.1,196.3 L223.0,196.1 L222.9,195.9 L222.8,195.8 L222.7,195.6 L222.5,195.3 L222.4,195.1 L222.3,194.8 L222.2,194.5 L222.1,194.2 L222.0,193.7 L221.9,193.3 L221.8,192.8 L221.6,192.2 L221.5,191.4 L221.4,190.7 L221.3,189.7 L221.2,188.5 L221.1,187.0 L221.0,185.3 L220.9,183.2 L220.7,180.5 L220.6,177.0 L220.5,172.6 L220.4,166.9 L220.3,159.1 L220.2,148.8 L220.1,135.5 L220.0,118.4 L219.8,98.1 L219.7,79.6 L219.6,70.2 L219.5,74.7 L219.4,90.7 L219.3,111.1 L219.2,129.6 L219.1,144.3 L218.9,155.6 L218.8,164.3 L218.7,170.7 L218.6,175.4 L218.5,179.2 L218.4,182.2 L218.3,184.5 L218.2,186.3 L218.0,187.9 L217.9,189.2 L217.8,190.2 L217.7,191.0 L217.6,191.8 L217.5,192.5 L217.4,193.0 L217.3,193.4 L217.1,193.8 L217.0,194.2 L216.9,194.5 L216.8,194.8 L216.7,195.0 L216.6,195.3 L216.5,195.5 L216.4,195.6 L216.2,195.8 L216.1,195.9 L216.0,196.0 L215.9,196.1 L212.4,196.5 L212.0,196.2 L211.9,196.0 L211.8,195.9 L211.6,195.8 L211.5,195.7 L211.4,195.4 L211.3,195.2 L211.2,195.1 L211.1,194.8 L211.0,194.4 L210.9,194.1 L210.7,193.8 L210.6,193.3 L210.5,192.7 L210.4,192.1 L210.3,191.4 L210.2,190.5 L210.1,189.3 L210.0,188.0 L209.8,186.4 L209.7,184.3 L209.6,181.6 L209.5,178.3 L209.4,174.1 L209.3,168.3 L209.2,160.5 L209.1,150.4 L208.9,137.4 L208.8,121.3 L208.7,105.1 L208.6,94.6 L208.5,94.7 L208.4,105.5 L208.3,121.7 L208.2,137.8 L208.0,150.7 L207.9,160.8 L207.8,168.5 L207.7,174.3 L207.6,178.5 L207.5,181.8 L207.4,184.5 L207.3,186.6 L207.2,188.1 L207.0,189.5 L206.9,190.6 L206.8,191.5 L206.7,192.2 L206.6,192.9 L206.5,193.5 L206.4,194.0 L206.3,194.3 L206.1,194.7 L206.0,195.0 L205.9,195.3 L205.8,195.5 L205.7,195.7 L205.6,195.9 L205.5,196.1 L198.1,198.3 L183.7,198.5 L169.3,198.5 L154.9,198.5 L140.5,198.5 L126.2,198.5 L111.8,198.5 L97.4,198.5 L83.0,198.5 L68.6,198.5 L54.3,198.5 L40.0,198.5"/>
+      <g fill="var(--muted)" font-family="JetBrains Mono, Menlo, monospace" font-size="11">
+        <g stroke="var(--muted)" stroke-width="1">
+          <line x1="103.9" y1="200" x2="103.9" y2="206"/><line x1="214.4" y1="200" x2="214.4" y2="206"/>
+          <line x1="324.8" y1="200" x2="324.8" y2="206"/><line x1="435.3" y1="200" x2="435.3" y2="206"/>
+        </g>
+        <text x="103.9" y="222" text-anchor="middle">1.4</text>
+        <text x="214.4" y="222" text-anchor="middle">1.2</text>
+        <text x="324.8" y="222" text-anchor="middle">1.0</text>
+        <text x="435.3" y="222" text-anchor="middle">0.8</text>
+        <text x="500" y="243" text-anchor="end">1H chemical shift / ppm, 14.1 T</text>
+        <text x="214.4" y="56" text-anchor="middle">J = 12 Hz</text>
+        <text x="324.8" y="56" text-anchor="middle">J = 12 Hz</text>
+      </g>
+    </svg>
+    <figcaption>The two-spin system from the quick start, as respinach computes it (1 Hz line broadening).</figcaption>
+  </figure>
+</div>
+
+<section id="goals">
+  <header><span class="eyebrow">Goals</span><h2>What the project is for</h2></header>
+  <div>
+    <ul class="plain">
+      <li><b>A readable, maintainable kernel.</b> The Spinach algorithms in plain Python with NumPy and SciPy, with the same names and conventions wherever that is possible.</li>
+      <li><b>Verified, not eyeballed.</b> Every ported stage is compared with reference data computed by Spinach itself, with tolerances that are stated and explained.</li>
+      <li><b>Ready for accelerators.</b> The hot loops go through one backend adapter so that a GPU array library can be plugged in; that step is deferred until a target device is chosen.</li>
+      <li><b>Later: a differentiable engine</b> for optimal control and fitting, and possibly a tensor-train backend for chain-like coupling topologies.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="approach">
+  <header><span class="eyebrow">Approach</span><h2>How the port is done</h2></header>
+  <div>
+    <ul class="plain">
+      <li><b>An oracle harness.</b> MATLAB dump scripts write the intermediate results of a Spinach calculation to HDF5 fixtures; parity tests load them and compare the Python results at each stage (<a href="https://github.com/ajerschow/respinach/blob/main/oracle/README.md">oracle/README.md</a>).</li>
+      <li><b>Stage by stage.</b> Spin system, basis, operators, Hamiltonian, propagation, relaxation, contexts, pulse sequences: each lands with its fixtures, tests and documentation before the next starts (<a href="https://github.com/ajerschow/respinach/blob/main/porting/ROADMAP.md">roadmap</a>).</li>
+      <li><b>Two formalisms behind one basis abstraction.</b> Dense Zeeman-Hilbert space for small systems, the spherical-tensor Liouville space with state-space restriction (IK-0, IK-1, IK-2) for large liquid-state systems.</li>
+      <li><b>Nothing silently ignored.</b> Any Spinach option that is not yet ported raises an error rather than being dropped.</li>
+      <li><b>Executable documentation.</b> Every guide's code blocks run in the test suite and are rendered into notebooks with their outputs.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="spinach">
+  <header><span class="eyebrow">Spinach</span><h2>Relationship to the original</h2></header>
+  <div>
+    <p>respinach derives from <a href="https://spindynamics.org">Spinach</a> 2.13, the spin dynamics package of Ilya Kuprov and co-workers, released under the MIT licence. The translation keeps the Spinach attribution and notice in <a href="https://github.com/ajerschow/respinach/blob/main/LICENSE">LICENSE</a>, and keeps Spinach's function names, parameter structures and tolerances so that an existing Spinach script maps onto respinach line by line.</p>
+    <p>The deliberate differences are small: spin indices are 0-based, product and sum operators are told apart by the type of the first argument, spin system objects are immutable, and time series are 1-D arrays. The guide <a href="https://github.com/ajerschow/respinach/blob/main/docs/coming-from-spinach.md">Coming from Spinach</a> lists, feature by feature, what is the same, what differs and what is not yet ported.</p>
+    <p>The translation from MATLAB to Python was carried out largely by an AI coding agent working under the direction of the author, who set the goals and reviewed the results; correctness rests on the test suite against Spinach reference data, not on the method of authorship (see the licence file).</p>
+  </div>
+</section>
+
+<section id="scope">
+  <header><span class="eyebrow">Scope</span><h2>What is ported</h2></header>
+  <div>
+    <div class="two">
+      <div>
+        <h3>Available now</h3>
+        <ul class="plain" style="margin-top:0.6rem">
+          <li>Liquid-state pulse-acquire in Hilbert space (<code>zeeman-hilb</code>)</li>
+          <li>Liouville space (<code>sphten-liouv</code>): restricted basis, superoperators, states, propagation with zero track elimination and path tracing, chemical exchange</li>
+          <li>Anisotropic interactions with the <code>crystal</code> and <code>powder</code> contexts and Spinach's grids</li>
+          <li>Redfield relaxation, T1/T2 and damping models, thermalisation</li>
+          <li>Magic angle spinning in Fokker-Planck form (<code>singlerot</code>)</li>
+          <li>COSY, NOESY, HSQC with isotopomer dilution, apodisation, 2D plotting</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Not yet</h3>
+        <ul class="plain" style="margin-top:0.6rem">
+          <li>Symmetry groups in the basis</li>
+          <li>The <code>zeeman-liouv</code> formalism</li>
+          <li>Decoupling inside the contexts</li>
+          <li>GPU execution (the entry points are marked)</li>
+          <li>ESR, DNP, imaging and optimal control modules</li>
+        </ul>
+        <p style="margin-top:0.8rem">The function-by-function table is in the <a href="https://github.com/ajerschow/respinach/blob/main/README.md#status">README</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="quick-start">
+  <header><span class="eyebrow">Quick start</span><h2>Install and run</h2></header>
+  <div>
+    <p>Python 3.11 or newer. Install from the repository, or clone it and install in editable mode with the <code>docs</code> extra to open the notebooks.</p>
+<pre><code>pip install "respinach @ git+https://github.com/ajerschow/respinach.git"
+
+# or, for the notebooks and tests
+git clone https://github.com/ajerschow/respinach.git
+cd respinach &amp;&amp; pip install -e ".[docs,test]"</code></pre>
+    <p>A two-spin system, 14.1 T, pulse-acquire on the protons:</p>
+<pre><code>import numpy as np
+import respinach
+
+ss = respinach.create(
+    {"isotopes": ["1H", "1H"], "magnet": 14.1},
+    {"zeeman": {"scalar": [1.00, 1.20]}, "coupling": {"scalar": [[0, 12.0], [0, 0]]}},
+)
+ss = respinach.basis(ss, {"formalism": "zeeman-hilb", "approximation": "none"})
+pars = {"spins": ["1H"], "offset": 660, "sweep": 500, "npoints": 1024,
+        "rho0": respinach.state(ss, "L+", "1H"), "coil": respinach.state(ss, "L+", "1H")}
+fid = respinach.liquid(ss, respinach.acquire, pars, "nmr")
+spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))</code></pre>
+    <p>On machines whose NumPy uses OpenBLAS, set <code>OPENBLAS_NUM_THREADS</code> to the number of cores you actually have; dense LAPACK calls slow down badly when the library sees more cores than the process may use.</p>
+  </div>
+</section>
+
+<section id="docs">
+  <header><span class="eyebrow">Documentation</span><h2>Guides and notebooks</h2></header>
+  <div>
+    <p>Each guide is a Markdown document whose code runs in the test suite, and a Jupyter notebook generated from it with its outputs and interactive plots. The notebook links open in nbviewer, which renders the Plotly figures; GitHub's own notebook viewer does not.</p>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Guide</th><th>Covers</th><th>Open</th></tr></thead>
+      <tbody>
+        <tr><td>Hilbert space</td><td>liquid-state NMR in Hilbert space: setup, the simulation pipeline, pulse sequences, tolerances, parity with Spinach</td><td class="links"><a href="https://github.com/ajerschow/respinach/blob/main/docs/hilbert-space.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/respinach/blob/main/docs/notebooks/hilbert-space.ipynb">notebook</a></td></tr>
+        <tr><td>Liouville space</td><td>the spherical-tensor formalism: basis descriptor, state-space restriction, filters, chemical subsystems</td><td class="links"><a href="https://github.com/ajerschow/respinach/blob/main/docs/liouville-space.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/respinach/blob/main/docs/notebooks/liouville-space.ipynb">notebook</a></td></tr>
+        <tr><td>Solid state</td><td>anisotropic interactions: tensors, dipolar couplings from coordinates, quadrupolar couplings, crystal and powder contexts, grids</td><td class="links"><a href="https://github.com/ajerschow/respinach/blob/main/docs/solid-state.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/respinach/blob/main/docs/notebooks/solid-state.ipynb">notebook</a></td></tr>
+        <tr><td>Relaxation</td><td>Redfield theory for rotational diffusion, T1/T2 and damping models, thermal equilibrium, transient NOE</td><td class="links"><a href="https://github.com/ajerschow/respinach/blob/main/docs/relaxation.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/respinach/blob/main/docs/notebooks/relaxation.ipynb">notebook</a></td></tr>
+        <tr><td>Magic angle spinning</td><td>the Fokker-Planck treatment of sample rotation: rotor phase grid, the singlerot context, sidebands, rotor echoes</td><td class="links"><a href="https://github.com/ajerschow/respinach/blob/main/docs/magic-angle-spinning.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/respinach/blob/main/docs/notebooks/magic-angle-spinning.ipynb">notebook</a></td></tr>
+        <tr><td>Pulse sequences</td><td>writing sequences, apodisation and 2D plots, decoupling and homospoil, COSY, NOESY, HSQC with isotopomer dilution</td><td class="links"><a href="https://github.com/ajerschow/respinach/blob/main/docs/pulse-sequences.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/respinach/blob/main/docs/notebooks/pulse-sequences.ipynb">notebook</a></td></tr>
+        <tr><td>Coming from Spinach</td><td>what carries over from Spinach and what differs: spin systems, basis, operators, Hamiltonians, parameters, modalities, processing</td><td class="links"><a href="https://github.com/ajerschow/respinach/blob/main/docs/coming-from-spinach.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/respinach/blob/main/docs/notebooks/coming-from-spinach.ipynb">notebook</a></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>Full-size translations of Spinach example scripts live in <a href="https://github.com/ajerschow/respinach/tree/main/examples">examples/</a>; the <a href="https://github.com/ajerschow/respinach/blob/main/docs/README.md">documentation index</a> explains how the guides, notebooks and examples fit together.</p>
+  </div>
+</section>
+
+<section id="reports">
+  <header><span class="eyebrow">Verification</span><h2>Parity and timing</h2></header>
+  <div>
+    <p>The parity suites compare respinach with Spinach 2.13 fixtures at every stage of a calculation. Of the 510 tests, 295 are fixture comparisons over 55 fixture sets: Liouville-space setup (132), Liouville-space propagation (54), Hilbert-space pulse-acquire (40), anisotropic interactions (25), relaxation (20), magic angle spinning (16) and pulse sequences (8). FIDs of ported sequences agree to about 1e-10 relative, the level of Spinach's own rounding of Hamiltonian elements.</p>
+    <p>Two full-size calculations are run on both sides under a profiler, on the same machine, and summarised in an HTML report with the stage timings, the normwise difference of every saved array, the figures and the profiler tops. The stage timings below are wall clock for each implementation as shipped: Spinach with its parallel pool and multithreaded BLAS, respinach as a single process with multithreaded BLAS inside dense calls.</p>
+    <div class="cards">
+      <div class="card">
+        <h3>noesy_strychnine</h3>
+        <p>22 protons, IK-2 basis (12 316 states), Redfield relaxation, 500 ms NOESY, 512 x 512 points.</p>
+        <dl>
+          <dt>FID agreement</dt><dd>2.2e-12 relative</dd>
+          <dt>liquid/noesy stage</dt><dd>93.3 s respinach, 83.0 s Spinach</dd>
+          <dt>whole case</dt><dd>93.6 s respinach, 110.9 s Spinach</dd>
+        </dl>
+        <a href="comparison/runs/noesy_strychnine/report.html">Open the report</a>
+      </div>
+      <div class="card">
+        <h3>zulf_pf6_1d</h3>
+        <p>31P and six 19F at 2.7 µT, complete basis (16 384 states), lab frame, selective pulse and 16 384-point acquisition.</p>
+        <dl>
+          <dt>FID agreement</dt><dd>1.5e-12 relative</dd>
+          <dt>acquisition stage</dt><dd>46.9 s respinach, 40.0 s Spinach</dd>
+          <dt>whole case</dt><dd>47.1 s respinach, 69.0 s Spinach</dd>
+        </dl>
+        <a href="comparison/runs/zulf_pf6_1d/report.html">Open the report</a>
+      </div>
+    </div>
+    <p>Both runs: Apple silicon Mac, 12 cores; MATLAB R2026b with an 11-worker pool; Python 3.12 with NumPy and SciPy on Accelerate. The protocol, including how to add a case, is in <a href="https://github.com/ajerschow/respinach/blob/main/comparison/README.md">comparison/README.md</a>.</p>
+  </div>
+</section>
+
+<footer>
+  <span>MIT licence, with the Spinach notice.</span>
+  <span>Alexej Jerschow, New York University.</span>
+  <a href="https://github.com/ajerschow/respinach/blob/main/HANDOFF.md">Design decisions</a>
+  <a href="https://github.com/ajerschow/respinach/blob/main/porting/ROADMAP.md">Roadmap</a>
+  <a href="https://github.com/ajerschow/respinach">Source</a>
+</footer>
+
+</div>
+</body>
+</html>

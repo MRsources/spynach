@@ -14,7 +14,9 @@ The notebooks are saved with their outputs, plots included. Open them
 with `OPENBLAS_NUM_THREADS=4 jupyter lab docs/notebooks/` after
 `pip install -e ".[docs]"`, or in VS Code with the Python and Jupyter
 extensions; the plots are interactive in both. (GitHub's notebook viewer
-does not show Plotly figures.)
+does not show Plotly figures; nbviewer does, and the project page
+[ajerschow.github.io/respinach](https://ajerschow.github.io/respinach/)
+links every notebook through it.)
 
 To experiment, copy a notebook into `scratch/` at the repository root
 (ignored by git) and work on the copy; it uses the same `respinach` code. The
