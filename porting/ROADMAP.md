@@ -138,7 +138,7 @@ Liouville formalisms with `reduce` (ZTE, path tracing, DSS; symmetry still
 refused), `krylov`, Taylor propagator with thresholding and the
 `krylov_tol` switch, pulse-acquire through `liquid`/`acquire` with
 `H + i·K`; fixtures `dump_liouv_pa.m` (FR-003) reusing the step-3 cases plus
-exchange line shapes. Then the `spinpy.backend` adapter and CuPy, with the
+exchange line shapes. Then the `respinach.backend` adapter and CuPy, with the
 first benchmarks on `liouv_chain_ik2`-style systems at 500–10 000 states.
 
 ## Step 5: anisotropic interactions (decided 2026-10-11: this, then relaxation)
@@ -146,8 +146,8 @@ first benchmarks on `liouv_chain_ik2`-style systems at 500–10 000 states.
 Status (2026-10-11): implemented on `main`. `create` takes `eigs`/`euler`
 tensors and coordinates (dipolar couplings, proximity graph);
 `hamiltonian(..., aniso=True)` returns `(I, Q)` and `orientation` contracts
-`Q` with Wigner matrices (`spinpy.conventions`); `crystal` and `powder`
-contexts with Spinach's grids shipped as `spinpy/grids/*.npz`;
+`Q` with Wigner matrices (`respinach.conventions`); `crystal` and `powder`
+contexts with Spinach's grids shipped as `respinach/grids/*.npz`;
 `esr`/`deer`/`labframe` assumption sets. Verified against closed forms
 (CSA, dipolar angular dependence, quadrupolar) and Hilbert/Liouville
 agreement; FR-004 fulfilled, 25 parity tests pass (1e-13 or better,

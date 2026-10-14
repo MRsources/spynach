@@ -1,9 +1,9 @@
-# Spinach vs spinpy comparison runs
+# Spinach vs respinach comparison runs
 
 A reusable protocol for timing, profiling and comparing a Spinach
-calculation with its spinpy translation, ending in one HTML report per run.
-The Spinach side runs in MATLAB on the host; the spinpy side runs in the
-container (or anywhere spinpy is installed); the report is built from the
+calculation with its respinach translation, ending in one HTML report per run.
+The Spinach side runs in MATLAB on the host; the respinach side runs in the
+container (or anywhere respinach is installed); the report is built from the
 files both sides leave behind. Nothing here is executed by the test suite
 except the report and runner helpers (`tests/unit/test_comparison.py`).
 
@@ -13,14 +13,14 @@ except the report and runner helpers (`tests/unit/test_comparison.py`).
 comparison/
   README.md                      this protocol
   cases/<case>/<case>_spinach.m  MATLAB side of a case: timed stages, returns data and figures
-  cases/<case>/<case>_spinpy.py  spinpy side: run(timer, **options) -> (data, figs)
+  cases/<case>/<case>_respinach.py  respinach side: run(timer, **options) -> (data, figs)
   matlab/run_comparison.m        MATLAB runner (settings block at the top): profiler, dumps, figures
   matlab/lib/                    cmp_timer, cmp_profile, cmp_meta, cmp_json, cmp_option
   run_spinach.sh                 runs run_comparison.m in MATLAB batch mode
-  run_spinpy.py                  spinpy runner: cProfile, dumps, figures
+  run_respinach.py                  respinach runner: cProfile, dumps, figures
   report.py                      builds runs/<run>/report.html from the two sides
   runs/<run>/spinach/            MATLAB outputs (git-ignored)
-  runs/<run>/spinpy/             spinpy outputs (git-ignored)
+  runs/<run>/respinach/             respinach outputs (git-ignored)
   runs/<run>/report.html         the report
 ```
 
@@ -43,9 +43,9 @@ holds:
 |---|---|
 | `timings.json` | `stages` (label, seconds, in order) and `total_s` (wall clock of the whole case) |
 | `profile.json` | `by_total` and `by_self`: the top functions with `calls`, `total_s` (with callees), `self_s` |
-| `meta.json` | provenance: Spinach commit and dirty flag, MATLAB version, pool size; spinpy commit, Python/NumPy/SciPy versions, `OPENBLAS_NUM_THREADS`; host, cores, case options |
+| `meta.json` | provenance: Spinach commit and dirty flag, MATLAB version, pool size; respinach commit, Python/NumPy/SciPy versions, `OPENBLAS_NUM_THREADS`; host, cores, case options |
 | `data.mat` / `data.npz` | every array the case returned, same names on both sides (`-v7` MAT file, readable by SciPy) |
-| `figure_<name>.png` | the figures the case returned (spinpy also writes `figure_<name>.html`, the interactive Plotly figure) |
+| `figure_<name>.png` | the figures the case returned (respinach also writes `figure_<name>.html`, the interactive Plotly figure) |
 | `console.log` | everything printed during the run, including Spinach's report output |
 
 ## Running a comparison
@@ -64,13 +64,13 @@ holds:
    `runs/<run>/spinach/`. Figures are saved from invisible figure windows,
    so batch mode works.
 
-2. **spinpy side, in the container.**
+2. **respinach side, in the container.**
 
    ```
-   OPENBLAS_NUM_THREADS=4 PYTHONPATH=src python comparison/run_spinpy.py noesy_strychnine --report
+   OPENBLAS_NUM_THREADS=4 PYTHONPATH=src python comparison/run_respinach.py noesy_strychnine --report
    ```
 
-   writes `runs/noesy_strychnine/spinpy/` and, with `--report`, builds the
+   writes `runs/noesy_strychnine/respinach/` and, with `--report`, builds the
    report. `--gpu` selects the GPU run (`runs/noesy_strychnine-gpu/`). `--tag quick --option npoints=64 --option zerofill=256` runs a
    reduced case into `runs/noesy_strychnine-quick/`; option values are
    parsed as JSON and passed to the case's `run()` as keyword arguments.
@@ -81,8 +81,8 @@ holds:
 3. **Report.** `python comparison/report.py noesy_strychnine` (a run name
    under `runs/`, or a path) writes `runs/noesy_strychnine/report.html`:
    provenance of both sides, stage timings side by side with the
-   spinpy/Spinach ratio, the normwise relative error
-   `||spinpy - Spinach||_F / ||Spinach||_F` and the largest elementwise
+   respinach/Spinach ratio, the normwise relative error
+   `||respinach - Spinach||_F / ||Spinach||_F` and the largest elementwise
    difference of every array (the oracle tests' metric; FIDs of ported
    sequences agree to about 1e-10), the figures next to each other, the
    profiler tops of both sides, and links to the console logs. Either side
@@ -94,22 +94,22 @@ the MATLAB settings block adds `'gpu'` to `sys.enable` of every case (the
 case honours `options.gpu`), records the device in `meta.json` and writes
 to `runs/<case>-gpu/`; Spinach itself falls back to the CPU when no
 CUDA device is present, which `gpu_device` in the provenance table shows.
-`--gpu` on `run_spinpy.py` does the same for spinpy, which currently
+`--gpu` on `run_respinach.py` does the same for respinach, which currently
 refuses it (`porting/gpu-notes.md`): the run then leaves only `meta.json`
 with the error, and the report says so in its status line. A GPU report
-is still worth building for the Spinach timings alone, and the spinpy
+is still worth building for the Spinach timings alone, and the respinach
 side fills in once the backend exists. Never mix sides from different
 switches in one run directory.
 
 The two sides can run in either order, and either can be rerun alone
-(for example after a spinpy optimisation) before rebuilding the report.
-Keep the Spinach outputs of a run when only spinpy changes: they are the
+(for example after a respinach optimisation) before rebuilding the report.
+Keep the Spinach outputs of a run when only respinach changes: they are the
 reference.
 
 ## Reading the numbers
 
 - **Timings** are wall clock per stage. Spinach uses its parallel pool
-  (`pool_workers` in `meta.json`) and spinpy is serial, so compare like
+  (`pool_workers` in `meta.json`) and respinach is serial, so compare like
   with like: a 4-CPU container against an 8-worker pool measures
   throughput per machine, not per core. Spinach's first run after
   starting MATLAB includes pool start-up and JIT warm-up inside `create`;
@@ -144,14 +144,14 @@ timer.start('plot'); figs.noesy=figure('Visible','off'); plot_2d(spin_system,...
 end
 ```
 
-**Python** `cases/<case>/<case>_spinpy.py`:
+**Python** `cases/<case>/<case>_respinach.py`:
 
 ```python
-from comparison.run_spinpy import load_example
+from comparison.run_respinach import load_example
 example = load_example("nmr_liquids/<case>")     # reuse the translation in examples/ when there is one
 
 def run(timer, npoints=512, zerofill=2048):
-    ...                                           # with timer("basis"): ss = spinpy.basis(ss, bas)
+    ...                                           # with timer("basis"): ss = respinach.basis(ss, bas)
     return {"fid_cos": ..., "fid_sin": ..., "spectrum": ...}, {"noesy": fig}
 ```
 

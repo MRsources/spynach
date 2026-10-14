@@ -48,11 +48,11 @@ added to the same generator.
 
 ```python
 import numpy as np
-import spinpy
+import respinach
 
 
 def spin_system(isotopes, **inter):
-    return spinpy.create({"isotopes": isotopes, "magnet": 14.1}, inter)
+    return respinach.create({"isotopes": isotopes, "magnet": 14.1}, inter)
 ```
 
 ## The basis descriptor
@@ -67,7 +67,7 @@ normalised to unit Frobenius norm, and is described by one integer per spin.
 lexicographically with the all-zero unit state first:
 
 ```python
-ab = spinpy.basis(spin_system(["1H", "1H"]), {"formalism": "sphten-liouv", "approximation": "none"})
+ab = respinach.basis(spin_system(["1H", "1H"]), {"formalism": "sphten-liouv", "approximation": "none"})
 assert ab.basis.nstates == 16                    # (2*2)^2: the complete Liouville space
 assert ab.basis.basis[0].tolist() == [0, 0]      # the unit state
 assert ab.basis.basis[6].tolist() == [1, 2]      # T(1,+1) on spin 0 times T(1,0) on spin 1
@@ -82,7 +82,7 @@ non-unit tensor):
 ```python
 assert ab.basis.tot_proj[6] == 1 and ab.basis.tot_cord[6] == 2
 assert sorted(set(ab.basis.tot_cord)) == [0, 1, 2]
-hd = spinpy.basis(spin_system(["1H", "2H"]), {"formalism": "sphten-liouv", "approximation": "none"})
+hd = respinach.basis(spin_system(["1H", "2H"]), {"formalism": "sphten-liouv", "approximation": "none"})
 assert hd.basis.nstates == 4 * 9                 # spin-1 has nine tensors, ranks 0 to 2
 ```
 
@@ -118,7 +118,7 @@ from math import comb
 
 five = spin_system(["1H"] * 5)
 for level in (1, 2, 3, 5):
-    ik0 = spinpy.basis(five, {"formalism": "sphten-liouv", "approximation": "IK-0", "inter_level": level})
+    ik0 = respinach.basis(five, {"formalism": "sphten-liouv", "approximation": "IK-0", "inter_level": level})
     assert ik0.basis.nstates == sum(comb(5, j) * 3**j for j in range(level + 1))
     print(f"IK-0 level {level}: {ik0.basis.nstates} states")
 
@@ -126,9 +126,9 @@ J = np.zeros((8, 8))
 for n in range(7):
     J[n, n + 1] = 10.0                       # nearest-neighbour couplings only
 chain = spin_system(["1H"] * 8, coupling={"scalar": J.tolist()})
-ik2 = spinpy.basis(chain, {"formalism": "sphten-liouv", "approximation": "IK-2",
+ik2 = respinach.basis(chain, {"formalism": "sphten-liouv", "approximation": "IK-2",
                            "connectivity": "scalar_couplings", "prox_level": 1})
-ik1 = spinpy.basis(chain, {"formalism": "sphten-liouv", "approximation": "IK-1",
+ik1 = respinach.basis(chain, {"formalism": "sphten-liouv", "approximation": "IK-1",
                            "connectivity": "scalar_couplings", "inter_level": 4, "prox_level": 1})
 print(f"8-spin chain: complete {4**8}, IK-2 {ik2.basis.nstates}, IK-1(4) {ik1.basis.nstates}")
 assert ik2.basis.tot_cord.max() == 3         # a chain spin has at most two neighbours
@@ -165,10 +165,10 @@ single molecule they are lists of one element.
 
 ```python
 hc = spin_system(["1H", "13C"], zeeman={"scalar": [2.0, 30.0]}, coupling={"scalar": [[0, 145.0], [0, 0]]})
-full = spinpy.basis(hc, {"formalism": "sphten-liouv", "approximation": "none"})
-plus_one = spinpy.basis(hc, {"formalism": "sphten-liouv", "approximation": "none", "projections": [[1]]})
-carbon_z = spinpy.basis(hc, {"formalism": "sphten-liouv", "approximation": "none", "longitudinal": [["13C"]]})
-carbon_zq = spinpy.basis(hc, {"formalism": "sphten-liouv", "approximation": "none", "zero_quantum": [[1]]})
+full = respinach.basis(hc, {"formalism": "sphten-liouv", "approximation": "none"})
+plus_one = respinach.basis(hc, {"formalism": "sphten-liouv", "approximation": "none", "projections": [[1]]})
+carbon_z = respinach.basis(hc, {"formalism": "sphten-liouv", "approximation": "none", "longitudinal": [["13C"]]})
+carbon_zq = respinach.basis(hc, {"formalism": "sphten-liouv", "approximation": "none", "zero_quantum": [[1]]})
 assert full.basis.nstates == 16
 assert plus_one.basis.nstates == 5 and set(plus_one.basis.tot_proj[1:]) == {1}
 assert carbon_z.basis.nstates == 8 and set(carbon_z.basis.basis[:, 1]) == {0, 2}
@@ -180,7 +180,7 @@ per subgraph and one column per spin, whose complete product bases are
 added to whatever the approximation generates.
 
 ```python
-manual = spinpy.basis(chain, {"formalism": "sphten-liouv", "approximation": "IK-0", "inter_level": 1,
+manual = respinach.basis(chain, {"formalism": "sphten-liouv", "approximation": "IK-0", "inter_level": 1,
                               "manual": [[True, False, False, False, False, False, False, True]]})
 assert manual.basis.nstates == 1 + 8 * 3 + 9     # singles, plus the two-spin states on spins 0 and 7
 ```
@@ -199,7 +199,7 @@ the same state of the other.
 ```python
 exchanging = spin_system(["1H", "1H"], zeeman={"scalar": [0.0, 3.0]},
                          chem={"parts": [[0], [1]], "rates": [[-2e3, 2e3], [2e3, -2e3]], "concs": [1.0, 1.0]})
-two_sites = spinpy.basis(exchanging, {"formalism": "sphten-liouv", "approximation": "none"})
+two_sites = respinach.basis(exchanging, {"formalism": "sphten-liouv", "approximation": "none"})
 assert two_sites.basis.nstates == 7              # 1 + 3 + 3, not 16
 print(two_sites.basis.basis.T)
 ```
@@ -218,17 +218,17 @@ operator_type)` returns the chosen superoperator as a sparse
 descriptions are the same as in Hilbert space:
 
 ```python
-ab_hilb = spinpy.basis(spin_system(["1H", "1H"]), {"formalism": "zeeman-hilb", "approximation": "none"})
-Lz_comm = spinpy.operator(ab, "Lz", "1H")                   # [Lz, .] on both protons
-Lz_left = spinpy.operator(ab, "Lz", "1H", "left")
-Lz_right = spinpy.operator(ab, "Lz", "1H", "right")
+ab_hilb = respinach.basis(spin_system(["1H", "1H"]), {"formalism": "zeeman-hilb", "approximation": "none"})
+Lz_comm = respinach.operator(ab, "Lz", "1H")                   # [Lz, .] on both protons
+Lz_left = respinach.operator(ab, "Lz", "1H", "left")
+Lz_right = respinach.operator(ab, "Lz", "1H", "right")
 assert Lz_comm.shape == (16, 16)
 assert abs(Lz_comm - (Lz_left - Lz_right)).max() == 0
 ```
 
 Nothing is ever expanded into the full `dim^2 x dim^2` space: the product
 of two spherical tensors on one spin is a fixed linear combination of
-spherical tensors on that spin (`spinpy.operators.ist_product_table`), so
+spherical tensors on that spin (`respinach.operators.ist_product_table`), so
 the action on a product state factorises over the spins and the matrix
 elements are looked up directly in the basis descriptor. In a restricted
 basis the result is the exact superoperator projected onto the kept
@@ -238,7 +238,7 @@ Hilbert-space definition, `A[k, j] = <B_k | Q B_j>` for the orthonormal
 basis operators `B_k`:
 
 ```python
-from spinpy.operators import irr_sph_ten, lin2lm
+from respinach.operators import irr_sph_ten, lin2lm
 
 def basis_operator(ss, row):
     t = np.array([[1.0 + 0j]])
@@ -248,7 +248,7 @@ def basis_operator(ss, row):
     return t / np.sqrt(np.vdot(t, t).real)
 
 B = [basis_operator(ab, row) for row in ab.basis.basis]
-Q = spinpy.operator(ab_hilb, "Lz", "1H").toarray()
+Q = respinach.operator(ab_hilb, "Lz", "1H").toarray()
 reference = np.array([[np.vdot(bk, Q @ bj) for bj in B] for bk in B])
 assert abs(Lz_left.toarray() - reference).max() < 1e-15
 ```
@@ -269,18 +269,18 @@ coefficient of the unit state. Spinach's three methods are available:
   term belongs to, for exchanging systems.
 
 ```python
-rho_exact = spinpy.state(ab, "Lz", "1H")
-rho_cheap = spinpy.state(ab, "Lz", "1H", "cheap")
+rho_exact = respinach.state(ab, "Lz", "1H")
+rho_cheap = respinach.state(ab, "Lz", "1H", "cheap")
 assert rho_exact.shape == (16,)
 assert np.count_nonzero(rho_exact) == 2 and set(rho_exact[rho_exact != 0]) == {0.5}
 assert set(rho_cheap[rho_cheap != 0]) == {1.0}
-coil = spinpy.state(ab, "L+", "1H")
+coil = respinach.state(ab, "L+", "1H")
 assert np.isclose(np.vdot(coil, rho_exact), 0)      # Lz and L+ are orthogonal
-weighted = spinpy.state(two_sites, "L+", "1H", "chem")
+weighted = respinach.state(two_sites, "L+", "1H", "chem")
 assert np.count_nonzero(weighted) == 2             # one T(1,+1) state per site
 ```
 
-Expectation values are Frobenius products, `spinpy.hdot(coil, rho)`, so
+Expectation values are Frobenius products, `respinach.hdot(coil, rho)`, so
 the observable of a `'exact'` state against a `'exact'` coil carries a
 factor `1/dim` relative to the Hilbert-space trace; Spinach has the same
 convention, and only ratios of observables matter in practice.
@@ -293,11 +293,11 @@ superoperator `[H, .]`, the generator of coherent evolution. The
 rotating-frame offsets of `frqoffset` are added as `2 pi offset [Lz, .]`:
 
 ```python
-hc_nmr = spinpy.assume(spinpy.basis(hc, {"formalism": "sphten-liouv", "approximation": "none"}), "nmr")
-H = spinpy.hamiltonian(hc_nmr)
+hc_nmr = respinach.assume(respinach.basis(hc, {"formalism": "sphten-liouv", "approximation": "none"}), "nmr")
+H = respinach.hamiltonian(hc_nmr)
 assert H.shape == (16, 16)
-H_off = spinpy.frqoffset(hc_nmr, H, {"spins": ["1H"], "offset": [1200.0]})
-Lz_comm_H = spinpy.operator(hc_nmr, "Lz", "1H")
+H_off = respinach.frqoffset(hc_nmr, H, {"spins": ["1H"], "offset": [1200.0]})
+Lz_comm_H = respinach.operator(hc_nmr, "Lz", "1H")
 assert abs(H_off - H - 2 * np.pi * 1200.0 * Lz_comm_H).max() < 1e-9
 ```
 
@@ -307,8 +307,8 @@ the spectrum can be read off directly; as a check against the Hilbert-space
 Hamiltonian:
 
 ```python
-hc_hilb = spinpy.assume(spinpy.basis(hc, {"formalism": "zeeman-hilb", "approximation": "none"}), "nmr")
-E = np.linalg.eigvalsh(np.asarray(spinpy.hamiltonian(hc_hilb)))
+hc_hilb = respinach.assume(respinach.basis(hc, {"formalism": "zeeman-hilb", "approximation": "none"}), "nmr")
+E = np.linalg.eigvalsh(np.asarray(respinach.hamiltonian(hc_hilb)))
 differences = np.sort((E[:, None] - E[None, :]).ravel())
 assert np.allclose(np.sort(np.linalg.eigvals(np.asarray(H)).real), differences, atol=1e-6)
 ```
@@ -325,12 +325,12 @@ Liouvillian as `L = H + 1j * R + 1j * K`, Spinach's convention for
 dissipative superoperators:
 
 ```python
-exch_nmr = spinpy.assume(two_sites, "nmr")
-K = spinpy.kinetics(exch_nmr)
+exch_nmr = respinach.assume(two_sites, "nmr")
+K = respinach.kinetics(exch_nmr)
 assert K.shape == (7, 7)
 assert np.allclose(np.asarray(K.sum(axis=0)), 0)          # conservation of matter
 assert K[0, 0] == 0                                        # the unit state is untouched
-L = spinpy.hamiltonian(exch_nmr) + 1j * K
+L = respinach.hamiltonian(exch_nmr) + 1j * K
 ```
 
 ## Analytical filters
@@ -345,13 +345,13 @@ spec)` keeps the states whose total coherence order over each spin set in
 space on the last axis, so they work on stacks of state vectors too.
 
 ```python
-rho = spinpy.state(hc_nmr, "L+", "all") + spinpy.state(hc_nmr, ["Lz", "L+"], [0, 1])
-single = spinpy.correlation(hc_nmr, rho, [1])
+rho = respinach.state(hc_nmr, "L+", "all") + respinach.state(hc_nmr, ["Lz", "L+"], [0, 1])
+single = respinach.correlation(hc_nmr, rho, [1])
 assert np.count_nonzero(single) == 2                      # L+ on 1H and on 13C
-proton = spinpy.coherence(hc_nmr, rho, [("1H", [1]), ("13C", [0])])
+proton = respinach.coherence(hc_nmr, rho, [("1H", [1]), ("13C", [0])])
 assert np.count_nonzero(proton) == 1                      # only L+ on the proton
 stack = np.stack([rho, 2 * rho])
-assert spinpy.correlation(hc_nmr, stack, [2]).shape == (2, 16)
+assert respinach.correlation(hc_nmr, stack, [2]).shape == (2, 16)
 ```
 
 ## Propagation: `step`, `evolution`, and the reductions
@@ -367,44 +367,44 @@ vectors, and a list of two or three generators sampled across the step
 ```python
 import scipy.linalg as sla
 
-L = spinpy.frqoffset(hc_nmr, spinpy.hamiltonian(hc_nmr), {"spins": ["1H"], "offset": [1200.0]})
-rho = spinpy.state(hc_nmr, "L+", "1H")
+L = respinach.frqoffset(hc_nmr, respinach.hamiltonian(hc_nmr), {"spins": ["1H"], "offset": [1200.0]})
+rho = respinach.state(hc_nmr, "L+", "1H")
 dt = 1e-3
-rho_dt = spinpy.step(hc_nmr, L, rho, dt)
+rho_dt = respinach.step(hc_nmr, L, rho, dt)
 assert np.allclose(rho_dt, sla.expm(-1j * np.asarray(L) * dt) @ rho, rtol=1e-12)
 ```
 
 `evolution(ss, L, coil, rho, dt, nsteps, output)` runs a whole free
 evolution period. Before propagating, it reduces the problem exactly for
-the trajectory at hand (`spinpy.reduce`):
+the trajectory at hand (`respinach.reduce`):
 
 - **destination state screening** (Krzystyniak et al. 2011): for the
   `'observable'` output the reduction is run backwards from the coil
   state, since only states that can reach the detector matter;
-- **zero track elimination** (Kuprov 2008, `spinpy.zte`): a short trial
+- **zero track elimination** (Kuprov 2008, `respinach.zte`): a short trial
   propagation marks the states that are ever populated above
   `tols.zte_tol`; the others are dropped;
-- **path tracing** (Hogben et al. 2010, `spinpy.path_trace`): the
+- **path tracing** (Hogben et al. 2010, `respinach.path_trace`): the
   generator is split into non-interacting subspaces (connected components
   of its graph), unpopulated ones are dropped, small ones merged into
   batches of `tols.merge_dim` states. Skipped below `tols.merge_dim`
   states.
 
 Each subspace is then propagated with the exponential propagator, or, above
-`tols.krylov_tol` states, by repeated `step` calls (`spinpy.krylov`).
+`tols.krylov_tol` states, by repeated `step` calls (`respinach.krylov`).
 `sys["disable"]` accepts Spinach's `'zte'`, `'pt'`, `'dss'`, `'merge'`,
 `'krylov'` and `'trajlevel'` tokens, `sys["enable"]` accepts `'krylov'`;
 none of them changes the answer:
 
 ```python
-coil = spinpy.state(hc_nmr, "L+", "1H")
-fid = spinpy.evolution(hc_nmr, L, coil, rho, 1 / 500, 63, "observable")
-hc_plain = spinpy.create({"isotopes": ["1H", "13C"], "magnet": 14.1, "disable": ["trajlevel"]},
+coil = respinach.state(hc_nmr, "L+", "1H")
+fid = respinach.evolution(hc_nmr, L, coil, rho, 1 / 500, 63, "observable")
+hc_plain = respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1, "disable": ["trajlevel"]},
                          {"zeeman": {"scalar": [2.0, 30.0]}, "coupling": {"scalar": [[0, 145.0], [0, 0]]}})
-hc_plain = spinpy.assume(spinpy.basis(hc_plain, {"formalism": "sphten-liouv", "approximation": "none"}), "nmr")
-fid_plain = spinpy.evolution(hc_plain, L, coil, rho, 1 / 500, 63, "observable")
+hc_plain = respinach.assume(respinach.basis(hc_plain, {"formalism": "sphten-liouv", "approximation": "none"}), "nmr")
+fid_plain = respinach.evolution(hc_plain, L, coil, rho, 1 / 500, 63, "observable")
 assert np.allclose(fid, fid_plain, rtol=1e-9)
-projectors = spinpy.reduce(hc_nmr, L.conj().T, coil)
+projectors = respinach.reduce(hc_nmr, L.conj().T, coil)
 assert sum(p.shape[1] for p in projectors) == 2     # L+(H) and L+(H)Lz(C) are all that reaches the coil
 ```
 
@@ -416,29 +416,29 @@ each, a Liouville-space observable is the Hilbert-space one divided by
 `dim`:
 
 ```python
-hc_hilb_nmr = spinpy.assume(spinpy.basis(hc, {"formalism": "zeeman-hilb", "approximation": "none"}), "nmr")
-L_hilb = spinpy.frqoffset(hc_hilb_nmr, spinpy.hamiltonian(hc_hilb_nmr), {"spins": ["1H"], "offset": [1200.0]})
-rho_hilb = spinpy.state(hc_hilb_nmr, "L+", "1H")
-fid_hilb = spinpy.evolution(hc_hilb_nmr, L_hilb, rho_hilb, rho_hilb, 1 / 500, 63, "observable")
+hc_hilb_nmr = respinach.assume(respinach.basis(hc, {"formalism": "zeeman-hilb", "approximation": "none"}), "nmr")
+L_hilb = respinach.frqoffset(hc_hilb_nmr, respinach.hamiltonian(hc_hilb_nmr), {"spins": ["1H"], "offset": [1200.0]})
+rho_hilb = respinach.state(hc_hilb_nmr, "L+", "1H")
+fid_hilb = respinach.evolution(hc_hilb_nmr, L_hilb, rho_hilb, rho_hilb, 1 / 500, 63, "observable")
 assert np.allclose(4 * fid, fid_hilb, rtol=1e-9)
 ```
 
 ## Pulse-acquire and chemical exchange through `liquid`
 
 `liquid` builds `H`, `R` (zero: relaxation is not ported) and `K`
-(`spinpy.kinetics`) and hands them to the pulse sequence, which forms the
+(`respinach.kinetics`) and hands them to the pulse sequence, which forms the
 Liouvillian as `L = H + 1j * R + 1j * K`; `acquire` then calls
 `evolution`. For an exchanging system the initial state is weighted by
 the concentrations (`state(..., "chem")`) and the coil is not, exactly as
 in Spinach's `examples/kinetics/exchange_symmetric.m`:
 
 ```python
-from spinpy.plotting import plot_1d
+from respinach.plotting import plot_1d
 
 exch_pars = {"spins": ["1H"], "offset": 900.0, "sweep": 5000.0, "npoints": 512, "zerofill": 1024,
-             "rho0": spinpy.state(two_sites, "L+", "1H", "chem"), "coil": spinpy.state(two_sites, "L+", "1H"),
+             "rho0": respinach.state(two_sites, "L+", "1H", "chem"), "coil": respinach.state(two_sites, "L+", "1H"),
              "axis_units": "ppm", "invert_axis": True}
-fid_exch = spinpy.liquid(two_sites, spinpy.acquire, exch_pars, "nmr")
+fid_exch = respinach.liquid(two_sites, respinach.acquire, exch_pars, "nmr")
 fid_exch *= np.exp(-6 * np.arange(exch_pars["npoints"]) / exch_pars["npoints"])   # exponential apodisation
 spectrum_exch = np.fft.fftshift(np.fft.fft(fid_exch, exch_pars["zerofill"]))
 plot_1d(two_sites, spectrum_exch.real, exch_pars)

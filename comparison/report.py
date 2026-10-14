@@ -1,4 +1,4 @@
-"""Builds the HTML report of a comparison run from its spinach/ and spinpy/ directories.
+"""Builds the HTML report of a comparison run from its spinach/ and respinach/ directories.
 
     python comparison/report.py <run> [<run> ...]        # <run> is a name under comparison/runs or a path
 
@@ -20,7 +20,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNS = ROOT / "comparison" / "runs"
-SIDES = ("spinach", "spinpy")
+SIDES = ("spinach", "respinach")
 TOP_SHOWN = 25
 
 
@@ -52,15 +52,15 @@ def load_data(side_dir: Path) -> dict[str, np.ndarray] | None:
 
 
 def compare_arrays(a: dict | None, b: dict | None) -> list[dict]:
-    """Rows for every variable: shapes, normwise relative error ||spinpy - spinach|| / ||spinach||, max |difference|."""
+    """Rows for every variable: shapes, normwise relative error ||respinach - spinach|| / ||spinach||, max |difference|."""
     a, b = a or {}, b or {}
     rows = []
     for name in sorted(set(a) | set(b)):
-        row = {"name": name, "spinach_shape": None, "spinpy_shape": None, "rel": None, "max_abs": None, "note": ""}
+        row = {"name": name, "spinach_shape": None, "respinach_shape": None, "rel": None, "max_abs": None, "note": ""}
         if name in a:
             row["spinach_shape"] = a[name].shape
         if name in b:
-            row["spinpy_shape"] = b[name].shape
+            row["respinach_shape"] = b[name].shape
         if name in a and name in b:
             x, y = np.asarray(b[name]), np.asarray(a[name])
             if x.shape != y.shape and np.squeeze(x).shape == np.squeeze(y).shape:
@@ -74,7 +74,7 @@ def compare_arrays(a: dict | None, b: dict | None) -> list[dict]:
                 row["rel"] = float(diff / ref) if ref > 0 else (0.0 if diff == 0 else float("inf"))
                 row["max_abs"] = float(np.max(np.abs(x - y))) if x.size else 0.0
         else:
-            row["note"] = "only in " + ("spinach" if name in a else "spinpy")
+            row["note"] = "only in " + ("spinach" if name in a else "respinach")
         rows.append(row)
     return rows
 
@@ -88,9 +88,9 @@ def timing_rows(sides: dict) -> list[dict]:
         for label in per_side[side]:
             if label not in labels:
                 labels.append(label)
-    rows = [{"label": l, "spinach": per_side["spinach"].get(l), "spinpy": per_side["spinpy"].get(l)} for l in labels]
+    rows = [{"label": l, "spinach": per_side["spinach"].get(l), "respinach": per_side["respinach"].get(l)} for l in labels]
     totals = {side: ((sides.get(side) or {}).get("timings") or {}).get("total_s") for side in SIDES}
-    rows.append({"label": "total (wall clock)", "spinach": totals["spinach"], "spinpy": totals["spinpy"]})
+    rows.append({"label": "total (wall clock)", "spinach": totals["spinach"], "respinach": totals["respinach"]})
     return rows
 
 
@@ -144,8 +144,8 @@ def meta_table(sides: dict) -> str:
                     ("spinach_dirty", "local modifications"), ("matlab_version", "MATLAB"), ("hostname", "host"),
                     ("platform", "platform"), ("cores", "cores"), ("pool_workers", "parallel pool workers"),
                     ("gpu", "GPU requested"), ("gpu_device", "GPU device"), ("options", "case options")],
-        "spinpy": [("created_utc", "run date (UTC)"), ("spinpy_describe", "spinpy version"), ("spinpy_commit", "commit"),
-                   ("spinpy_dirty", "local modifications"), ("python_version", "Python"), ("numpy_version", "NumPy"),
+        "respinach": [("created_utc", "run date (UTC)"), ("respinach_describe", "respinach version"), ("respinach_commit", "commit"),
+                   ("respinach_dirty", "local modifications"), ("python_version", "Python"), ("numpy_version", "NumPy"),
                    ("scipy_version", "SciPy"), ("hostname", "host"), ("platform", "platform"), ("cores", "cores"),
                    ("openblas_num_threads", "OPENBLAS_NUM_THREADS"), ("gpu", "GPU requested"), ("gpu_device", "GPU device"),
                    ("options", "case options"), ("error", "not run")],
@@ -169,9 +169,9 @@ def meta_table(sides: dict) -> str:
 
 def timings_table(rows: list[dict]) -> str:
     body = "".join(
-        f"<tr><td>{esc(r['label'])}</td><td class=\"num\">{fmt_s(r['spinach'])}</td><td class=\"num\">{fmt_s(r['spinpy'])}</td>"
-        f"<td class=\"num\">{fmt_ratio(r['spinach'], r['spinpy'])}</td></tr>" for r in rows)
-    return ('<table><tr><th>stage</th><th class="num">Spinach / s</th><th class="num">spinpy / s</th><th class="num">spinpy / Spinach</th></tr>'
+        f"<tr><td>{esc(r['label'])}</td><td class=\"num\">{fmt_s(r['spinach'])}</td><td class=\"num\">{fmt_s(r['respinach'])}</td>"
+        f"<td class=\"num\">{fmt_ratio(r['spinach'], r['respinach'])}</td></tr>" for r in rows)
+    return ('<table><tr><th>stage</th><th class="num">Spinach / s</th><th class="num">respinach / s</th><th class="num">respinach / Spinach</th></tr>'
             f"{body}</table>")
 
 
@@ -181,11 +181,11 @@ def data_table(rows: list[dict]) -> str:
     body = ""
     for r in rows:
         body += (f"<tr><td class=\"mono\">{esc(r['name'])}</td><td class=\"mono\">{esc(r['spinach_shape'] or '')}</td>"
-                 f"<td class=\"mono\">{esc(r['spinpy_shape'] or '')}</td><td class=\"num\">{fmt_rel(r['rel'])}</td>"
+                 f"<td class=\"mono\">{esc(r['respinach_shape'] or '')}</td><td class=\"num\">{fmt_rel(r['rel'])}</td>"
                  f"<td class=\"num\">{fmt_rel(r['max_abs'])}</td><td class=\"missing\">{esc(r['note'])}</td></tr>")
-    return ('<table><tr><th>variable</th><th>Spinach shape</th><th>spinpy shape</th><th class="num">relative error</th>'
+    return ('<table><tr><th>variable</th><th>Spinach shape</th><th>respinach shape</th><th class="num">relative error</th>'
             f'<th class="num">max |difference|</th><th></th></tr>{body}</table>'
-            '<p class="small">relative error = ||spinpy - Spinach||<sub>F</sub> / ||Spinach||<sub>F</sub>, the metric of the oracle tests.</p>')
+            '<p class="small">relative error = ||respinach - Spinach||<sub>F</sub> / ||Spinach||<sub>F</sub>, the metric of the oracle tests.</p>')
 
 
 def figures_section(sides: dict) -> str:
@@ -249,17 +249,17 @@ def build_report(run_dir: Path) -> Path:
     if failed:
         status += "; " + ", ".join(f"{side} did not run ({sides[side]['meta']['error']})" for side in failed)
     body = f"""<main>
-<h1>Spinach vs spinpy: {esc(case)} ({accel})</h1>
+<h1>Spinach vs respinach: {esc(case)} ({accel})</h1>
 <p class="sub">run <span class="mono">{esc(run_dir.name)}</span>, {esc(status)}. Built by comparison/report.py; protocol in comparison/README.md.</p>
 <h2>Provenance</h2>{meta_table(sides)}
 <h2>Timings</h2>{timings_table(timing_rows(sides))}
-<h2>Data</h2>{data_table(compare_arrays((sides['spinach'] or {}).get('data'), (sides['spinpy'] or {}).get('data')))}
+<h2>Data</h2>{data_table(compare_arrays((sides['spinach'] or {}).get('data'), (sides['respinach'] or {}).get('data')))}
 <h2>Figures</h2>{figures_section(sides)}
 <h2>Profiles</h2>{profile_tables(sides)}
 <h2>Console logs</h2>{logs_section(sides, run_dir)}
 </main>"""
     page = (f"<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
-            f"<title>Spinach vs spinpy: {esc(case)} ({accel})</title><style>{CSS}</style></head><body>{body}</body></html>")
+            f"<title>Spinach vs respinach: {esc(case)} ({accel})</title><style>{CSS}</style></head><body>{body}</body></html>")
     out = run_dir / "report.html"
     out.write_text(page, encoding="utf-8")
     return out

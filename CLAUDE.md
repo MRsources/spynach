@@ -1,12 +1,12 @@
-# spinpy: notes for agents
+# respinach: notes for agents
 
 Read `HANDOFF.md` for goals and design decisions, `README.md` for status,
 `porting/ROADMAP.md` for the current step, and `porting/design-notes.md`
 for the Liouville-space kernel design (literature and Spinach source review).
 GPU acceleration is deferred: `porting/gpu-notes.md` lists the entry points;
-keep the hot loops going through `spinpy.backend` and mark new device-relevant
+keep the hot loops going through `respinach.backend` and mark new device-relevant
 lines with `# GPU:`. `comparison/README.md` is the protocol for timed and
-profiled Spinach-vs-spinpy runs (MATLAB on the host, spinpy here, HTML report).
+profiled Spinach-vs-respinach runs (MATLAB on the host, respinach here, HTML report).
 `LICENSE` is MIT and carries the Spinach notice: material translated from
 Spinach keeps that attribution, and contributed scripts in `user_ml/` keep
 their author's name.
@@ -19,7 +19,7 @@ their author's name.
 - Guides are `docs/*.md`; their `python` blocks are executed by
   `tests/docs/`. Run `python docs/build_notebooks.py` after editing a guide:
   notebooks in `docs/notebooks/` are generated and saved with their outputs
-  (plots included), never hand-edited. Plot with `spinpy.plotting`.
+  (plots included), never hand-edited. Plot with `respinach.plotting`.
 - For each ported feature, update `docs/coming-from-spinach.md` with what is
   the same as in Spinach, what differs, and what is still not ported.
 - Split a guide by theme when it passes ~500 lines or a new formalism,

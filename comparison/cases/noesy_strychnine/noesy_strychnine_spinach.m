@@ -1,5 +1,5 @@
 % Comparison case: NOESY of strychnine, examples/nmr_liquids/noesy_strychnine.m
-% with timed stages. Stage labels must match noesy_strychnine_spinpy.py.
+% with timed stages. Stage labels must match noesy_strychnine_respinach.py.
 % Syntax:
 %
 %     [data,figs]=noesy_strychnine_spinach(timer,options)

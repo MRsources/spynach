@@ -4,9 +4,9 @@ import numpy as np
 import pytest
 import scipy.sparse as sps
 
-import spinpy
-from spinpy.conventions import eeqq2nqi, euler2dcm, mat2sphten, wigner
-from spinpy.oracle import assert_matches
+import respinach
+from respinach.conventions import eeqq2nqi, euler2dcm, mat2sphten, wigner
+from respinach.oracle import assert_matches
 
 HILB = {"formalism": "zeeman-hilb", "approximation": "none"}
 LIOUV = {"formalism": "sphten-liouv", "approximation": "none"}
@@ -17,12 +17,12 @@ def dense(x):
 
 
 def system(isotopes, bas=HILB, **inter):
-    return spinpy.assume(spinpy.basis(spinpy.create({"isotopes": isotopes, "magnet": 14.1}, inter), bas), "nmr")
+    return respinach.assume(respinach.basis(respinach.create({"isotopes": isotopes, "magnet": 14.1}, inter), bas), "nmr")
 
 
 def hamiltonian_at(ss, angles):
-    I, Q = spinpy.hamiltonian(ss, aniso=True)
-    H = dense(I) + dense(spinpy.orientation(Q, angles))
+    I, Q = respinach.hamiltonian(ss, aniso=True)
+    H = dense(I) + dense(respinach.orientation(Q, angles))
     return (H + H.conj().T) / 2
 
 
@@ -49,7 +49,7 @@ def test_conventions():
 
 
 def test_tensor_inputs():
-    ss = spinpy.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
+    ss = respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
                        {"zeeman": {"eigs": [[-2, -2, 4], None], "euler": [[0.3, 0.9, 1.2], None], "scalar": [1.0, 50.0]},
                         "coupling": {"eigs": [[None, [-1.0, -1.0, 2.0]], [None, None]],
                                      "euler": [[None, [0.1, 0.2, 0.3]], [None, None]], "scalar": [[0, 140.0], [0, 0]]}})
@@ -60,36 +60,36 @@ def test_tensor_inputs():
     assert np.allclose(ss.coupling_matrix[0][1] / (2 * np.pi), R @ np.diag([-1.0, -1.0, 2.0]) @ R.T + 140.0 * np.eye(3))
     assert ss.coupling_matrix[1][0] is None
     with pytest.raises(ValueError, match="euler"):
-        spinpy.create({"isotopes": ["1H"], "magnet": 14.1}, {"zeeman": {"eigs": [[1, 2, 3]]}})
+        respinach.create({"isotopes": ["1H"], "magnet": 14.1}, {"zeeman": {"eigs": [[1, 2, 3]]}})
     with pytest.raises(ValueError, match="identical non-empty"):
-        spinpy.create({"isotopes": ["1H"], "magnet": 14.1}, {"zeeman": {"eigs": [[1, 2, 3]], "euler": [None]}})
+        respinach.create({"isotopes": ["1H"], "magnet": 14.1}, {"zeeman": {"eigs": [[1, 2, 3]], "euler": [None]}})
 
 
 def test_dipolar_couplings_from_coordinates():
     """dipolar.m stores half the dipolar tensor in both [n][k] and [k][n]; the pair counts twice in H."""
-    ss = spinpy.create({"isotopes": ["1H", "13C"], "magnet": 14.1}, {"coordinates": [[0, 0, 0], [0, 0, 1.09]]})
+    ss = respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1}, {"coordinates": [[0, 0, 0], [0, 0, 1.09]]})
     r = 1.09e-10
     b = ss.gammas[0] * ss.gammas[1] * ss.tols.hbar * ss.tols.mu0 / (4 * np.pi * r**3)
     D = ss.coupling_matrix[0][1]
     assert np.allclose(D, 0.5 * b * np.diag([1, 1, -2])) and np.allclose(ss.coupling_matrix[1][0], D)
     assert ss.proxmatrix.tolist() == [[False, True], [True, False]]
     assert np.isclose(abs(b) / (2 * np.pi), 23.3e3, rtol=0.01)     # the usual 1H-13C one-bond dipolar coupling
-    far = spinpy.create({"isotopes": ["1H", "13C"], "magnet": 14.1, "tols": {"prox_cutoff": 1.0}},
+    far = respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1, "tols": {"prox_cutoff": 1.0}},
                         {"coordinates": [[0, 0, 0], [0, 0, 1.09]]})
     assert far.coupling_matrix[0][1] is None and not far.proxmatrix.any()
     with pytest.raises(ValueError, match="collision"):
-        spinpy.create({"isotopes": ["1H", "1H"], "magnet": 14.1}, {"coordinates": [[0, 0, 0], [0, 0, 0.3]]})
+        respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1}, {"coordinates": [[0, 0, 0], [0, 0, 0.3]]})
     # Coordinates only couple spins within one chemical subsystem
-    two = spinpy.create({"isotopes": ["1H", "1H"], "magnet": 14.1},
+    two = respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1},
                         {"coordinates": [[0, 0, 0], [0, 0, 2.0]], "chem": {"parts": [[0], [1]], "concs": [1, 1]}})
     assert two.coupling_matrix[0][1] is None
 
 
 def test_proximity_graph_drives_ik_bases():
     coords = [[0, 0, 0], [0, 0, 1.5], [0, 0, 3.0], [0, 0, 20.0]]
-    ss = spinpy.create({"isotopes": ["1H"] * 4, "magnet": 14.1, "tols": {"prox_cutoff": 2.0}}, {"coordinates": coords})
+    ss = respinach.create({"isotopes": ["1H"] * 4, "magnet": 14.1, "tols": {"prox_cutoff": 2.0}}, {"coordinates": coords})
     assert ss.proxmatrix.sum() == 4        # 0-1 and 1-2, both ways
-    bas = spinpy.basis(ss, {**LIOUV, "approximation": "IK-1", "connectivity": "scalar_couplings",
+    bas = respinach.basis(ss, {**LIOUV, "approximation": "IK-1", "connectivity": "scalar_couplings",
                             "inter_level": 1, "prox_level": 2}).basis
     # pairs (0,1) and (1,2) correlate; spin 3 and the pair (0,2) do not
     assert bas.nstates == 1 + 4 * 3 + 2 * 9
@@ -98,7 +98,7 @@ def test_proximity_graph_drives_ik_bases():
 @pytest.mark.parametrize("bas", [HILB, LIOUV])
 def test_csa_hamiltonian_follows_the_rotated_tensor(bas):
     ss = system(["1H"], bas, zeeman={"eigs": [[-2, -2, 4]], "euler": [[0, 0, 0]], "scalar": [3.0]})
-    Lz = dense(spinpy.operator(ss, "Lz", "1H"))
+    Lz = dense(respinach.operator(ss, "Lz", "1H"))
     for angles in ([0, 0, 0], [0.3, 0.9, 1.2], [1.0, 2.0, 3.0]):
         R = euler2dcm(angles)
         Z = R @ ss.zeeman_matrix[0] @ R.T
@@ -108,8 +108,8 @@ def test_csa_hamiltonian_follows_the_rotated_tensor(bas):
 
 def test_dipolar_pair_angular_dependence():
     ss = system(["1H", "1H"], HILB, coordinates=[[0, 0, 0], [0, 0, 3.0]])
-    LzSz = dense(spinpy.operator(ss, ["Lz", "Lz"], [0, 1]))
-    flip = dense(spinpy.operator(ss, ["L+", "L-"], [0, 1])) + dense(spinpy.operator(ss, ["L-", "L+"], [0, 1]))
+    LzSz = dense(respinach.operator(ss, ["Lz", "Lz"], [0, 1]))
+    flip = dense(respinach.operator(ss, ["L+", "L-"], [0, 1])) + dense(respinach.operator(ss, ["L-", "L+"], [0, 1]))
     for beta in (0.0, 0.7, np.pi / 2, np.arccos(1 / np.sqrt(3))):
         D = euler2dcm([0, beta, 0]) @ ss.coupling_matrix[0][1] @ euler2dcm([0, beta, 0]).T
         expected = 2 * D[2, 2] * (LzSz - flip / 4)        # twice: both [0][1] and [1][0] hold half the tensor
@@ -120,38 +120,38 @@ def test_dipolar_pair_angular_dependence():
 def test_quadrupolar_coupling_enters_through_q():
     nqi = eeqq2nqi(1.24e6, 0.22, 1, [0, 0, 0])
     ss = system(["14N"], HILB, coupling={"matrix": [[nqi.tolist()]]})
-    I, Q = spinpy.hamiltonian(ss, aniso=True)
+    I, Q = respinach.hamiltonian(ss, aniso=True)
     assert np.abs(dense(I)).max() == 0                      # no isotropic part
     H = hamiltonian_at(ss, [0, 0, 0])
-    T20 = dense(spinpy.operator(ss, ["T2,0"], [0]))
+    T20 = dense(respinach.operator(ss, ["T2,0"], [0]))
     _, _, phi = mat2sphten(2 * np.pi * nqi)
     np.testing.assert_allclose(H, phi[2] * T20, rtol=1e-12, atol=1e-6)   # secular: T(2,0) only under 'nmr'
     with pytest.raises(ValueError, match="traceless"):
-        spinpy.hamiltonian(system(["14N"], HILB, coupling={"matrix": [[np.eye(3).tolist()]]}), aniso=True)
+        respinach.hamiltonian(system(["14N"], HILB, coupling={"matrix": [[np.eye(3).tolist()]]}), aniso=True)
 
 
 def test_powder_average_and_crystal():
-    ss = spinpy.basis(spinpy.create({"isotopes": ["1H"], "magnet": 14.1},
+    ss = respinach.basis(respinach.create({"isotopes": ["1H"], "magnet": 14.1},
                                     {"zeeman": {"eigs": [[-2, -2, 4]], "euler": [[0, 0, 0]], "scalar": [3.0]}}), LIOUV)
     pars = {"spins": ["1H"], "offset": 0.0, "sweep": 20000.0, "npoints": 64,
-            "rho0": spinpy.state(ss, "L+", "1H"), "coil": spinpy.state(ss, "L+", "1H")}
-    single = spinpy.powder(ss, spinpy.acquire, {**pars, "grid": "single_crystal"}, "nmr")
-    assert_matches(single, spinpy.crystal(ss, spinpy.acquire, {**pars, "orientation": [0, 0, 0]}, "nmr"), rtol=1e-12, atol=0)
-    fid = spinpy.powder(ss, spinpy.acquire, {**pars, "grid": "leb_2ang_rank_23"}, "nmr")
+            "rho0": respinach.state(ss, "L+", "1H"), "coil": respinach.state(ss, "L+", "1H")}
+    single = respinach.powder(ss, respinach.acquire, {**pars, "grid": "single_crystal"}, "nmr")
+    assert_matches(single, respinach.crystal(ss, respinach.acquire, {**pars, "orientation": [0, 0, 0]}, "nmr"), rtol=1e-12, atol=0)
+    fid = respinach.powder(ss, respinach.acquire, {**pars, "grid": "leb_2ang_rank_23"}, "nmr")
     assert fid.shape == (64,)
     # The powder-averaged FID at t = 0 is the full magnetisation, and its initial phase velocity is the
     # isotropic shift (first moment of the powder pattern); use a dwell time short against the anisotropy
     assert np.isclose(fid[0], 0.5)
-    fast = spinpy.powder(ss, spinpy.acquire, {**pars, "sweep": 1e6, "npoints": 2, "grid": "leb_2ang_rank_23"}, "nmr")
+    fast = respinach.powder(ss, respinach.acquire, {**pars, "sweep": 1e6, "npoints": 2, "grid": "leb_2ang_rank_23"}, "nmr")
     iso = ss.basefrqs[0] * 3.0e-6
     assert np.isclose(np.angle(fast[1] / fast[0]) * 1e6, -iso, rtol=1e-3)
-    per_orientation = spinpy.powder(ss, spinpy.acquire, {**pars, "grid": "leb_2ang_rank_11", "sum_up": False}, "nmr")
-    grid = spinpy.load_grid("leb_2ang_rank_11")
+    per_orientation = respinach.powder(ss, respinach.acquire, {**pars, "grid": "leb_2ang_rank_11", "sum_up": False}, "nmr")
+    grid = respinach.load_grid("leb_2ang_rank_11")
     assert len(per_orientation) == grid["weights"].size and np.isclose(grid["weights"].sum(), 1)
     with pytest.raises(ValueError, match="unknown spherical grid"):
-        spinpy.load_grid("no_such_grid")
+        respinach.load_grid("no_such_grid")
     with pytest.raises(ValueError, match="orientation"):
-        spinpy.crystal(ss, spinpy.acquire, pars, "nmr")
+        respinach.crystal(ss, respinach.acquire, pars, "nmr")
 
 
 def test_liouville_and_hilbert_q_agree():

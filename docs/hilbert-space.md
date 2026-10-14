@@ -30,7 +30,7 @@ in one namespace, so the examples stay correct as the code changes.
 
 ## Setup
 
-spinpy needs Python 3.11 or later with NumPy, SciPy, and h5py. From the
+respinach needs Python 3.11 or later with NumPy, SciPy, and h5py. From the
 repository root:
 
 ```
@@ -57,7 +57,7 @@ pulse-acquire experiment:
 
 ```python
 import numpy as np
-import spinpy
+import respinach
 
 # Spin system: isotopes, field, chemical shifts (ppm), J-couplings (Hz)
 sys = {"isotopes": ["1H", "1H"], "magnet": 14.1}
@@ -66,8 +66,8 @@ inter = {
     "coupling": {"scalar": [[0, 12.0],
                             [0, 0]]},
 }
-ss = spinpy.create(sys, inter)
-ss = spinpy.basis(ss, {"formalism": "zeeman-hilb", "approximation": "none"})
+ss = respinach.create(sys, inter)
+ss = respinach.basis(ss, {"formalism": "zeeman-hilb", "approximation": "none"})
 
 # Experiment: transverse proton magnetisation, detected on the same channel
 parameters = {
@@ -75,10 +75,10 @@ parameters = {
     "offset": 660,        # transmitter offset, Hz
     "sweep": 500,         # spectral width, Hz (dwell time 1/sweep)
     "npoints": 1024,      # complex points in the FID
-    "rho0": spinpy.state(ss, "L+", "1H"),
-    "coil": spinpy.state(ss, "L+", "1H"),
+    "rho0": respinach.state(ss, "L+", "1H"),
+    "coil": respinach.state(ss, "L+", "1H"),
 }
-fid = spinpy.liquid(ss, spinpy.acquire, parameters, "nmr")
+fid = respinach.liquid(ss, respinach.acquire, parameters, "nmr")
 
 # Spectrum: apodise, zero-fill, Fourier transform
 zerofill = 4096
@@ -95,7 +95,7 @@ the same name: it runs from `offset - sweep/2` upwards in steps of
 frequency of the channel isotope:
 
 ```python
-from spinpy.plotting import axis_1d
+from respinach.plotting import axis_1d
 
 ppm_axis, label = axis_1d(ss, {**parameters, "zerofill": zerofill, "axis_units": "ppm"})
 assert label == "1H chemical shift / ppm"
@@ -110,7 +110,7 @@ is usual in NMR. The figure is interactive: hover to read off shifts and
 intensities, drag to zoom in, double-click to zoom out.
 
 ```python
-from spinpy.plotting import plot_1d
+from respinach.plotting import plot_1d
 
 fig = plot_1d(ss, spectrum.real, parameters, title="AB quartet at 14.1 T")
 fig.update_xaxes(range=[1.4, 0.8])   # start zoomed in on the quartet
@@ -120,7 +120,7 @@ fig
 `plot_fid` shows the time domain, real and imaginary parts:
 
 ```python
-from spinpy.plotting import plot_fid
+from respinach.plotting import plot_fid
 
 plot_fid(fid, parameters, title="Apodised free induction decay")
 ```
@@ -140,7 +140,7 @@ create -> basis -> operator / state -> assume -> hamiltonian -> frqoffset -> pro
 
 ### 1. `create`: describe the spin system
 
-`spinpy.create(sys, inter)` takes two dictionaries mirroring Spinach's `sys`
+`respinach.create(sys, inter)` takes two dictionaries mirroring Spinach's `sys`
 and `inter` structures.
 
 | key | meaning | units |
@@ -171,7 +171,7 @@ kinetics superoperator and exchanging systems need the Liouville-space
 formalism, which is not ported yet.
 
 ```python
-exchanging = spinpy.create(
+exchanging = respinach.create(
     {"isotopes": ["1H", "1H"], "magnet": 14.1},
     {"zeeman": {"scalar": [0.0, 3.0]},
      "chem": {"parts": [[0], [1]], "rates": [[-2e3, 2e3], [2e3, -2e3]], "concs": [1.0, 1.0]}},
@@ -184,7 +184,7 @@ The result is a frozen `SpinSystem`. Internally everything is in angular
 frequency units (rad/s) in the laboratory frame:
 
 ```python
-ss = spinpy.create(
+ss = respinach.create(
     {"isotopes": ["1H", "13C"], "magnet": 14.1},
     {"zeeman": {"scalar": [2.00, 30.0]}, "coupling": {"scalar": [[0, 145.0], [0, 0]]}},
 )
@@ -196,12 +196,12 @@ assert ss.coupling_matrix[1][0] is None        # absent couplings are None
 ```
 
 Isotope data (multiplicity and magnetogyric ratio) come from Spinach's
-`spin.m`: `spinpy.isotopes.spin("15N")` returns `(gamma, multiplicity)`.
+`spin.m`: `respinach.isotopes.spin("15N")` returns `(gamma, multiplicity)`.
 
 ### 2. `basis`: choose the formalism
 
 ```python
-ss = spinpy.basis(ss, {"formalism": "zeeman-hilb", "approximation": "none"})
+ss = respinach.basis(ss, {"formalism": "zeeman-hilb", "approximation": "none"})
 assert ss.basis.basis.shape == (4, 2)    # dim x nspins Zeeman level table
 ```
 
@@ -216,9 +216,9 @@ Operators are built from a label and a spin selection. **Spin indices are
 0-based.** There are three forms:
 
 ```python
-Lz_H = spinpy.operator(ss, "Lz", "1H")          # sum over all 1H spins
-Lz_01 = spinpy.operator(ss, "Lz", [0, 1])       # sum over spins 0 and 1
-LzSp = spinpy.operator(ss, ["Lz", "L+"], [0, 1]) # product Lz(0) L+(1)
+Lz_H = respinach.operator(ss, "Lz", "1H")          # sum over all 1H spins
+Lz_01 = respinach.operator(ss, "Lz", [0, 1])       # sum over spins 0 and 1
+LzSp = respinach.operator(ss, ["Lz", "L+"], [0, 1]) # product Lz(0) L+(1)
 
 assert Lz_H.shape == (4, 4)
 ```
@@ -239,8 +239,8 @@ in the sum form can also be `"all"`, `"nuclei"`, or `"electrons"`.
 matrix, used as an (unnormalised) density matrix:
 
 ```python
-rho = spinpy.state(ss, "L+", "1H")
-assert (rho != spinpy.operator(ss, "L+", "1H")).nnz == 0
+rho = respinach.state(ss, "L+", "1H")
+assert (rho != respinach.operator(ss, "L+", "1H")).nnz == 0
 ```
 
 ### 4. `assume` and `hamiltonian`: the Hamiltonian
@@ -256,9 +256,9 @@ assumption set is the usual high-field liquid-state approximation:
 `hamiltonian` then returns the isotropic Hamiltonian in rad/s:
 
 ```python
-H = spinpy.hamiltonian(spinpy.assume(ss, "nmr"))
-H_zeeman = spinpy.hamiltonian(spinpy.assume(ss, "nmr", "zeeman"))      # drop couplings
-H_coupling = spinpy.hamiltonian(spinpy.assume(ss, "nmr", "couplings")) # drop Zeeman terms
+H = respinach.hamiltonian(respinach.assume(ss, "nmr"))
+H_zeeman = respinach.hamiltonian(respinach.assume(ss, "nmr", "zeeman"))      # drop couplings
+H_coupling = respinach.hamiltonian(respinach.assume(ss, "nmr", "couplings")) # drop Zeeman terms
 
 assert np.allclose(H, H_zeeman + H_coupling)
 assert np.allclose(H, H.conj().T)
@@ -277,7 +277,7 @@ The rotating frame of `"nmr"` puts each isotope's carrier at zero frequency.
 signals are:
 
 ```python
-H_off = spinpy.frqoffset(ss, H, {"spins": ["1H"], "offset": 1200})
+H_off = respinach.frqoffset(ss, H, {"spins": ["1H"], "offset": 1200})
 ```
 
 `liquid` applies this for you.
@@ -286,14 +286,14 @@ H_off = spinpy.frqoffset(ss, H, {"spins": ["1H"], "offset": 1200})
 
 ```python
 dt = 1 / 500
-P = spinpy.propagator(ss, H_off, dt)       # expm(-1j * H_off * dt)
+P = respinach.propagator(ss, H_off, dt)       # expm(-1j * H_off * dt)
 assert np.allclose(P @ P.conj().T, np.eye(4))
 
-rho0 = spinpy.state(ss, "L+", "1H")
-coil = spinpy.state(ss, "L+", "1H")
-fid_hc = spinpy.evolution(ss, H_off, coil, rho0, dt, 1023, "observable")
+rho0 = respinach.state(ss, "L+", "1H")
+coil = respinach.state(ss, "L+", "1H")
+fid_hc = respinach.evolution(ss, H_off, coil, rho0, dt, 1023, "observable")
 assert fid_hc.shape == (1024,)                 # nsteps + 1 points, from t = 0
-assert np.isclose(fid_hc[0], spinpy.hdot(coil, rho0))
+assert np.isclose(fid_hc[0], respinach.hdot(coil, rho0))
 ```
 
 `evolution(..., "observable")` returns `hdot(coil, rho(t))` (the
@@ -315,8 +315,8 @@ specifies neither.
 detects `parameters["coil"]`. It reproduces the step-by-step route above:
 
 ```python
-fid_liquid = spinpy.liquid(
-    ss, spinpy.acquire,
+fid_liquid = respinach.liquid(
+    ss, respinach.acquire,
     {"spins": ["1H"], "offset": 1200, "sweep": 500, "npoints": 1024, "rho0": rho0, "coil": coil},
     "nmr",
 )
@@ -333,17 +333,17 @@ acquires:
 ```python
 def pulse_acquire(spin_system, parameters, H, R, K):
     L = H + 1j * R + 1j * K
-    Ly = spinpy.operator(spin_system, "Ly", parameters["spins"][0])
-    pulse = spinpy.propagator(spin_system, Ly, np.pi / 2)   # rotation angle as "time"
+    Ly = respinach.operator(spin_system, "Ly", parameters["spins"][0])
+    pulse = respinach.propagator(spin_system, Ly, np.pi / 2)   # rotation angle as "time"
     rho = pulse @ parameters["rho0"] @ pulse.conj().T
-    return spinpy.evolution(
+    return respinach.evolution(
         spin_system, L, parameters["coil"], rho,
         1 / parameters["sweep"], parameters["npoints"] - 1, "observable",
     )
 
 pars = {"spins": ["1H"], "offset": 1200, "sweep": 500, "npoints": 1024,
-        "rho0": spinpy.state(ss, "Lz", "1H"), "coil": spinpy.state(ss, "L+", "1H")}
-fid_pulse = spinpy.liquid(ss, pulse_acquire, pars, "nmr")
+        "rho0": respinach.state(ss, "Lz", "1H"), "coil": respinach.state(ss, "L+", "1H")}
+fid_pulse = respinach.liquid(ss, pulse_acquire, pars, "nmr")
 
 # The pulse turns Lz into Lx = (L+ + L-)/2; only the L+ half is detected
 assert np.allclose(fid_pulse, 0.5 * fid_liquid)
@@ -355,7 +355,7 @@ ideal pulse.
 
 ## Plotting results
 
-`spinpy.plotting` draws interactive [Plotly](https://plotly.com/python/)
+`respinach.plotting` draws interactive [Plotly](https://plotly.com/python/)
 figures that render in JupyterLab, VS Code, and exported HTML:
 
 | function | draws | Spinach |
@@ -393,7 +393,7 @@ assert np.isclose(spectra[1].max(), 0.5 * spectra[0].max())
 ```
 
 ```python
-from spinpy.plotting import plot_1d
+from respinach.plotting import plot_1d
 
 plot_1d(ss, spectra, pars_hc, names=["acquire from L+", "90° pulse from Lz"],
         title="1H spectrum of a 1H-13C pair")
@@ -405,7 +405,7 @@ plot_1d(ss, spectra, pars_hc, names=["acquire from L+", "90° pulse from Lz"],
 values. Override any of them at creation:
 
 ```python
-ss_fine = spinpy.create({"isotopes": ["1H"], "magnet": 14.1, "tols": {"prop_chop": 1e-14}}, {})
+ss_fine = respinach.create({"isotopes": ["1H"], "magnet": 14.1, "tols": {"prop_chop": 1e-14}}, {})
 assert ss_fine.tols.prop_chop == 1e-14
 assert ss_fine.tols.small_matrix == 200
 ```
@@ -469,7 +469,7 @@ an acquisition time T gives about 1e-10 x T in the FID. To compare your own
 results with a fixture:
 
 ```python
-from spinpy.oracle import assert_matches, find_case, load_fixture
+from respinach.oracle import assert_matches, find_case, load_fixture
 
 path = find_case("hilb_pa_hc_2spin")
 if path is not None:   # fixtures are optional

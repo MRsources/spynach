@@ -50,19 +50,19 @@ superoperator `R` in Hz; it enters the Liouvillian as `L = H + 1j * R +
 ```python
 import numpy as np
 import scipy.linalg as sla
-import spinpy
+import respinach
 
 
 def dense(x):
     return x.toarray() if hasattr(x, "toarray") else np.asarray(x)
 
 
-hc = spinpy.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
+hc = respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
                    {"zeeman": {"scalar": [0.0, 0.0]}, "coordinates": [[0, 0, 0], [0, 0, 1.03]],
                     "relaxation": ["redfield"], "equilibrium": "dibari", "rlx_keep": "kite",
                     "temperature": 298, "tau_c": [[100e-12]]})
-hc = spinpy.basis(hc, {"formalism": "sphten-liouv", "approximation": "none"})
-R = spinpy.relaxation(hc)
+hc = respinach.basis(hc, {"formalism": "sphten-liouv", "approximation": "none"})
+R = respinach.relaxation(hc)
 assert R.shape == (16, 16)
 ```
 
@@ -70,7 +70,7 @@ assert R.shape == (16, 16)
 
 Bloch-Redfield-Wangsness theory treats the anisotropic part of the
 Hamiltonian, modulated by rotational diffusion, as a perturbation of the
-lab-frame isotropic Hamiltonian. spinpy uses Spinach's
+lab-frame isotropic Hamiltonian. respinach uses Spinach's
 diagonalisation-free form (Kuprov 2011): every pair of irreducible
 components `Q[r][k][m]`, `Q[r][p][q]` of the anisotropic Hamiltonian (the
 same `Q` as in the solid-state guide, here as commutation superoperators
@@ -82,7 +82,7 @@ where `L0` is the lab-frame Liouvillian, the weights `w` and decay rates
 `1/tau` come from the rotational diffusion model (isotropic, axial or
 rhombic, from one, two or three correlation times), and the integral is a
 block of one matrix exponential (the auxiliary-matrix formalism of
-Goodwin and Kuprov 2015, `spinpy.relaxation.expmint`). No eigenvectors are
+Goodwin and Kuprov 2015, `respinach.relaxation.expmint`). No eigenvectors are
 ever needed, so the method scales to restricted bases.
 
 For a dipolar-coupled pair the result is the Solomon theory: with
@@ -92,7 +92,7 @@ and cross-relaxation rates are `rho_I = b^2/10 [J(wI-wS) + 3J(wI) +
 `R` between normalised `Lz` states:
 
 ```python
-Lz_H, Lz_C = spinpy.state(hc, ["Lz"], [0]), spinpy.state(hc, ["Lz"], [1])
+Lz_H, Lz_C = respinach.state(hc, ["Lz"], [0]), respinach.state(hc, ["Lz"], [1])
 rate = lambda bra, ket: -np.vdot(bra, dense(R) @ ket).real / np.sqrt(np.vdot(bra, bra).real * np.vdot(ket, ket).real)
 b = hc.gammas[0] * hc.gammas[1] * hc.tols.hbar * hc.tols.mu0 / (4 * np.pi * 1.03e-10**3)
 J = lambda w: 100e-12 / (1 + (w * 100e-12) ** 2)
@@ -121,14 +121,14 @@ shifts:
 
 ```python
 def pair(keep, **extra):
-    ss = spinpy.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
+    ss = respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
                        {"zeeman": {"scalar": [0.0, 0.0]}, "coordinates": [[0, 0, 0], [0, 0, 1.03]],
                         "relaxation": ["redfield"], "equilibrium": "zero", "rlx_keep": keep,
                         "temperature": 298, "tau_c": [[100e-12]], **extra})
-    return spinpy.basis(ss, {"formalism": "sphten-liouv", "approximation": "none"})
+    return respinach.basis(ss, {"formalism": "sphten-liouv", "approximation": "none"})
 
-R_lab = dense(spinpy.relaxation(pair("labframe", rlx_dfs="keep")))
-R_diag = dense(spinpy.relaxation(pair("diagonal")))
+R_lab = dense(respinach.relaxation(pair("labframe", rlx_dfs="keep")))
+R_diag = dense(respinach.relaxation(pair("diagonal")))
 assert np.abs(R_lab.imag).max() > 0                       # dynamic frequency shifts
 assert np.allclose(R_diag, np.diag(np.diag(R_diag)))
 assert np.allclose(np.diag(R_diag), np.diag(R_lab).real, atol=1e-9)
@@ -145,11 +145,11 @@ the field direction at the orientation handed to `relaxation`).
 (in Hilbert space, every element at half the rate):
 
 ```python
-t1t2 = spinpy.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
+t1t2 = respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
                      {"relaxation": ["t1_t2", "damp"], "equilibrium": "zero", "rlx_keep": "diagonal",
                       "r1_rates": [1.0, 2.0], "r2_rates": [5.0, 7.0], "damp_rate": 0.5})
-t1t2 = spinpy.basis(t1t2, {"formalism": "sphten-liouv", "approximation": "none"})
-R_t = dense(spinpy.relaxation(t1t2))
+t1t2 = respinach.basis(t1t2, {"formalism": "sphten-liouv", "approximation": "none"})
+R_t = dense(respinach.relaxation(t1t2))
 row = lambda spec: np.flatnonzero((t1t2.basis.basis == spec).all(axis=1))[0]
 assert R_t[row([2, 0]), row([2, 0])] == -1.5          # Lz(H): R1 + damping
 assert R_t[row([1, 3]), row([1, 3])] == -12.5         # L+(H) L-(C): R2(H) + R2(C) + damping
@@ -171,12 +171,12 @@ equation, adds a drive from the unit state (`R -> R - (R rho_eq) u^T`);
 `inter["equilibrium"]`; `thermalize` applies either to a given `R`:
 
 ```python
-rho_eq = spinpy.equilibrium(hc)
+rho_eq = respinach.equilibrium(hc)
 assert rho_eq[0] == 1
 zero = pair("kite")
-R0 = spinpy.relaxation(zero)
-HL = spinpy.hamiltonian(spinpy.assume(zero, "labframe"), "left")
-for R_th in (spinpy.thermalize(zero, R0, None, None, rho_eq, "IME"), spinpy.thermalize(zero, R0, HL, 298.0, None, "dibari")):
+R0 = respinach.relaxation(zero)
+HL = respinach.hamiltonian(respinach.assume(zero, "labframe"), "left")
+for R_th in (respinach.thermalize(zero, R0, None, None, rho_eq, "IME"), respinach.thermalize(zero, R0, HL, 298.0, None, "dibari")):
     assert np.linalg.norm(dense(R_th) @ rho_eq) < 1e-9       # rho_eq is stationary
 ```
 
@@ -188,11 +188,11 @@ under `R` alone, with the `"multichannel"` output of `evolution` (one
 trace per coil column):
 
 ```python
-Lz1, Lz2 = spinpy.state(hc, ["Lz"], [0]), spinpy.state(hc, ["Lz"], [1])
+Lz1, Lz2 = respinach.state(hc, ["Lz"], [0]), respinach.state(hc, ["Lz"], [1])
 rho = rho_eq - 2 * Lz1 * np.vdot(Lz1, rho_eq) / np.vdot(Lz1, Lz1).real   # proton inverted
 coils = np.stack([Lz1, Lz2], axis=1)
 dt, nsteps = 1e-2, 400
-noe = spinpy.evolution(hc, 1j * R, coils, rho, dt, nsteps, "multichannel").real
+noe = respinach.evolution(hc, 1j * R, coils, rho, dt, nsteps, "multichannel").real
 assert noe.shape == (2, nsteps + 1)
 ```
 

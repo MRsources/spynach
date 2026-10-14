@@ -1,6 +1,6 @@
 """Parity of the zeeman-hilb pulse-acquire slice against Spinach fixtures.
 
-Each stage of oracle/matlab/dumps/dump_hilb_pa.m is recomputed with spinpy
+Each stage of oracle/matlab/dumps/dump_hilb_pa.m is recomputed with respinach
 and compared with the stored MATLAB result. The case definitions below must
 stay identical to the ones in the dump script. Tests skip when the fixtures
 are not available.
@@ -23,8 +23,8 @@ import numpy as np
 import pytest
 import scipy.sparse as sps
 
-import spinpy
-from spinpy.oracle import assert_matches, find_case, load_fixture
+import respinach
+from respinach.oracle import assert_matches, find_case, load_fixture
 
 CASES = {
     "ab_2spin": dict(
@@ -77,8 +77,8 @@ def fx(case):
 @pytest.fixture
 def spin_system(case):
     spec = CASES[case]
-    ss = spinpy.create({**spec["sys"], "magnet": MAGNET}, spec["inter"])
-    return spinpy.basis(ss, BAS)
+    ss = respinach.create({**spec["sys"], "magnet": MAGNET}, spec["inter"])
+    return respinach.basis(ss, BAS)
 
 
 def test_case_definitions_match_fixture(fx, case):
@@ -119,36 +119,36 @@ def test_operators(fx, spin_system):
     for key, label in OPS.items():
         ref = fx[f"/ops/{key}"]
         for n in range(spin_system.nspins):
-            assert_matches(spinpy.operator(spin_system, [label], [n]), ref[0, n], **OPERATOR_TOL, name=f"{label}({n})")
-    assert_matches(spinpy.operator(spin_system, ["Lz", "L+"], [0, 1]), fx["/ops/LzLp_12"], **OPERATOR_TOL)
-    assert_matches(spinpy.operator(spin_system, "Lz", "1H"), fx["/ops/Lz_det"], **OPERATOR_TOL)
-    assert_matches(spinpy.operator(spin_system, "L+", "1H"), fx["/ops/Lp_det"], **OPERATOR_TOL)
+            assert_matches(respinach.operator(spin_system, [label], [n]), ref[0, n], **OPERATOR_TOL, name=f"{label}({n})")
+    assert_matches(respinach.operator(spin_system, ["Lz", "L+"], [0, 1]), fx["/ops/LzLp_12"], **OPERATOR_TOL)
+    assert_matches(respinach.operator(spin_system, "Lz", "1H"), fx["/ops/Lz_det"], **OPERATOR_TOL)
+    assert_matches(respinach.operator(spin_system, "L+", "1H"), fx["/ops/Lp_det"], **OPERATOR_TOL)
 
 
 def test_hamiltonian(fx, case, spin_system):
-    H = spinpy.hamiltonian(spinpy.assume(spin_system, "nmr"))
+    H = respinach.hamiltonian(respinach.assume(spin_system, "nmr"))
     assert_matches(H, fx["/ham/H"], **HAMILTONIAN_TOL, name="H")
-    H_zeeman = spinpy.hamiltonian(spinpy.assume(spin_system, "nmr", "zeeman"))
+    H_zeeman = respinach.hamiltonian(respinach.assume(spin_system, "nmr", "zeeman"))
     assert_matches(H_zeeman, fx["/ham/H_zeeman"], **HAMILTONIAN_TOL, name="H_zeeman")
-    H_coupling = spinpy.hamiltonian(spinpy.assume(spin_system, "nmr", "couplings"))
+    H_coupling = respinach.hamiltonian(respinach.assume(spin_system, "nmr", "couplings"))
     assert_matches(H_coupling, fx["/ham/H_coupling"], **HAMILTONIAN_TOL, name="H_coupling")
-    H_off = spinpy.frqoffset(spin_system, H, CASES[case]["pars"])
+    H_off = respinach.frqoffset(spin_system, H, CASES[case]["pars"])
     assert_matches(H_off, fx["/ham/H_off"], **HAMILTONIAN_TOL, name="H_off")
 
 
 def test_states(fx, spin_system):
-    assert_matches(spinpy.state(spin_system, "L+", "1H"), fx["/states/rho0"], **OPERATOR_TOL, name="rho0")
-    assert_matches(spinpy.state(spin_system, "L+", "1H"), fx["/states/coil"], **OPERATOR_TOL, name="coil")
+    assert_matches(respinach.state(spin_system, "L+", "1H"), fx["/states/rho0"], **OPERATOR_TOL, name="rho0")
+    assert_matches(respinach.state(spin_system, "L+", "1H"), fx["/states/coil"], **OPERATOR_TOL, name="coil")
 
 
 def test_propagator(fx, case, spin_system):
-    P = spinpy.propagator(spin_system, fx["/ham/H_off"], 1 / CASES[case]["pars"]["sweep"])
+    P = respinach.propagator(spin_system, fx["/ham/H_off"], 1 / CASES[case]["pars"]["sweep"])
     assert_matches(P, fx["/prop/P"], **PROPAGATOR_TOL, name="P")
 
 
 def test_evolution(fx, case, spin_system):
     pars = CASES[case]["pars"]
-    fid = spinpy.evolution(
+    fid = respinach.evolution(
         spin_system, fx["/ham/H_off"], fx["/states/coil"], fx["/states/rho0"],
         1 / pars["sweep"], pars["npoints"] - 1, "observable",
     )
@@ -157,10 +157,10 @@ def test_evolution(fx, case, spin_system):
 
 def test_liquid_acquire_end_to_end(fx, case, spin_system):
     pars = dict(CASES[case]["pars"])
-    pars["rho0"] = spinpy.state(spin_system, "L+", "1H")
-    pars["coil"] = spinpy.state(spin_system, "L+", "1H")
+    pars["rho0"] = respinach.state(spin_system, "L+", "1H")
+    pars["coil"] = respinach.state(spin_system, "L+", "1H")
     pars["decouple"] = []
-    fid = spinpy.liquid(spin_system, spinpy.acquire, pars, "nmr")
+    fid = respinach.liquid(spin_system, respinach.acquire, pars, "nmr")
     assert_matches(fid[:, None], fx["/fid/liquid"], **FID_TOL, name="fid liquid")
     spectrum = np.fft.fftshift(np.fft.fft(fid, pars["zerofill"]))
     assert_matches(spectrum[:, None], fx["/spectrum/raw"], **FID_TOL, name="spectrum")
@@ -168,5 +168,5 @@ def test_liquid_acquire_end_to_end(fx, case, spin_system):
 
 def test_outputs_have_spinach_storage(fx, spin_system):
     """Operators stay sparse; small Hamiltonians are made dense by clean_up, as in Spinach."""
-    assert sps.issparse(spinpy.operator(spin_system, "Lz", "1H"))
-    assert isinstance(spinpy.hamiltonian(spinpy.assume(spin_system, "nmr")), np.ndarray)
+    assert sps.issparse(respinach.operator(spin_system, "Lz", "1H"))
+    assert isinstance(respinach.hamiltonian(respinach.assume(spin_system, "nmr")), np.ndarray)

@@ -2,7 +2,7 @@
 
 These run only when the fixtures from dump_hilb_pa.m are present. They verify
 the HDF5 layout through the /probe variables and check the stored data
-against itself and basic physics. They test the oracle output, not spinpy.
+against itself and basic physics. They test the oracle output, not respinach.
 """
 
 import numpy as np
@@ -10,7 +10,7 @@ import pytest
 import scipy.linalg as sla
 import scipy.sparse as sps
 
-from spinpy.oracle import assert_matches, find_case, load_fixture
+from respinach.oracle import assert_matches, find_case, load_fixture
 
 CASES = ["ab_2spin", "abx_3spin", "hc_2spin", "hd_2spin"]
 EXPECTED_MULTS = {

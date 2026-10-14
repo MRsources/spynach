@@ -33,35 +33,35 @@ angle)`; free evolution is `evolution(...)`; an indirect dimension is the
 sequence propagates all at once, so that the final `'observable'` call
 returns the whole 2-D FID as an `(npoints[1], npoints[0])` array: rows
 along the direct dimension, columns along the indirect one. Spinach's
-`cosy.m` is ten lines, and so is spinpy's:
+`cosy.m` is ten lines, and so is respinach's:
 
 ```python
 import numpy as np
-import spinpy
+import respinach
 
-derome = spinpy.create({"isotopes": ["1H"] * 3, "magnet": 16.1},
+derome = respinach.create({"isotopes": ["1H"] * 3, "magnet": 16.1},
                        {"zeeman": {"scalar": [3.70, 3.92, 4.50]},
                         "coupling": {"scalar": [[0, 10, 4], [0, 0, 12], [0, 0, 0]]}})
-derome = spinpy.basis(derome, {"formalism": "sphten-liouv", "approximation": "none"})
+derome = respinach.basis(derome, {"formalism": "sphten-liouv", "approximation": "none"})
 
 
 def my_cosy(ss, parameters, H, R, K):
     L = H + 1j * R + 1j * K
-    rho = spinpy.state(ss, "Lz", "1H", "cheap")
-    coil = spinpy.state(ss, "L+", "1H", "cheap")
-    Lx = spinpy.operator(ss, "Lx", "1H")
-    rho = spinpy.step(ss, Lx, rho, np.pi / 2)
-    stack = spinpy.evolution(ss, L, None, rho, 1 / parameters["sweep"], parameters["npoints"][0] - 1, "trajectory")
-    stack = spinpy.coherence(ss, stack.T, [("1H", 1)]).T          # select the +1 pathway in t1
-    stack = spinpy.step(ss, Lx, stack, parameters["angle"])
-    return spinpy.evolution(ss, L, coil, stack, 1 / parameters["sweep"], parameters["npoints"][1] - 1, "observable")
+    rho = respinach.state(ss, "Lz", "1H", "cheap")
+    coil = respinach.state(ss, "L+", "1H", "cheap")
+    Lx = respinach.operator(ss, "Lx", "1H")
+    rho = respinach.step(ss, Lx, rho, np.pi / 2)
+    stack = respinach.evolution(ss, L, None, rho, 1 / parameters["sweep"], parameters["npoints"][0] - 1, "trajectory")
+    stack = respinach.coherence(ss, stack.T, [("1H", 1)]).T          # select the +1 pathway in t1
+    stack = respinach.step(ss, Lx, stack, parameters["angle"])
+    return respinach.evolution(ss, L, coil, stack, 1 / parameters["sweep"], parameters["npoints"][1] - 1, "observable")
 
 
 pars = {"angle": np.pi / 2, "offset": 2800.0, "sweep": 700.0, "npoints": [64, 64], "zerofill": [256, 256],
         "spins": ["1H"], "axis_units": "ppm"}
-fid = spinpy.liquid(derome, my_cosy, pars, "nmr")
+fid = respinach.liquid(derome, my_cosy, pars, "nmr")
 assert fid.shape == (64, 64)
-assert np.allclose(fid, spinpy.liquid(derome, spinpy.cosy, pars, "nmr"))
+assert np.allclose(fid, respinach.liquid(derome, respinach.cosy, pars, "nmr"))
 ```
 
 The filters take the spin state space on the *last* axis, hence the
@@ -84,9 +84,9 @@ red) and `delta[2..3]` of the minimum (negative, blue), spaced as the
 `k`-th power of a linear grid, both axes decreasing to the right and up:
 
 ```python
-from spinpy.plotting import plot_2d
+from respinach.plotting import plot_2d
 
-fid_apod = spinpy.apodisation(fid, [("sqcos",), ("sqcos",)])
+fid_apod = respinach.apodisation(fid, [("sqcos",), ("sqcos",)])
 cosy_spectrum = np.fft.fftshift(np.fft.fft2(fid_apod, pars["zerofill"]))
 plot_2d(derome, cosy_spectrum.real, pars, 20, (0.1, 0.5, 0.1, 0.5), 2, 256, 6, "both", title="COSY-90, Derome's three-spin system")
 ```
@@ -107,13 +107,13 @@ add a homodecoupling term. `homospoil(ss, rho, "destroy")` kills every
 coherence (a gradient pulse), `"keep"` retains zero-quantum ones:
 
 ```python
-hc = spinpy.basis(spinpy.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
+hc = respinach.basis(respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
                                 {"zeeman": {"scalar": [2.0, 30.0]}, "coupling": {"scalar": [[0, 145.0], [0, 0]]}}),
                   {"formalism": "sphten-liouv", "approximation": "none"})
 acq = {"spins": ["1H"], "offset": 1200.0, "sweep": 2000.0, "npoints": 128,
-       "rho0": spinpy.state(hc, "L+", "1H"), "coil": spinpy.state(hc, "L+", "1H")}
-coupled = spinpy.liquid(hc, spinpy.acquire, acq, "nmr")
-decoupled = spinpy.liquid(hc, spinpy.acquire, {**acq, "decouple": ["13C"]}, "nmr")
+       "rho0": respinach.state(hc, "L+", "1H"), "coil": respinach.state(hc, "L+", "1H")}
+coupled = respinach.liquid(hc, respinach.acquire, acq, "nmr")
+decoupled = respinach.liquid(hc, respinach.acquire, {**acq, "decouple": ["13C"]}, "nmr")
 t = np.arange(128) / 2000.0
 omega = hc.basefrqs[0] * 2.0e-6 + 2 * np.pi * 1200.0          # 2 ppm shift in the frame of the 1200 Hz offset
 assert np.allclose(decoupled, decoupled[0] * np.exp(-1j * omega * t), rtol=1e-6)   # a pure singlet
@@ -139,16 +139,16 @@ combined after the F1 transform. It needs relaxation, and the thermal
 equilibrium as the initial state (`needs=["rho_eq"]`):
 
 ```python
-pair = spinpy.create({"isotopes": ["1H", "1H"], "magnet": 14.1},
+pair = respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1},
                      {"zeeman": {"scalar": [1.0, 3.0]}, "coordinates": [[0, 0, 0], [0, 0, 2.5]],
                       "relaxation": ["redfield"], "equilibrium": "IME", "rlx_keep": "kite",
                       "temperature": 298, "tau_c": [[2e-9]]})
-pair = spinpy.basis(pair, {"formalism": "sphten-liouv", "approximation": "none"})
+pair = respinach.basis(pair, {"formalism": "sphten-liouv", "approximation": "none"})
 noesy_pars = {"tmix": 0.3, "offset": 1200.0, "sweep": [2000.0, 2000.0], "npoints": [64, 64], "zerofill": [256, 256],
               "spins": ["1H"], "needs": ["rho_eq"], "axis_units": "ppm"}
-fid_noesy = spinpy.liquid(pair, spinpy.noesy, noesy_pars, "nmr")
-cos = spinpy.apodisation(fid_noesy["cos"], [("sqcos",), ("sqcos",)])
-sin = spinpy.apodisation(fid_noesy["sin"], [("sqcos",), ("sqcos",)])
+fid_noesy = respinach.liquid(pair, respinach.noesy, noesy_pars, "nmr")
+cos = respinach.apodisation(fid_noesy["cos"], [("sqcos",), ("sqcos",)])
+sin = respinach.apodisation(fid_noesy["sin"], [("sqcos",), ("sqcos",)])
 f1_cos = np.real(np.fft.fftshift(np.fft.fft(cos, 256, axis=0), axes=0))
 f1_sin = np.real(np.fft.fftshift(np.fft.fft(sin, 256, axis=0), axes=0))
 noesy_spectrum = np.fft.fftshift(np.fft.fft(f1_cos - 1j * f1_sin, 256, axis=1), axes=1)
@@ -171,17 +171,17 @@ delays. Natural-abundance 13C spectra are sums over isotopomers:
 removed (`kill_spin`), each of which is simulated separately:
 
 ```python
-sugar = spinpy.create({"isotopes": ["1H", "13C", "13C", "1H"], "magnet": 5.9},
+sugar = respinach.create({"isotopes": ["1H", "13C", "13C", "1H"], "magnet": 5.9},
                       {"zeeman": {"scalar": [3.0, 40.0, 50.0, 1.0]},
                        "coupling": {"scalar": [[0, 140, 0, 7], [0, 0, 35, 0], [0, 0, 0, 150], [0, 0, 0, 0]]}})
 hsqc_pars = {"J": 140.0, "sweep": [3000.0, 2000.0], "offset": [2800.0, 500.0], "npoints": [48, 48], "zerofill": [256, 256],
              "spins": ["13C", "1H"], "decouple_f1": ["1H"], "decouple_f2": ["13C"], "axis_units": "ppm"}
 hsqc_spectrum = np.zeros((256, 256), dtype=complex)
-for sub in spinpy.dilute(sugar, "13C"):
-    sub = spinpy.basis(sub, {"formalism": "sphten-liouv", "approximation": "none"})
-    fid_hsqc = spinpy.liquid(sub, spinpy.hsqc, hsqc_pars, "nmr")
-    pos = np.fft.fftshift(np.fft.fft(spinpy.apodisation(fid_hsqc["pos"], [("sqcos",), ("sqcos",)]), 256, axis=0), axes=0)
-    neg = np.fft.fftshift(np.fft.fft(spinpy.apodisation(fid_hsqc["neg"], [("sqcos",), ("sqcos",)]), 256, axis=0), axes=0)
+for sub in respinach.dilute(sugar, "13C"):
+    sub = respinach.basis(sub, {"formalism": "sphten-liouv", "approximation": "none"})
+    fid_hsqc = respinach.liquid(sub, respinach.hsqc, hsqc_pars, "nmr")
+    pos = np.fft.fftshift(np.fft.fft(respinach.apodisation(fid_hsqc["pos"], [("sqcos",), ("sqcos",)]), 256, axis=0), axes=0)
+    neg = np.fft.fftshift(np.fft.fft(respinach.apodisation(fid_hsqc["neg"], [("sqcos",), ("sqcos",)]), 256, axis=0), axes=0)
     hsqc_spectrum += np.fft.fftshift(np.fft.fft(pos + np.conj(neg), 256, axis=1), axes=1)
 plot_2d(sugar, hsqc_spectrum.real, hsqc_pars, 20, (0.05, 1.0, 0.05, 1.0), 2, 256, 6, "positive", title="HSQC, two isotopomers")
 ```

@@ -2047,7 +2047,7 @@ wheels = [
 ]
 
 [[package]]
-name = "spinpy"
+name = "respinach"
 version = "0.0.1"
 source = { editable = "." }
 dependencies = [
@@ -2084,7 +2084,7 @@ requires-dist = [
     { name = "plotly", marker = "extra == 'plot'", specifier = ">=6" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8" },
     { name = "scipy", specifier = ">=1.11" },
-    { name = "spinpy", extras = ["plot"], marker = "extra == 'docs'" },
+    { name = "respinach", extras = ["plot"], marker = "extra == 'docs'" },
 ]
 provides-extras = ["test", "plot", "docs"]
 

@@ -13,7 +13,7 @@ Adaptations, applied identically to the MATLAB side in comparison/cases/zulf_pf6
 targets a pre-2.9 Spinach and does not run on 2.13 as written):
   - inter.coordinates=rPF*{...} (a number times a cell array) is written out as the scaled coordinates;
   - apodization(fid-mean(fid),'exp-1d',1) is the legacy function; 2.13 uses apodisation(spin_system,
-    fid-mean(fid),{{'exp',1}}), which also halves the first point, as spinpy's apodisation does;
+    fid-mean(fid),{{'exp',1}}), which also halves the first point, as respinach's apodisation does;
   - sys.output='hush' and sys.enable={'greedy'} only affect console output and parallelisation and
     are dropped; the relaxation fields are kept (create validates them) but, as in the script, R is
     never built: the pulse and the acquisition evolve under H alone.
@@ -34,8 +34,8 @@ from pathlib import Path
 import numpy as np
 import scipy.sparse as sps
 
-import spinpy
-from spinpy.isotopes import spin
+import respinach
+from respinach.isotopes import spin
 
 ROOT = Path(__file__).resolve().parents[2]
 RHO_PATH = ROOT / "user_ml" / "rho_adiabatic_drop.csv"
@@ -93,11 +93,11 @@ def simulate(npoints: int = 4 * 4096, zerofill: int = 4 * 4096, timer: Timer | N
 
     # Spinach housekeeping
     with timer("create"):
-        spin_system = spinpy.create(sys_, inter)
+        spin_system = respinach.create(sys_, inter)
     with timer("basis"):
-        spin_system = spinpy.basis(spin_system, bas)
+        spin_system = respinach.basis(spin_system, bas)
     with timer("hamiltonian"):
-        H = spinpy.hamiltonian(spinpy.assume(spin_system, "labframe"), "comm")
+        H = respinach.hamiltonian(respinach.assume(spin_system, "labframe"), "comm")
 
     # Density operator after the adiabatic drop
     rho = load_matlab_csv(rho_path)
@@ -113,21 +113,21 @@ def simulate(npoints: int = 4 * 4096, zerofill: int = 4 * 4096, timer: Timer | N
         weights = spin_system.gammas / spin("19F")[0]
 
         # Gamma-weighted detection states
-        coilPF6X = sum(weights[n] * (_dense(spinpy.state(spin_system, "L+", n)) + _dense(spinpy.state(spin_system, "L-", n))) / 2 for n in range(7))
-        coilPF6Z = sum(weights[n] * _dense(spinpy.state(spin_system, "Lz", n)) for n in range(7))
+        coilPF6X = sum(weights[n] * (_dense(respinach.state(spin_system, "L+", n)) + _dense(respinach.state(spin_system, "L-", n))) / 2 for n in range(7))
+        coilPF6Z = sum(weights[n] * _dense(respinach.state(spin_system, "Lz", n)) for n in range(7))
 
         # Gamma-weighted pulse operators
-        Sy = sum(weights[n] * (spinpy.operator(spin_system, "L+", n) - spinpy.operator(spin_system, "L-", n)) / 2j for n in range(7))
-        Sx = sum(weights[n] * (spinpy.operator(spin_system, "L+", n) + spinpy.operator(spin_system, "L-", n)) / 2 for n in range(7))
+        Sy = sum(weights[n] * (respinach.operator(spin_system, "L+", n) - respinach.operator(spin_system, "L-", n)) / 2j for n in range(7))
+        Sx = sum(weights[n] * (respinach.operator(spin_system, "L+", n) + respinach.operator(spin_system, "L-", n)) / 2 for n in range(7))
 
     with timer("pulse"):
-        rho_pulse = spinpy.evolution(spin_system, H + spin("19F")[0] * 30e-6 * Sy, None, rho, 1e-6, 150, "final")
+        rho_pulse = respinach.evolution(spin_system, H + spin("19F")[0] * 30e-6 * Sy, None, rho, 1e-6, 150, "final")
     with timer("acquisition"):
-        fid = spinpy.evolution(spin_system, H, coilPF6Z, rho_pulse, 1 / parameters["sweep"], parameters["npoints"] - 1, "observable")
+        fid = respinach.evolution(spin_system, H, coilPF6Z, rho_pulse, 1 / parameters["sweep"], parameters["npoints"] - 1, "observable")
 
     with timer("processing"):
         # Apodisation (legacy apodization(fid-mean(fid),'exp-1d',1))
-        fid_ap = spinpy.apodisation(fid - fid.mean(), [("exp", 1)])
+        fid_ap = respinach.apodisation(fid - fid.mean(), [("exp", 1)])
 
         # Fourier transform
         spectrum = np.fft.fftshift(np.fft.fft(fid_ap, parameters["zerofill"]))
@@ -139,7 +139,7 @@ def simulate(npoints: int = 4 * 4096, zerofill: int = 4 * 4096, timer: Timer | N
 
 def plot(spin_system, parameters, spectrum, timer: Timer | None = None):
     """The figure of the script: plot_1d(spin_system,abs(spectrum),parameters)."""
-    from spinpy.plotting import plot_1d
+    from respinach.plotting import plot_1d
 
     timer = Timer() if timer is None else timer
     with timer("plot"):

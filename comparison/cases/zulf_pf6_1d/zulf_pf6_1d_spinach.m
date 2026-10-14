@@ -2,7 +2,7 @@
 % Teleanu, 2024) with timed stages and the adaptations for Spinach 2.13
 % listed in examples/user_ml/zulf_pf6_1d.py (coordinates cell scaling,
 % apodisation instead of the legacy apodization). Stage labels must match
-% zulf_pf6_1d_spinpy.py. Syntax:
+% zulf_pf6_1d_respinach.py. Syntax:
 %
 %     [data,figs]=zulf_pf6_1d_spinach(timer,options)
 %

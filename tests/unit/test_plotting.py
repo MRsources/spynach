@@ -1,16 +1,16 @@
-"""Frequency axes and plots (spinpy.plotting)."""
+"""Frequency axes and plots (respinach.plotting)."""
 
 import numpy as np
 import pytest
 
-import spinpy
-from spinpy.isotopes import spin
-from spinpy.plotting import axis_1d, ft_axis, plot_1d, plot_fid
+import respinach
+from respinach.isotopes import spin
+from respinach.plotting import axis_1d, ft_axis, plot_1d, plot_fid
 
 
 @pytest.fixture(scope="module")
 def ss():
-    return spinpy.create({"isotopes": ["1H", "13C"], "magnet": 14.1}, {})
+    return respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1}, {})
 
 
 @pytest.mark.parametrize("npoints", [8, 9, 1024, 1025])
@@ -102,7 +102,7 @@ def test_plot_fid_time_axis():
 
 
 def test_plot_2d_levels_and_binning():
-    from spinpy.plotting import _bin_extremes, _level_index, contspacing, plot_2d
+    from respinach.plotting import _bin_extremes, _level_index, contspacing, plot_2d
 
     # the level map sends every contour level to its index, in between it is monotone
     levels = np.array([0.1, 0.4, 1.0])
@@ -122,7 +122,7 @@ def test_plot_2d_levels_and_binning():
     assert same is spectrum and same_axis is not None
 
     pytest.importorskip("plotly")
-    ss = spinpy.create({"isotopes": ["1H", "1H"], "magnet": 14.1}, {"zeeman": {"scalar": [1.0, 3.0]}})
+    ss = respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1}, {"zeeman": {"scalar": [1.0, 3.0]}})
     pars = {"spins": ["1H"], "offset": 1200.0, "sweep": [2000.0, 2000.0], "npoints": [8, 8], "zerofill": [64, 64]}
     z = np.zeros((2000, 1500)); z[500, 300] = 1.0; z[1200, 900] = -0.5
     fig = plot_2d(ss, z, pars, 20, (0.05, 0.5, 0.05, 0.5), 2, 256, 6, "both")

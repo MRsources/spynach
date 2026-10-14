@@ -9,14 +9,14 @@
     },
     {
       "function": "run_comparison",
-      "file": "/Users/alexej/Documents/PROG/spinpy/comparison/matlab/run_comparison.m",
+      "file": "/Users/alexej/Documents/PROG/respinach/comparison/matlab/run_comparison.m",
       "calls": 1,
       "total_s": 69.079823791664381,
       "self_s": 0.074300833422967116
     },
     {
       "function": "zulf_pf6_1d_spinach",
-      "file": "/Users/alexej/Documents/PROG/spinpy/comparison/cases/zulf_pf6_1d/zulf_pf6_1d_spinach.m",
+      "file": "/Users/alexej/Documents/PROG/respinach/comparison/cases/zulf_pf6_1d/zulf_pf6_1d_spinach.m",
       "calls": 1,
       "total_s": 69.005522958241414,
       "self_s": 0.41482866716707179
@@ -30,21 +30,21 @@
     },
     {
       "function": "evolution",
-      "file": "/Users/alexej/Documents/PROG/spinpy-spinach/kernel/evolution.m",
+      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/evolution.m",
       "calls": 2,
       "total_s": 40.385179715383352,
       "self_s": 0.012896916682237247
     },
     {
       "function": "evolution>(parfor body)",
-      "file": "/Users/alexej/Documents/PROG/spinpy-spinach/kernel/evolution.m",
+      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/evolution.m",
       "calls": 8,
       "total_s": 39.952732798195015,
       "self_s": 36.637836544196254
     },
     {
       "function": "create",
-      "file": "/Users/alexej/Documents/PROG/spinpy-spinach/kernel/create.m",
+      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/create.m",
       "calls": 1,
       "total_s": 21.823160901325295,
       "self_s": 0.062035375074827925
@@ -100,14 +100,14 @@
     },
     {
       "function": "propagator",
-      "file": "/Users/alexej/Documents/PROG/spinpy-spinach/kernel/propagator.m",
+      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/propagator.m",
       "calls": 1,
       "total_s": 3.311455587327945,
       "self_s": 3.1620587954810611
     },
     {
       "function": "plot_1d",
-      "file": "/Users/alexej/Documents/PROG/spinpy-spinach/kernel/plotting/plot_1d.m",
+      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/plotting/plot_1d.m",
       "calls": 1,
       "total_s": 3.0148333369701295,
       "self_s": 0.13600479183072922
@@ -149,14 +149,14 @@
     },
     {
       "function": "basis",
-      "file": "/Users/alexej/Documents/PROG/spinpy-spinach/kernel/basis.m",
+      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/basis.m",
       "calls": 1,
       "total_s": 1.6763538353555205,
       "self_s": 0.01831762502209644
     },
     {
       "function": "unihash",
-      "file": "/Users/alexej/Documents/PROG/spinpy-spinach/kernel/utilities/unihash.m",
+      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/utilities/unihash.m",
       "calls": 1,
       "total_s": 1.6020929602659395,
       "self_s": 0.0017241250020803012
@@ -170,14 +170,14 @@
     },
     {
       "function": "autoexec",
-      "file": "/Users/alexej/Documents/PROG/spinpy-spinach/kernel/includes/autoexec.m",
+      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/includes/autoexec.m",
       "calls": 1,
       "total_s": 1.4651781684341125,
       "self_s": 0.7168439591980631
     },
     {
       "function": "existentials",
-      "file": "/Users/alexej/Documents/PROG/spinpy-spinach/kernel/integrity/existentials.m",
+      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/integrity/existentials.m",
       "calls": 1,
       "total_s": 1.143157168045658,
       "self_s": 0.83376941767244328
@@ -191,7 +191,7 @@
     },
     {
       "function": "operator",
-      "file": "/Users/alexej/Documents/PROG/spinpy-spinach/kernel/operator.m",
+      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/operator.m",
       "calls": 49,
       "total_s": 0.91151650109956306,
       "self_s": 0.049319083392826868
@@ -219,7 +219,7 @@
     },
     {
       "function": "hamiltonian",
-      "file": "/Users/alexej/Documents/PROG/spinpy-spinach/kernel/hamiltonian.m",
+      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/hamiltonian.m",
       "calls": 1,
       "total_s": 0.67175625081034018,
       "self_s": 0.10902245846484748
@@ -284,7 +284,7 @@
   "by_self": [
     {
       "function": "evolution>(parfor body)",
-      "file": "/Users/alexej/Documents/PROG/spinpy-spinach/kernel/evolution.m",
+      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/evolution.m",
       "calls": 8,
       "total_s": 39.952732798195015,
       "self_s": 36.637836544196254
@@ -298,7 +298,7 @@
     },
     {
       "function": "propagator",
-      "file": "/Users/alexej/Documents/PROG/spinpy-spinach/kernel/propagator.m",
+      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/propagator.m",
       "calls": 1,
       "total_s": 3.311455587327945,
       "self_s": 3.1620587954810611
@@ -319,14 +319,14 @@
     },
     {
       "function": "existentials",
-      "file": "/Users/alexej/Documents/PROG/spinpy-spinach/kernel/integrity/existentials.m",
+      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/integrity/existentials.m",
       "calls": 1,
       "total_s": 1.143157168045658,
       "self_s": 0.83376941767244328
     },
     {
       "function": "autoexec",
-      "file": "/Users/alexej/Documents/PROG/spinpy-spinach/kernel/includes/autoexec.m",
+      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/includes/autoexec.m",
       "calls": 1,
       "total_s": 1.4651781684341125,
       "self_s": 0.7168439591980631
@@ -340,7 +340,7 @@
     },
     {
       "function": "zulf_pf6_1d_spinach",
-      "file": "/Users/alexej/Documents/PROG/spinpy/comparison/cases/zulf_pf6_1d/zulf_pf6_1d_spinach.m",
+      "file": "/Users/alexej/Documents/PROG/respinach/comparison/cases/zulf_pf6_1d/zulf_pf6_1d_spinach.m",
       "calls": 1,
       "total_s": 69.005522958241414,
       "self_s": 0.41482866716707179
@@ -410,7 +410,7 @@
     },
     {
       "function": "clean_up",
-      "file": "/Users/alexej/Documents/PROG/spinpy-spinach/kernel/utilities/clean_up.m",
+      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/utilities/clean_up.m",
       "calls": 19,
       "total_s": 0.14648879184337624,
       "self_s": 0.14595058350939366
@@ -424,7 +424,7 @@
     },
     {
       "function": "plot_1d",
-      "file": "/Users/alexej/Documents/PROG/spinpy-spinach/kernel/plotting/plot_1d.m",
+      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/plotting/plot_1d.m",
       "calls": 1,
       "total_s": 3.0148333369701295,
       "self_s": 0.13600479183072922
@@ -452,7 +452,7 @@
     },
     {
       "function": "hamiltonian",
-      "file": "/Users/alexej/Documents/PROG/spinpy-spinach/kernel/hamiltonian.m",
+      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/hamiltonian.m",
       "calls": 1,
       "total_s": 0.67175625081034018,
       "self_s": 0.10902245846484748
@@ -536,7 +536,7 @@
     },
     {
       "function": "run_comparison",
-      "file": "/Users/alexej/Documents/PROG/spinpy/comparison/matlab/run_comparison.m",
+      "file": "/Users/alexej/Documents/PROG/respinach/comparison/matlab/run_comparison.m",
       "calls": 1,
       "total_s": 69.079823791664381,
       "self_s": 0.074300833422967116
@@ -557,7 +557,7 @@
     },
     {
       "function": "apodisation",
-      "file": "/Users/alexej/Documents/PROG/spinpy-spinach/kernel/utilities/apodisation.m",
+      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/utilities/apodisation.m",
       "calls": 1,
       "total_s": 0.0727719167544515,
       "self_s": 0.0715831667530175

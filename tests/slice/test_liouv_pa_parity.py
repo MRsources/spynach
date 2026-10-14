@@ -1,6 +1,6 @@
 """Parity of sphten-liouv propagation against Spinach fixtures (FR-003).
 
-Each stage of oracle/matlab/dumps/dump_liouv_pa.m is recomputed with spinpy
+Each stage of oracle/matlab/dumps/dump_liouv_pa.m is recomputed with respinach
 and compared with the stored MATLAB result. The case definitions below
 must stay identical to the ones in the dump script. Tests skip when the
 fixtures are not available.
@@ -17,8 +17,8 @@ import numpy as np
 import pytest
 import scipy.sparse as sps
 
-import spinpy
-from spinpy.oracle import assert_matches, find_case, load_fixture
+import respinach
+from respinach.oracle import assert_matches, find_case, load_fixture
 
 from .test_liouv_setup_parity import CHAIN_J, STYRENE
 
@@ -86,14 +86,14 @@ def fx(case):
 @pytest.fixture
 def spin_system(case):
     spec = CASES[case]
-    return spinpy.basis(spinpy.create(spec["sys"], spec["inter"]), spec["bas"])
+    return respinach.basis(respinach.create(spec["sys"], spec["inter"]), spec["bas"])
 
 
 @pytest.fixture
 def liouvillian(case, spin_system):
-    nmr = spinpy.assume(spin_system, "nmr")
-    H = spinpy.frqoffset(spin_system, spinpy.hamiltonian(nmr), CASES[case]["pars"])
-    return H + 1j * spinpy.kinetics(spin_system)
+    nmr = respinach.assume(spin_system, "nmr")
+    H = respinach.frqoffset(spin_system, respinach.hamiltonian(nmr), CASES[case]["pars"])
+    return H + 1j * respinach.kinetics(spin_system)
 
 
 def column(x):
@@ -126,29 +126,29 @@ def test_case_definitions_match_fixture(fx, case):
 def test_liouvillian_and_states(fx, case, spin_system, liouvillian):
     det = CASES[case]["pars"]["spins"][0]
     assert_matches(liouvillian, fx["/ham/L"], **LIOUVILLIAN_TOL, name="L")
-    assert_matches(spinpy.state(spin_system, "L+", det, "chem"), column(fx["/states/rho0"]), rtol=1e-14, atol=0)
-    assert_matches(spinpy.state(spin_system, "L+", det), column(fx["/states/coil"]), rtol=1e-14, atol=0)
+    assert_matches(respinach.state(spin_system, "L+", det, "chem"), column(fx["/states/rho0"]), rtol=1e-14, atol=0)
+    assert_matches(respinach.state(spin_system, "L+", det), column(fx["/states/coil"]), rtol=1e-14, atol=0)
 
 
 def test_propagator_and_step(fx, case, spin_system):
     dt = 1 / CASES[case]["pars"]["sweep"]
     L, rho0, coil = fx["/ham/L"], column(fx["/states/rho0"]), column(fx["/states/coil"])
-    assert_matches(spinpy.propagator(spin_system, L, dt), fx["/prop/P"], **PROPAGATOR_TOL, name="P")
-    assert_matches(spinpy.step(spin_system, L, rho0, dt), column(fx["/step/rho_dt"]), **PROPAGATOR_TOL, name="step")
-    assert_matches(spinpy.step(spin_system, L, rho0, 7.3 * dt), column(fx["/step/rho_long"]), **PROPAGATOR_TOL)
+    assert_matches(respinach.propagator(spin_system, L, dt), fx["/prop/P"], **PROPAGATOR_TOL, name="P")
+    assert_matches(respinach.step(spin_system, L, rho0, dt), column(fx["/step/rho_dt"]), **PROPAGATOR_TOL, name="step")
+    assert_matches(respinach.step(spin_system, L, rho0, 7.3 * dt), column(fx["/step/rho_long"]), **PROPAGATOR_TOL)
     stack = np.stack([rho0, 0.5 * coil], axis=1)
     ref = fx["/step/stack"]
-    assert_matches(spinpy.step(spin_system, L, stack, dt), ref.toarray() if sps.issparse(ref) else ref, **PROPAGATOR_TOL)
+    assert_matches(respinach.step(spin_system, L, stack, dt), ref.toarray() if sps.issparse(ref) else ref, **PROPAGATOR_TOL)
 
 
 def test_reductions_keep_the_same_states(fx, spin_system):
     L, coil = fx["/ham/L"], column(fx["/states/coil"])
     L_dag = L.conj().T
     expected = kept_states(fx["/reduce/zte_projector"])
-    actual = kept_states(spinpy.zte(spin_system, L_dag, coil))
+    actual = kept_states(respinach.zte(spin_system, L_dag, coil))
     assert actual == expected or (expected is None and len(actual) == spin_system.basis.nstates)
     expected = kept_states(fx["/reduce/projectors"])
-    actual = kept_states(spinpy.reduce(spin_system, L_dag, coil))
+    actual = kept_states(respinach.reduce(spin_system, L_dag, coil))
     assert actual == expected or (expected is None and len(actual) == spin_system.basis.nstates)
 
 
@@ -156,11 +156,11 @@ def test_evolution_outputs(fx, case, spin_system):
     pars = CASES[case]["pars"]
     dt = 1 / pars["sweep"]
     L, rho0, coil = fx["/ham/L"], column(fx["/states/rho0"]), column(fx["/states/coil"])
-    fid = spinpy.evolution(spin_system, L, coil, rho0, dt, pars["npoints"] - 1, "observable")
+    fid = respinach.evolution(spin_system, L, coil, rho0, dt, pars["npoints"] - 1, "observable")
     assert_matches(fid, column(fx["/fid/evolution"]), **FID_TOL, name="observable")
-    final = spinpy.evolution(spin_system, L, None, rho0, dt, pars["npoints"] - 1, "final")
+    final = respinach.evolution(spin_system, L, None, rho0, dt, pars["npoints"] - 1, "final")
     assert_matches(final, column(fx["/fid/final"]), **FID_TOL, name="final")
-    traj = spinpy.evolution(spin_system, L, None, rho0, dt, NTRAJ - 1, "trajectory")
+    traj = respinach.evolution(spin_system, L, None, rho0, dt, NTRAJ - 1, "trajectory")
     ref = fx["/fid/trajectory"]
     assert_matches(traj, ref.toarray() if sps.issparse(ref) else ref, **FID_TOL, name="trajectory")
 
@@ -168,9 +168,9 @@ def test_evolution_outputs(fx, case, spin_system):
 def test_liquid_acquire_end_to_end(fx, case, spin_system):
     pars = dict(CASES[case]["pars"])
     det = pars["spins"][0]
-    pars["rho0"] = spinpy.state(spin_system, "L+", det, "chem")
-    pars["coil"] = spinpy.state(spin_system, "L+", det)
-    fid = spinpy.liquid(spin_system, spinpy.acquire, pars, "nmr")
+    pars["rho0"] = respinach.state(spin_system, "L+", det, "chem")
+    pars["coil"] = respinach.state(spin_system, "L+", det)
+    fid = respinach.liquid(spin_system, respinach.acquire, pars, "nmr")
     assert_matches(fid, column(fx["/fid/liquid"]), **FID_TOL, name="fid liquid")
     spectrum = np.fft.fftshift(np.fft.fft(fid, pars["zerofill"]))
     assert_matches(spectrum, column(fx["/spectrum/raw"]), **FID_TOL, name="spectrum")

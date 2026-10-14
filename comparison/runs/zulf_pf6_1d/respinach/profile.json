@@ -1,0 +1,566 @@
+{
+  "by_total": [
+    {
+      "function": "run (zulf_pf6_1d_respinach.py:14)",
+      "file": "/workspace/comparison/cases/zulf_pf6_1d/zulf_pf6_1d_respinach.py",
+      "calls": 1,
+      "total_s": 35.627680608000006,
+      "self_s": 1.7041e-05
+    },
+    {
+      "function": "simulate (zulf_pf6_1d.py:69)",
+      "file": "/workspace/examples/user_ml/zulf_pf6_1d.py",
+      "calls": 1,
+      "total_s": 35.516960306,
+      "self_s": 0.000356249
+    },
+    {
+      "function": "evolution (propagation.py:208)",
+      "file": "/workspace/src/respinach/propagation.py",
+      "calls": 2,
+      "total_s": 35.361417448000005,
+      "self_s": 28.149717467000002
+    },
+    {
+      "function": "propagator (propagation.py:25)",
+      "file": "/workspace/src/respinach/propagation.py",
+      "calls": 2,
+      "total_s": 7.018491706000001,
+      "self_s": 5.696417938000001
+    },
+    {
+      "function": "clean_up (utilities.py:27)",
+      "file": "/workspace/src/respinach/utilities.py",
+      "calls": 18,
+      "total_s": 0.913428962,
+      "self_s": 0.09571355000000001
+    },
+    {
+      "function": "matlab_round (utilities.py:20)",
+      "file": "/workspace/src/respinach/utilities.py",
+      "calls": 75,
+      "total_s": 0.5218167450000001,
+      "self_s": 0.521697327
+    },
+    {
+      "function": "_matmul_dispatch (_base.py:788)",
+      "file": "/workspace/.venv/lib/python3.11/site-packages/scipy/sparse/_base.py",
+      "calls": 209,
+      "total_s": 0.29582537600000003,
+      "self_s": 0.00023349200000000002
+    },
+    {
+      "function": "__matmul__ (_base.py:919)",
+      "file": "/workspace/.venv/lib/python3.11/site-packages/scipy/sparse/_base.py",
+      "calls": 204,
+      "total_s": 0.29568841300000004,
+      "self_s": 9.9036e-05
+    },
+    {
+      "function": "count_nonzero (numeric.py:483)",
+      "file": "/workspace/.venv/lib/python3.11/site-packages/numpy/_core/numeric.py",
+      "calls": 41,
+      "total_s": 0.267745956,
+      "self_s": 5.4748000000000005e-05
+    },
+    {
+      "function": "<built-in method numpy._core._multiarray_umath.count_nonzero>",
+      "file": "~",
+      "calls": 40,
+      "total_s": 0.267481623,
+      "self_s": 0.267481623
+    },
+    {
+      "function": "nnz (utilities.py:15)",
+      "file": "/workspace/src/respinach/utilities.py",
+      "calls": 28,
+      "total_s": 0.22572982500000002,
+      "self_s": 0.00010091600000000001
+    },
+    {
+      "function": "_matmul_multivector (_compressed.py:399)",
+      "file": "/workspace/.venv/lib/python3.11/site-packages/scipy/sparse/_compressed.py",
+      "calls": 4,
+      "total_s": 0.21236628500000002,
+      "self_s": 4.4127e-05
+    },
+    {
+      "function": "<built-in method scipy.sparse._sparsetools.csr_matvecs>",
+      "file": "~",
+      "calls": 4,
+      "total_s": 0.21217049100000002,
+      "self_s": 0.21217049100000002
+    },
+    {
+      "function": "_detect (propagation.py:355)",
+      "file": "/workspace/src/respinach/propagation.py",
+      "calls": 16384,
+      "total_s": 0.13498822200000002,
+      "self_s": 0.066263956
+    },
+    {
+      "function": "plot (zulf_pf6_1d.py:139)",
+      "file": "/workspace/examples/user_ml/zulf_pf6_1d.py",
+      "calls": 1,
+      "total_s": 0.11070326100000001,
+      "self_s": 2.9624000000000003e-05
+    },
+    {
+      "function": "plot_1d (plotting.py:122)",
+      "file": "/workspace/src/respinach/plotting.py",
+      "calls": 1,
+      "total_s": 0.109317548,
+      "self_s": 2.1793000000000003e-05
+    },
+    {
+      "function": "_figure (plotting.py:440)",
+      "file": "/workspace/src/respinach/plotting.py",
+      "calls": 1,
+      "total_s": 0.106084912,
+      "self_s": 1.825e-05
+    },
+    {
+      "function": "superop (operators.py:242)",
+      "file": "/workspace/src/respinach/operators.py",
+      "calls": 74,
+      "total_s": 0.094111623,
+      "self_s": 0.004201555
+    },
+    {
+      "function": "nnz (backend.py:71)",
+      "file": "/workspace/src/respinach/backend.py",
+      "calls": 10,
+      "total_s": 0.090817488,
+      "self_s": 6.0208000000000004e-05
+    },
+    {
+      "function": "_superop_side (operators.py:265)",
+      "file": "/workspace/src/respinach/operators.py",
+      "calls": 127,
+      "total_s": 0.08990136300000001,
+      "self_s": 0.00041567700000000004
+    },
+    {
+      "function": "_superop_side_build (operators.py:280)",
+      "file": "/workspace/src/respinach/operators.py",
+      "calls": 99,
+      "total_s": 0.08941623200000001,
+      "self_s": 0.016917198
+    },
+    {
+      "function": "hamiltonian (hamiltonian.py:87)",
+      "file": "/workspace/src/respinach/hamiltonian.py",
+      "calls": 1,
+      "total_s": 0.08027187400000001,
+      "self_s": 0.00016575500000000001
+    },
+    {
+      "function": "__init__ (_compressed.py:30)",
+      "file": "/workspace/.venv/lib/python3.11/site-packages/scipy/sparse/_compressed.py",
+      "calls": 366,
+      "total_s": 0.075086522,
+      "self_s": 0.001042004
+    },
+    {
+      "function": "<method 'conj' of 'numpy.ndarray' objects>",
+      "file": "~",
+      "calls": 16384,
+      "total_s": 0.06366662000000001,
+      "self_s": 0.06366662000000001
+    },
+    {
+      "function": "_add (propagation.py:381)",
+      "file": "/workspace/src/respinach/propagation.py",
+      "calls": 9,
+      "total_s": 0.063298781,
+      "self_s": 0.047260438
+    },
+    {
+      "function": "_wrapfunc (fromnumeric.py:48)",
+      "file": "/workspace/.venv/lib/python3.11/site-packages/numpy/_core/fromnumeric.py",
+      "calls": 1609,
+      "total_s": 0.063089621,
+      "self_s": 0.00048244000000000005
+    },
+    {
+      "function": "<listcomp> (hamiltonian.py:172)",
+      "file": "/workspace/src/respinach/hamiltonian.py",
+      "calls": 1,
+      "total_s": 0.05977306,
+      "self_s": 2.6622e-05
+    },
+    {
+      "function": "_triplets (hamiltonian.py:195)",
+      "file": "/workspace/src/respinach/hamiltonian.py",
+      "calls": 25,
+      "total_s": 0.059746438000000006,
+      "self_s": 0.003732303
+    },
+    {
+      "function": "searchsorted (fromnumeric.py:1421)",
+      "file": "/workspace/.venv/lib/python3.11/site-packages/numpy/_core/fromnumeric.py",
+      "calls": 672,
+      "total_s": 0.059244374,
+      "self_s": 0.00021019000000000002
+    },
+    {
+      "function": "<method 'searchsorted' of 'numpy.ndarray' objects>",
+      "file": "~",
+      "calls": 672,
+      "total_s": 0.058756843,
+      "self_s": 0.058756843
+    },
+    {
+      "function": "_find_and_load (<frozen importlib._bootstrap>:1167)",
+      "file": "<frozen importlib._bootstrap>",
+      "calls": 209,
+      "total_s": 0.058596469000000005,
+      "self_s": 0.000394125
+    },
+    {
+      "function": "_find_and_load_unlocked (<frozen importlib._bootstrap>:1122)",
+      "file": "<frozen importlib._bootstrap>",
+      "calls": 125,
+      "total_s": 0.05809505400000001,
+      "self_s": 0.00028426300000000004
+    },
+    {
+      "function": "count_nonzero (_compressed.py:138)",
+      "file": "/workspace/.venv/lib/python3.11/site-packages/scipy/sparse/_compressed.py",
+      "calls": 26,
+      "total_s": 0.057597679000000006,
+      "self_s": 4.8958e-05
+    },
+    {
+      "function": "sum_duplicates (_compressed.py:1063)",
+      "file": "/workspace/.venv/lib/python3.11/site-packages/scipy/sparse/_compressed.py",
+      "calls": 97,
+      "total_s": 0.057533558000000005,
+      "self_s": 8.9301e-05
+    },
+    {
+      "function": "<built-in method builtins.sum>",
+      "file": "~",
+      "calls": 674,
+      "total_s": 0.055719203,
+      "self_s": 0.000262736
+    },
+    {
+      "function": "_matmul_sparse (_compressed.py:415)",
+      "file": "/workspace/.venv/lib/python3.11/site-packages/scipy/sparse/_compressed.py",
+      "calls": 18,
+      "total_s": 0.054606878000000005,
+      "self_s": 0.000109918
+    },
+    {
+      "function": "_load_unlocked (<frozen importlib._bootstrap>:666)",
+      "file": "<frozen importlib._bootstrap>",
+      "calls": 123,
+      "total_s": 0.054561298,
+      "self_s": 0.00022147300000000003
+    },
+    {
+      "function": "exec_module (<frozen importlib._bootstrap_external>:934)",
+      "file": "<frozen importlib._bootstrap_external>",
+      "calls": 121,
+      "total_s": 0.053958045,
+      "self_s": 0.000117164
+    },
+    {
+      "function": "import_module (__init__.py:108)",
+      "file": "/usr/lib/python3.11/importlib/__init__.py",
+      "calls": 119,
+      "total_s": 0.051037371000000005,
+      "self_s": 8.3744e-05
+    },
+    {
+      "function": "sort_indices (_compressed.py:1110)",
+      "file": "/workspace/.venv/lib/python3.11/site-packages/scipy/sparse/_compressed.py",
+      "calls": 33,
+      "total_s": 0.050945866000000006,
+      "self_s": 1.7168000000000002e-05
+    }
+  ],
+  "by_self": [
+    {
+      "function": "evolution (propagation.py:208)",
+      "file": "/workspace/src/respinach/propagation.py",
+      "calls": 2,
+      "total_s": 35.361417448000005,
+      "self_s": 28.149717467000002
+    },
+    {
+      "function": "propagator (propagation.py:25)",
+      "file": "/workspace/src/respinach/propagation.py",
+      "calls": 2,
+      "total_s": 7.018491706000001,
+      "self_s": 5.696417938000001
+    },
+    {
+      "function": "matlab_round (utilities.py:20)",
+      "file": "/workspace/src/respinach/utilities.py",
+      "calls": 75,
+      "total_s": 0.5218167450000001,
+      "self_s": 0.521697327
+    },
+    {
+      "function": "<built-in method numpy._core._multiarray_umath.count_nonzero>",
+      "file": "~",
+      "calls": 40,
+      "total_s": 0.267481623,
+      "self_s": 0.267481623
+    },
+    {
+      "function": "<built-in method scipy.sparse._sparsetools.csr_matvecs>",
+      "file": "~",
+      "calls": 4,
+      "total_s": 0.21217049100000002,
+      "self_s": 0.21217049100000002
+    },
+    {
+      "function": "clean_up (utilities.py:27)",
+      "file": "/workspace/src/respinach/utilities.py",
+      "calls": 18,
+      "total_s": 0.913428962,
+      "self_s": 0.09571355000000001
+    },
+    {
+      "function": "_detect (propagation.py:355)",
+      "file": "/workspace/src/respinach/propagation.py",
+      "calls": 16384,
+      "total_s": 0.13498822200000002,
+      "self_s": 0.066263956
+    },
+    {
+      "function": "<method 'conj' of 'numpy.ndarray' objects>",
+      "file": "~",
+      "calls": 16384,
+      "total_s": 0.06366662000000001,
+      "self_s": 0.06366662000000001
+    },
+    {
+      "function": "<method 'searchsorted' of 'numpy.ndarray' objects>",
+      "file": "~",
+      "calls": 672,
+      "total_s": 0.058756843,
+      "self_s": 0.058756843
+    },
+    {
+      "function": "<built-in method scipy.sparse._sparsetools.csr_sort_indices>",
+      "file": "~",
+      "calls": 5,
+      "total_s": 0.050464615000000004,
+      "self_s": 0.050464615000000004
+    },
+    {
+      "function": "_add (propagation.py:381)",
+      "file": "/workspace/src/respinach/propagation.py",
+      "calls": 9,
+      "total_s": 0.063298781,
+      "self_s": 0.047260438
+    },
+    {
+      "function": "<method 'nonzero' of 'numpy.ndarray' objects>",
+      "file": "~",
+      "calls": 916,
+      "total_s": 0.04722206,
+      "self_s": 0.04722206
+    },
+    {
+      "function": "<built-in method scipy.sparse._sparsetools.csr_matmat>",
+      "file": "~",
+      "calls": 16,
+      "total_s": 0.036925487,
+      "self_s": 0.036925487
+    },
+    {
+      "function": "<built-in method scipy.sparse._sparsetools.csr_todense>",
+      "file": "~",
+      "calls": 26,
+      "total_s": 0.026218830000000002,
+      "self_s": 0.026218830000000002
+    },
+    {
+      "function": "<built-in method scipy.sparse._sparsetools.csr_matvec>",
+      "file": "~",
+      "calls": 152,
+      "total_s": 0.023656699,
+      "self_s": 0.023656699
+    },
+    {
+      "function": "<method 'read' of '_io.BufferedReader' objects>",
+      "file": "~",
+      "calls": 122,
+      "total_s": 0.021562195000000003,
+      "self_s": 0.021562195000000003
+    },
+    {
+      "function": "_superop_side_build (operators.py:280)",
+      "file": "/workspace/src/respinach/operators.py",
+      "calls": 99,
+      "total_s": 0.08941623200000001,
+      "self_s": 0.016917198
+    },
+    {
+      "function": "<built-in method scipy.sparse._sparsetools.csr_matmat_maxnnz>",
+      "file": "~",
+      "calls": 18,
+      "total_s": 0.016029468,
+      "self_s": 0.016029468
+    },
+    {
+      "function": "raw_decode (decoder.py:343)",
+      "file": "/usr/lib/python3.11/json/decoder.py",
+      "calls": 2,
+      "total_s": 0.013213249000000002,
+      "self_s": 0.013213249000000002
+    },
+    {
+      "function": "<method 'copy' of 'numpy.ndarray' objects>",
+      "file": "~",
+      "calls": 362,
+      "total_s": 0.008688225,
+      "self_s": 0.008688225
+    },
+    {
+      "function": "<built-in method scipy.sparse._sparsetools.coo_tocsr>",
+      "file": "~",
+      "calls": 56,
+      "total_s": 0.006808186000000001,
+      "self_s": 0.006808186000000001
+    },
+    {
+      "function": "<built-in method scipy.sparse._sparsetools.csr_plus_csr>",
+      "file": "~",
+      "calls": 27,
+      "total_s": 0.006730104000000001,
+      "self_s": 0.006730104000000001
+    },
+    {
+      "function": "<method 'sort' of 'numpy.ndarray' objects>",
+      "file": "~",
+      "calls": 2,
+      "total_s": 0.006477271000000001,
+      "self_s": 0.006477271000000001
+    },
+    {
+      "function": "<built-in method marshal.loads>",
+      "file": "~",
+      "calls": 121,
+      "total_s": 0.005796143,
+      "self_s": 0.005796143
+    },
+    {
+      "function": "_reordered_taylor (propagation.py:122)",
+      "file": "/workspace/src/respinach/propagation.py",
+      "calls": 5,
+      "total_s": 0.034634901,
+      "self_s": 0.005789384000000001
+    },
+    {
+      "function": "<built-in method scipy.sparse._sparsetools.csr_eliminate_zeros>",
+      "file": "~",
+      "calls": 12,
+      "total_s": 0.0057836020000000005,
+      "self_s": 0.0057836020000000005
+    },
+    {
+      "function": "<method 'reshape' of 'numpy.ndarray' objects>",
+      "file": "~",
+      "calls": 16716,
+      "total_s": 0.0051341040000000004,
+      "self_s": 0.0051341040000000004
+    },
+    {
+      "function": "<method 'reduce' of 'numpy.ufunc' objects>",
+      "file": "~",
+      "calls": 2962,
+      "total_s": 0.004434777,
+      "self_s": 0.004434777
+    },
+    {
+      "function": "superop (operators.py:242)",
+      "file": "/workspace/src/respinach/operators.py",
+      "calls": 74,
+      "total_s": 0.094111623,
+      "self_s": 0.004201555
+    },
+    {
+      "function": "<built-in method io.open_code>",
+      "file": "~",
+      "calls": 122,
+      "total_s": 0.004063519000000001,
+      "self_s": 0.004063519000000001
+    },
+    {
+      "function": "<built-in method scipy.sparse._sparsetools.csc_matvec>",
+      "file": "~",
+      "calls": 35,
+      "total_s": 0.004055892,
+      "self_s": 0.004055892
+    },
+    {
+      "function": "<built-in method scipy.sparse._sparsetools.csr_sum_duplicates>",
+      "file": "~",
+      "calls": 33,
+      "total_s": 0.004006926,
+      "self_s": 0.004006926
+    },
+    {
+      "function": "_triplets (hamiltonian.py:195)",
+      "file": "/workspace/src/respinach/hamiltonian.py",
+      "calls": 25,
+      "total_s": 0.059746438000000006,
+      "self_s": 0.003732303
+    },
+    {
+      "function": "<listcomp> (zulf_pf6_1d.py:62)",
+      "file": "/workspace/examples/user_ml/zulf_pf6_1d.py",
+      "calls": 1,
+      "total_s": 0.004541056,
+      "self_s": 0.0034327560000000003
+    },
+    {
+      "function": "<built-in method builtins.__build_class__>",
+      "file": "~",
+      "calls": 970,
+      "total_s": 0.009532598,
+      "self_s": 0.003212963
+    },
+    {
+      "function": "assemble (hamiltonian.py:174)",
+      "file": "/workspace/src/respinach/hamiltonian.py",
+      "calls": 1,
+      "total_s": 0.019468435000000003,
+      "self_s": 0.0027588820000000003
+    },
+    {
+      "function": "<method 'read' of '_io.TextIOWrapper' objects>",
+      "file": "~",
+      "calls": 20,
+      "total_s": 0.002823467,
+      "self_s": 0.0026753830000000004
+    },
+    {
+      "function": "__getitem__ (basedatatypes.py:4642)",
+      "file": "/workspace/.venv/lib/python3.11/site-packages/plotly/basedatatypes.py",
+      "calls": 1459,
+      "total_s": 0.021038906,
+      "self_s": 0.0021874330000000003
+    },
+    {
+      "function": "<built-in method posix.listdir>",
+      "file": "~",
+      "calls": 23,
+      "total_s": 0.002154631,
+      "self_s": 0.002154631
+    },
+    {
+      "function": "<built-in method scipy.sparse._sparsetools.csr_tocsc>",
+      "file": "~",
+      "calls": 10,
+      "total_s": 0.0018377150000000002,
+      "self_s": 0.0018377150000000002
+    }
+  ]
+}

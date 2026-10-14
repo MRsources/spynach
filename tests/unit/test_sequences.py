@@ -5,14 +5,14 @@ import importlib.util
 import numpy as np
 import pytest
 
-import spinpy
-from spinpy.oracle import assert_matches
+import respinach
+from respinach.oracle import assert_matches
 
 LIOUV = {"formalism": "sphten-liouv", "approximation": "none"}
 
 
 def system(isotopes, bas=LIOUV, magnet=14.1, **inter):
-    return spinpy.basis(spinpy.create({"isotopes": isotopes, "magnet": magnet}, inter), bas)
+    return respinach.basis(respinach.create({"isotopes": isotopes, "magnet": magnet}, inter), bas)
 
 
 def spectrum_2d(fid, zerofill):
@@ -27,67 +27,67 @@ def peak_position(spectrum, axes):
 
 def test_apodisation():
     fid = np.ones(8, dtype=complex)
-    out = spinpy.apodisation(fid, [("exp", 6)])
+    out = respinach.apodisation(fid, [("exp", 6)])
     assert out[0] == 0.5 and np.allclose(out[1:], np.exp(-6 * np.linspace(0, 1, 8))[1:])
-    assert spinpy.apodisation(fid, [("none",)], fp_half=False)[0] == 1
-    two = spinpy.apodisation(np.ones((4, 6), dtype=complex), [("sqcos",), ("sin",)])
+    assert respinach.apodisation(fid, [("none",)], fp_half=False)[0] == 1
+    two = respinach.apodisation(np.ones((4, 6), dtype=complex), [("sqcos",), ("sin",)])
     expected = np.outer(np.cos(np.linspace(0, np.pi / 2, 4)) ** 2, np.sin(np.linspace(0, np.pi, 6)))
     expected[0, :] /= 2
     expected[:, 0] /= 2
     np.testing.assert_allclose(two, expected)
-    assert np.allclose(spinpy.apodisation(np.ones((4, 6), dtype=complex), [None, ("crisp",)])[:, 1], np.cos(np.pi / 2 / 5) ** 8)
+    assert np.allclose(respinach.apodisation(np.ones((4, 6), dtype=complex), [None, ("crisp",)])[:, 1], np.cos(np.pi / 2 / 5) ** 8)
     with pytest.raises(ValueError, match="one element per"):
-        spinpy.apodisation(fid, [("exp", 6), ("exp", 6)])
+        respinach.apodisation(fid, [("exp", 6), ("exp", 6)])
     with pytest.raises(ValueError, match="takes one parameter"):
-        spinpy.apodisation(fid, [("exp",)])
+        respinach.apodisation(fid, [("exp",)])
 
 
 def test_decouple_and_homospoil():
     ss = system(["1H", "13C"], coupling={"scalar": [[0, 140.0], [0, 0]]})
-    nmr = spinpy.assume(ss, "nmr")
-    H = spinpy.hamiltonian(nmr)
-    rho = spinpy.state(ss, "L+", "all") + spinpy.state(ss, ["L+", "Lz"], [0, 1])
-    H_dec, rho_dec = spinpy.decouple(ss, H, rho, ["13C"])
+    nmr = respinach.assume(ss, "nmr")
+    H = respinach.hamiltonian(nmr)
+    rho = respinach.state(ss, "L+", "all") + respinach.state(ss, ["L+", "Lz"], [0, 1])
+    H_dec, rho_dec = respinach.decouple(ss, H, rho, ["13C"])
     carbon = ss.basis.basis[:, 1] > 0
     assert np.allclose(rho_dec[carbon], 0) and np.allclose(rho_dec[~carbon], rho[~carbon])
     Hd = np.asarray(H_dec)
     assert np.allclose(Hd[carbon], 0) and np.allclose(Hd[:, carbon], 0)
     # Decoupled acquisition: the proton doublet collapses to a singlet at the proton frequency
     pars = {"spins": ["1H"], "offset": 1200.0, "sweep": 2000.0, "npoints": 128,
-            "rho0": spinpy.state(ss, "L+", "1H"), "coil": spinpy.state(ss, "L+", "1H")}
-    coupled = spinpy.liquid(ss, spinpy.acquire, pars, "nmr")
-    decoupled = spinpy.liquid(ss, spinpy.acquire, {**pars, "decouple": ["13C"]}, "nmr")
+            "rho0": respinach.state(ss, "L+", "1H"), "coil": respinach.state(ss, "L+", "1H")}
+    coupled = respinach.liquid(ss, respinach.acquire, pars, "nmr")
+    decoupled = respinach.liquid(ss, respinach.acquire, {**pars, "decouple": ["13C"]}, "nmr")
     t = np.arange(128) / 2000.0
     omega = ss.basefrqs[0] * 0 + 2 * np.pi * 1200.0
     assert np.allclose(decoupled, decoupled[0] * np.exp(-1j * omega * t), rtol=1e-9)
     assert not np.allclose(coupled, decoupled)
-    assert_matches(spinpy.decouple(ss, H, rho, [1])[1], rho_dec, rtol=0, atol=0)
-    same_L, same_rho = spinpy.decouple(ss, H, rho, [])
+    assert_matches(respinach.decouple(ss, H, rho, [1])[1], rho_dec, rtol=0, atol=0)
+    same_L, same_rho = respinach.decouple(ss, H, rho, [])
     assert same_L is H and same_rho is rho
-    kept = spinpy.homospoil(ss, rho, "destroy")
-    _, projs = spinpy.operators.lin2lm(ss.basis.basis)
+    kept = respinach.homospoil(ss, rho, "destroy")
+    _, projs = respinach.operators.lin2lm(ss.basis.basis)
     assert np.allclose(kept[np.abs(projs).sum(axis=1) > 0], 0)
     # 'keep' retains states with zero Zeeman frequency: a heteronuclear L+L- is not one, a homonuclear one is
-    assert np.count_nonzero(spinpy.homospoil(ss, spinpy.state(ss, ["L+", "L-"], [0, 1]), "keep")) == 0
+    assert np.count_nonzero(respinach.homospoil(ss, respinach.state(ss, ["L+", "L-"], [0, 1]), "keep")) == 0
     hh = system(["1H", "1H"])
-    assert np.count_nonzero(spinpy.homospoil(hh, spinpy.state(hh, ["L+", "L-"], [0, 1]) + spinpy.state(hh, "L+", "all"), "keep")) == 1
+    assert np.count_nonzero(respinach.homospoil(hh, respinach.state(hh, ["L+", "L-"], [0, 1]) + respinach.state(hh, "L+", "all"), "keep")) == 1
     with pytest.raises(ValueError, match="zqc_flag"):
-        spinpy.homospoil(ss, rho, "whatever")
+        respinach.homospoil(ss, rho, "whatever")
 
 
 def test_refocus_and_dead_time():
     ss = system(["1H", "13C"], coupling={"scalar": [[0, 140.0], [0, 0]]})
-    L = spinpy.hamiltonian(spinpy.assume(ss, "nmr"))
+    L = respinach.hamiltonian(respinach.assume(ss, "nmr"))
     dt = 1e-3
-    stack = spinpy.evolution(ss, L, None, spinpy.state(ss, "L+", "1H"), dt, 5, "trajectory")
-    refocused = spinpy.evolution(ss, L, None, stack, dt, 0, "refocus")
-    P = spinpy.propagator(ss, L, dt)
+    stack = respinach.evolution(ss, L, None, respinach.state(ss, "L+", "1H"), dt, 5, "trajectory")
+    refocused = respinach.evolution(ss, L, None, stack, dt, 0, "refocus")
+    P = respinach.propagator(ss, L, dt)
     for k in range(6):
         expected = np.linalg.matrix_power(np.asarray(P), k) @ stack[:, k]
         assert_matches(refocused[:, k], expected, rtol=1e-10, atol=1e-14)
-    pars = {"spins": ["1H"], "sweep": 2000.0, "npoints": 16, "rho0": spinpy.state(ss, "L+", "1H"), "coil": spinpy.state(ss, "L+", "1H")}
-    plain = spinpy.liquid(ss, spinpy.acquire, {**pars, "npoints": 20}, "nmr")
-    delayed = spinpy.liquid(ss, spinpy.acquire, {**pars, "dead_time": 4 / 2000.0}, "nmr")
+    pars = {"spins": ["1H"], "sweep": 2000.0, "npoints": 16, "rho0": respinach.state(ss, "L+", "1H"), "coil": respinach.state(ss, "L+", "1H")}
+    plain = respinach.liquid(ss, respinach.acquire, {**pars, "npoints": 20}, "nmr")
+    delayed = respinach.liquid(ss, respinach.acquire, {**pars, "dead_time": 4 / 2000.0}, "nmr")
     assert_matches(delayed, plain[4:], rtol=1e-9, atol=0)
 
 
@@ -98,10 +98,10 @@ def test_cosy_cross_peaks_need_a_coupling():
     uncoupled = system(["1H", "1H"], zeeman={"scalar": shifts})
     spectra = {}
     for name, ss in (("coupled", coupled), ("uncoupled", uncoupled)):
-        fid = spinpy.liquid(ss, spinpy.cosy, pars, "nmr")
+        fid = respinach.liquid(ss, respinach.cosy, pars, "nmr")
         assert fid.shape == (64, 64)
-        spectra[name] = spectrum_2d(spinpy.apodisation(fid, [("sqcos",), ("sqcos",)]), (256, 256))
-    from spinpy.plotting import axis_2d
+        spectra[name] = spectrum_2d(respinach.apodisation(fid, [("sqcos",), ("sqcos",)]), (256, 256))
+    from respinach.plotting import axis_2d
     f1, f2, _, _ = axis_2d(coupled, spectra["coupled"], {**pars, "axis_units": "ppm"})
     # Cross peak region: F1 at spin 1, F2 at spin 2
     near = lambda axis, value: np.abs(axis - value) < 0.15
@@ -111,7 +111,7 @@ def test_cosy_cross_peaks_need_a_coupling():
     # Without a coupling only truncation sidelobes of the diagonal peaks (about 1 %) reach the cross-peak region
     assert np.abs(spectra["uncoupled"])[np.ix_(near(f2, 3.0), near(f1, 1.0))].max() < 0.02 * diagonal
     with pytest.raises(ValueError, match="angle"):
-        spinpy.liquid(coupled, spinpy.cosy, {k: v for k, v in pars.items() if k != "angle"}, "nmr")
+        respinach.liquid(coupled, respinach.cosy, {k: v for k, v in pars.items() if k != "angle"}, "nmr")
 
 
 def test_noesy_cross_peaks_from_cross_relaxation():
@@ -119,14 +119,14 @@ def test_noesy_cross_peaks_from_cross_relaxation():
                 relaxation=["redfield"], equilibrium="IME", rlx_keep="kite", temperature=298, tau_c=[[2e-9]])
     pars = {"tmix": 0.3, "offset": 1200.0, "sweep": [2000.0, 2000.0], "npoints": [48, 48], "spins": ["1H"],
             "needs": ["rho_eq"], "zerofill": [256, 256], "axis_units": "ppm"}
-    fid = spinpy.liquid(ss, spinpy.noesy, pars, "nmr")
+    fid = respinach.liquid(ss, respinach.noesy, pars, "nmr")
     assert set(fid) == {"cos", "sin"} and fid["cos"].shape == (48, 48)
-    cos = spinpy.apodisation(fid["cos"], [("sqcos",), ("sqcos",)])
-    sin = spinpy.apodisation(fid["sin"], [("sqcos",), ("sqcos",)])
+    cos = respinach.apodisation(fid["cos"], [("sqcos",), ("sqcos",)])
+    sin = respinach.apodisation(fid["sin"], [("sqcos",), ("sqcos",)])
     f1_cos = np.real(np.fft.fftshift(np.fft.fft(cos, 256, axis=0), axes=0))
     f1_sin = np.real(np.fft.fftshift(np.fft.fft(sin, 256, axis=0), axes=0))
     spectrum = np.fft.fftshift(np.fft.fft(f1_cos - 1j * f1_sin, 256, axis=1), axes=1)
-    from spinpy.plotting import axis_2d
+    from respinach.plotting import axis_2d
     f1, f2, _, _ = axis_2d(ss, spectrum, pars)
     near = lambda axis, value: np.abs(axis - value) < 0.15
     diagonal = spectrum.real[np.ix_(near(f2, 1.0), near(f1, 1.0))]
@@ -135,7 +135,7 @@ def test_noesy_cross_peaks_from_cross_relaxation():
     # Slow tumbling (omega tau_c >> 1): positive NOE cross peaks have the same sign as the diagonal
     assert np.sign(cross.flat[np.argmax(np.abs(cross))]) == np.sign(diagonal.flat[np.argmax(np.abs(diagonal))])
     with pytest.raises(ValueError, match="conflicts"):
-        spinpy.liquid(ss, spinpy.noesy, {**pars, "rho0": spinpy.state(ss, "Lz", "1H")}, "nmr")
+        respinach.liquid(ss, respinach.noesy, {**pars, "rho0": respinach.state(ss, "Lz", "1H")}, "nmr")
 
 
 def test_hsqc_peak_at_the_pair_shifts():
@@ -143,40 +143,40 @@ def test_hsqc_peak_at_the_pair_shifts():
                 coupling={"scalar": [[0, 140.0, 7.0], [0, 0, 0], [0, 0, 0]]})
     pars = {"J": 140.0, "sweep": [3000.0, 2000.0], "offset": [2500.0, 500.0], "npoints": [48, 48], "zerofill": [256, 256],
             "spins": ["13C", "1H"], "decouple_f1": ["1H"], "decouple_f2": ["13C"], "axis_units": "ppm"}
-    fid = spinpy.liquid(ss, spinpy.hsqc, pars, "nmr")
+    fid = respinach.liquid(ss, respinach.hsqc, pars, "nmr")
     assert set(fid) == {"pos", "neg"}
-    pos = np.fft.fftshift(np.fft.fft(spinpy.apodisation(fid["pos"], [("sqcos",), ("sqcos",)]), 256, axis=0), axes=0)
-    neg = np.fft.fftshift(np.fft.fft(spinpy.apodisation(fid["neg"], [("sqcos",), ("sqcos",)]), 256, axis=0), axes=0)
+    pos = np.fft.fftshift(np.fft.fft(respinach.apodisation(fid["pos"], [("sqcos",), ("sqcos",)]), 256, axis=0), axes=0)
+    neg = np.fft.fftshift(np.fft.fft(respinach.apodisation(fid["neg"], [("sqcos",), ("sqcos",)]), 256, axis=0), axes=0)
     spectrum = np.fft.fftshift(np.fft.fft(pos + np.conj(neg), 256, axis=1), axes=1)
-    from spinpy.plotting import axis_2d
+    from respinach.plotting import axis_2d
     f1, f2, _, _ = axis_2d(ss, spectrum, pars)
     F1, F2 = peak_position(spectrum, (f1, f2))
     assert abs(F1 - 40.0) < 0.3 and abs(F2 - 3.0) < 0.05       # 13C shift in F1, bound proton in F2
     with pytest.raises(ValueError, match="two different isotopes"):
-        spinpy.liquid(ss, spinpy.hsqc, {**pars, "spins": ["1H", "1H"], "offset": [500.0, 500.0]}, "nmr")
+        respinach.liquid(ss, respinach.hsqc, {**pars, "spins": ["1H", "1H"], "offset": [500.0, 500.0]}, "nmr")
 
 
 def test_kill_spin_and_dilute():
-    ss = spinpy.create({"isotopes": ["1H", "13C", "13C"], "magnet": 5.9},
+    ss = respinach.create({"isotopes": ["1H", "13C", "13C"], "magnet": 5.9},
                        {"zeeman": {"scalar": [3.0, 40.0, 50.0]}, "coupling": {"scalar": [[0, 140.0, 0], [0, 0, 35.0], [0, 0, 0]]},
                         "coordinates": [[0, 0, 0], [0, 0, 1.09], [0, 0, 2.6]]})
-    sub = spinpy.dilute(ss, "13C")
+    sub = respinach.dilute(ss, "13C")
     assert [s.isotopes for s in sub] == [("1H", "13C"), ("1H", "13C")]
     assert np.isclose(sub[1].zeeman_matrix[1][0, 0] / sub[1].basefrqs[1], 1 + 50e-6)
     assert np.isclose(np.trace(sub[0].coupling_matrix[0][1]) / 3, 2 * np.pi * 140.0)   # one-bond J kept
     assert np.isclose(np.trace(sub[1].coupling_matrix[0][1]), 0)                          # only the dipolar part remains
     assert sub[0].basis is None and sub[0].chem.parts == ((0, 1),)
-    pairs = spinpy.dilute(ss, "13C", 2)
+    pairs = respinach.dilute(ss, "13C", 2)
     assert len(pairs) == 1 and pairs[0].isotopes == ("1H", "13C", "13C")
     with pytest.raises(ValueError, match="not enough"):
-        spinpy.dilute(ss, "13C", 3)
+        respinach.dilute(ss, "13C", 3)
     with pytest.raises(ValueError, match="bounds"):
-        spinpy.kill_spin(ss, [5])
+        respinach.kill_spin(ss, [5])
 
 
 @pytest.mark.skipif(importlib.util.find_spec("plotly") is None, reason="plotly not installed")
 def test_plot_2d_and_contours():
-    from spinpy.plotting import contspacing, plot_2d
+    from respinach.plotting import contspacing, plot_2d
     levels, pos, neg = contspacing(1.0, -0.5, (0.1, 0.5, 0.1, 0.5), 2, "both", 5)
     assert np.allclose(pos, 0.1 + 0.4 * np.linspace(0, 1, 5) ** 2) and np.allclose(neg, -0.05 - 0.2 * np.linspace(0, 1, 5) ** 2)
     assert np.all(np.diff(levels) > 0)

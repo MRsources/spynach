@@ -1,6 +1,6 @@
 """Parity of magic angle spinning (singlerot, Fokker-Planck form) against Spinach fixtures (FR-006).
 
-Each stage of oracle/matlab/dumps/dump_mas.m is recomputed with spinpy and
+Each stage of oracle/matlab/dumps/dump_mas.m is recomputed with respinach and
 compared with the stored MATLAB result; the case definitions below must
 stay identical to the dump script's. Tests skip when the fixtures are not
 available.
@@ -10,10 +10,10 @@ import numpy as np
 import pytest
 import scipy.sparse as sps
 
-import spinpy
-from spinpy.contexts import fourdif
-from spinpy.conventions import wigner
-from spinpy.oracle import assert_matches, find_case, load_fixture
+import respinach
+from respinach.contexts import fourdif
+from respinach.conventions import wigner
+from respinach.oracle import assert_matches, find_case, load_fixture
 
 LIOUV = {"formalism": "sphten-liouv", "approximation": "none", "projections": [[1]]}
 CSA = dict(sys={"isotopes": ["1H", "1H"], "magnet": 14.1},
@@ -51,7 +51,7 @@ def fx(case):
 @pytest.fixture
 def spin_system(case):
     spec = CASES[case]
-    return spinpy.basis(spinpy.create(spec["sys"], spec["inter"]), LIOUV)
+    return respinach.basis(respinach.create(spec["sys"], spec["inter"]), LIOUV)
 
 
 def dense(x):
@@ -90,15 +90,15 @@ def test_fokker_planck_generator(fx, case, spin_system):
             seen["G"] = G
         return 0.0
 
-    spinpy.singlerot(spin_system, grab, {**pars, "sum_up": False}, "nmr")
+    respinach.singlerot(spin_system, grab, {**pars, "sum_up": False}, "nmr")
     assert_matches(seen["G"], fx["/fp/G_first_orientation"], **GENERATOR_TOL, name="G")
 
 
 def test_states_and_fid(fx, case, spin_system):
     pars = dict(CASES[case]["pars"])
     det = pars["spins"][0]
-    pars["rho0"] = spinpy.state(spin_system, "L+", det)
-    pars["coil"] = spinpy.state(spin_system, "L+", det)
+    pars["rho0"] = respinach.state(spin_system, "L+", det)
+    pars["coil"] = respinach.state(spin_system, "L+", det)
     seen = {}
 
     def grab(ss, parameters, G, R, K):
@@ -106,10 +106,10 @@ def test_states_and_fid(fx, case, spin_system):
         seen.setdefault("coil", parameters["coil"])
         return 0.0
 
-    spinpy.singlerot(spin_system, grab, {**pars, "grid": "single_crystal"}, "nmr")
+    respinach.singlerot(spin_system, grab, {**pars, "grid": "single_crystal"}, "nmr")
     assert_matches(seen["rho0"], column(fx["/states/rho0_fp_crystal"]), rtol=1e-14, atol=0, name="rho0 fp")
     assert_matches(seen["coil"], column(fx["/states/coil_fp"]), rtol=1e-14, atol=0, name="coil fp")
-    fid = spinpy.singlerot(spin_system, spinpy.acquire, pars, "nmr")
+    fid = respinach.singlerot(spin_system, respinach.acquire, pars, "nmr")
     assert_matches(fid, column(fx["/fid/singlerot"]), **FID_TOL, name="fid")
     spectrum = np.fft.fftshift(np.fft.fft(fid, pars["zerofill"]))
     assert_matches(spectrum, column(fx["/spectrum/raw"]), **FID_TOL, name="spectrum")

@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import scipy.sparse as sps
 
-from spinpy.oracle import assert_matches, compare
+from respinach.oracle import assert_matches, compare
 
 
 def test_identical_passes_with_zero_tolerance():

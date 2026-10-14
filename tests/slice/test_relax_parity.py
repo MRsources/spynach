@@ -1,6 +1,6 @@
 """Parity of relaxation against Spinach fixtures (FR-005).
 
-Each stage of oracle/matlab/dumps/dump_relax.m is recomputed with spinpy and
+Each stage of oracle/matlab/dumps/dump_relax.m is recomputed with respinach and
 compared with the stored MATLAB result; the case definitions below must
 stay identical to the dump script's. Tests skip when the fixtures are not
 available.
@@ -15,8 +15,8 @@ import numpy as np
 import pytest
 import scipy.sparse as sps
 
-import spinpy
-from spinpy.oracle import assert_matches, find_case, load_fixture
+import respinach
+from respinach.oracle import assert_matches, find_case, load_fixture
 
 LIOUV = {"formalism": "sphten-liouv", "approximation": "none"}
 ANGLES = [0.3, 0.9, 1.2]
@@ -82,7 +82,7 @@ def fx(case):
 @pytest.fixture
 def spin_system(case):
     spec = CASES[case]
-    return spinpy.basis(spinpy.create(spec["sys"], spec["inter"]), LIOUV)
+    return respinach.basis(respinach.create(spec["sys"], spec["inter"]), LIOUV)
 
 
 def dense(x):
@@ -103,33 +103,33 @@ def test_case_definitions_match_fixture(fx, case):
 
 
 def test_relaxation_superoperators(fx, spin_system):
-    assert_matches(spinpy.relaxation(spin_system), fx["/rlx/R"], **R_TOL, name="R")
-    assert_matches(spinpy.relaxation(spin_system, ANGLES), fx["/rlx/R_oriented"], **R_TOL, name="R oriented")
+    assert_matches(respinach.relaxation(spin_system), fx["/rlx/R"], **R_TOL, name="R")
+    assert_matches(respinach.relaxation(spin_system, ANGLES), fx["/rlx/R_oriented"], **R_TOL, name="R oriented")
 
 
 def test_equilibrium_and_thermalisation(fx, case, spin_system):
-    HL, QL = spinpy.hamiltonian(spinpy.assume(spin_system, "labframe"), "left", aniso=True)
+    HL, QL = respinach.hamiltonian(respinach.assume(spin_system, "labframe"), "left", aniso=True)
     assert_matches(HL, fx["/ham/HL"], rtol=1e-12, atol=0, name="HL")
-    rho_eq = spinpy.equilibrium(spin_system, HL)
+    rho_eq = respinach.equilibrium(spin_system, HL)
     assert_matches(rho_eq, column(fx["/states/rho_eq"]), **STATE_TOL, name="rho_eq")
-    assert_matches(spinpy.equilibrium(spin_system, HL, QL, ANGLES), column(fx["/states/rho_eq_oriented"]), **STATE_TOL)
+    assert_matches(respinach.equilibrium(spin_system, HL, QL, ANGLES), column(fx["/states/rho_eq_oriented"]), **STATE_TOL)
     from dataclasses import replace
     zero = replace(spin_system, rlx=replace(spin_system.rlx, equilibrium="zero"))
-    R0 = spinpy.relaxation(zero)
+    R0 = respinach.relaxation(zero)
     assert_matches(R0, fx["/rlx/R_zero"], **R_TOL, name="R zero")
-    assert_matches(spinpy.thermalize(spin_system, R0, None, None, rho_eq, "IME"), fx["/rlx/R_ime"], **R_TOL, name="IME")
+    assert_matches(respinach.thermalize(spin_system, R0, None, None, rho_eq, "IME"), fx["/rlx/R_ime"], **R_TOL, name="IME")
     temperature = CASES[case]["inter"]["temperature"]
-    assert_matches(spinpy.thermalize(spin_system, R0, HL, temperature, None, "dibari"), fx["/rlx/R_dibari"], **R_TOL)
+    assert_matches(respinach.thermalize(spin_system, R0, HL, temperature, None, "dibari"), fx["/rlx/R_dibari"], **R_TOL)
 
 
 def test_transient_noe(fx, case, spin_system):
     noe = CASES[case]["noe"]
     R = fx["/rlx/R"]
     rho_eq = column(fx["/states/rho_eq"])
-    Lz1 = spinpy.state(spin_system, ["Lz"], [0])
+    Lz1 = respinach.state(spin_system, ["Lz"], [0])
     rho = rho_eq - 2 * Lz1 * np.vdot(Lz1, rho_eq) / np.vdot(Lz1, Lz1).real
     assert_matches(rho, column(fx["/states/rho_inverted"]), **STATE_TOL, name="rho inverted")
-    coil = np.stack([spinpy.state(spin_system, ["Lz"], [k]) for k in range(spin_system.nspins)], axis=1)
-    answer = spinpy.evolution(spin_system, 1j * R, coil, rho, noe["dt"], noe["nsteps"], "multichannel")
+    coil = np.stack([respinach.state(spin_system, ["Lz"], [k]) for k in range(spin_system.nspins)], axis=1)
+    answer = respinach.evolution(spin_system, 1j * R, coil, rho, noe["dt"], noe["nsteps"], "multichannel")
     ref = dense(fx["/noe/multichannel"])
     assert_matches(answer, ref.reshape(answer.shape), **STATE_TOL, name="NOE")

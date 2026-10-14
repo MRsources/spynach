@@ -4,7 +4,7 @@ Written 2026-10-11 from the Spinach publications in `spinach-publications/`
 (local folder, not in git; index in `Spinach_papers_index.md`) and from the
 Spinach 2.13 source at `/spinach`. These notes record *why* the kernel is
 built the way it is, how the design changed over the years, and which
-version spinpy ports. The implementation plan derived from them is in
+version respinach ports. The implementation plan derived from them is in
 `ROADMAP.md`.
 
 Paper keys: K07 = Kuprov 2007 JMR 189; K08 = Kuprov 2008 JMR 195; HHK10 =
@@ -33,7 +33,7 @@ page. The ultrafast-MR content is covered by FP16 Sec. 5 and AL19.
 | 2011 | SP11 | Packaging: IK-0/1/2 names, `reduce` = symmetry → ZTE → path tracing, sparse clean-up, kernel API | current (ESR-1/ESR-2 bases removed since) |
 | 2011 | KAR11 | Accuracy proof: error of correlation-order truncation decays as a Gaussian in the order, governed by h/r (largest coupling / smallest relaxation rate) | current justification |
 | 2011 | KEK11 | Destination state screening (reduce against the coil state, backwards) | current, default in `evolution` |
-| 2012 | EK12 | Hilbert-space column split of ρ for parallel propagation; sparsity bounds for Pauli-basis H | spinpy's `evolution` runs serially; no constraint on the Liouville design |
+| 2012 | EK12 | Hilbert-space column split of ρ for parallel propagation; sparsity bounds for Pauli-basis H | respinach's `evolution` runs serially; no constraint on the Liouville design |
 | 2013–16 | ED13, FP16 | Fokker-Planck: classical coordinates (rotor phase, RF phase, space) as extra Kronecker factors *in front of* the spin factor | current; defines how composite state vectors are stacked |
 | 2014 | ED14 | Final basis algorithm: two coupling graphs (J and dipolar/proximity), DFS enumeration of connected subgraphs, union of per-subgraph product bases; IK-1(n,k), IK-2(n) | current (`dfpt.m`, `prune_subgraphs.m`) |
 | 2015 | GK15 | Auxiliary (block) matrices for integrals of exponentials | later (relaxation, derivatives) |
@@ -46,7 +46,7 @@ state), the structure-coefficient construction of superoperators, and the
 exact reductions (symmetry, ZTE, path tracing, DSS) have been stable since
 2010–2011. What changed later is *around* them: how many species share a
 basis (AC25), how classical coordinates are attached (FP16), and how
-generators are stored when the kron products get large (AL19). spinpy ports
+generators are stored when the kron products get large (AL19). respinach ports
 the 2.13 state of all of this, and must leave room for the FP16/AL19/AC25
 extensions in the state and generator layout (Section 5).
 
@@ -57,7 +57,7 @@ extensions in the state and generator layout (Section 5).
 - Single-spin ISTs are numbered `I = l² + l − m` (`kernel/indexing/lm2lin.m`;
   inverse `L = fix(sqrt(I))`, `M = L² + L − I`): 0 = T00 (unit), 1 = T1+1,
   2 = T10, 3 = T1−1, 4..8 = T2+2..T2−2. A spin of multiplicity `mult` has
-  indices `0..mult²−1`. spinpy's `operators.lin2lm/lm2lin` already use this.
+  indices `0..mult²−1`. respinach's `operators.lin2lm/lm2lin` already use this.
 - `spin_system.bas.basis` is an `nstates × nspins` integer matrix (sparse
   double in MATLAB), one row per basis state. Row 1 is always the all-zero
   unit state. Rows are the lexicographically sorted *set* of unique rows
@@ -67,7 +67,7 @@ extensions in the state and generator layout (Section 5).
 - Basis states are **orthonormal**: row `(i₁…i_N)` is the operator
   `⊗_s T_{i_s}/‖T_{i_s}‖_F`. For spin-1/2, `‖T00‖ = √2`, `‖T1m‖ = 1/√2`, with
   `T(1,+1) = −L+/√2`, `T(1,0) = Lz`, `T(1,−1) = +L−/√2` (`irr_sph_ten.m`,
-  which spinpy already reproduces). The unit state is `E/√dim`.
+  which respinach already reproduces). The unit state is `E/√dim`.
 - `sphten2zeeman.m` gives the map to the Zeeman-Liouville vectorisation:
   `P(:,n) = √(Π mults) · vec(⊗T)/‖⊗T‖`, `ρ_zeeman = P ρ_sphten`. For a
   complete basis this is a cross-formalism identity usable without fixtures:
@@ -90,7 +90,7 @@ basis state `T̂_m`, expanded in orthonormal states `T̂_k`. Spin-1/2 tables
     rpst(:,:,1)=[1 0 0 0; 0 0 0 -.5; 0 0 .5 0; 0 -.5 0 0]    rpst(:,:,2)=[0 1 0 0; .5 0 .5 0; 0 -.5 0 0; 0 0 0 0]
     rpst(:,:,3)=[0 0 1 0; 0 0 0 .5; .5 0 0 0; 0 -.5 0 0]      rpst(:,:,4)=[0 0 0 1; 0 0 0 0; 0 0 0 .5; .5 0 -.5 0]
 
-Spinach caches tables for mult > 2 as `.mat` files; spinpy computes them from
+Spinach caches tables for mult > 2 as `.mat` files; respinach computes them from
 `irr_sph_ten` (dense `np.vdot`) and caches per multiplicity. Multiplicities
 above 16 are refused by Spinach.
 
@@ -140,7 +140,7 @@ right`. For one opspec with active spins `a₁..a_p`:
 - `hamiltonian.m` is formalism-agnostic: it builds a term table and calls
   `operator(..., type, 'xyz')` per term, so in `sphten-liouv` the default
   `type='comm'` returns the commutation superoperator `[H,·]` directly. The
-  isotropic logic is exactly what `spinpy/hamiltonian.py` already does
+  isotropic logic is exactly what `respinach/hamiltonian.py` already does
   (Zeeman full/secular/ignore; `strong/secular → LzSz + (L+S− + L−S+)/2`;
   `zz/z*/*z → LzSz`), followed by `clean_up(..., liouv_zero)`.
 - Second output `Q = {3×3 cell, 5×5 cell}` holds the rank-1 and rank-2
@@ -171,7 +171,7 @@ descriptor operations; they replace phase cycles (ED14).
 (now a cell per substance). `bas.projections` and `bas.zero_quantum` are also
 cells with one entry per chemical substance. Allowed approximations:
 `none, IK-0, IK-1, IK-2, IK-DNP, IK-SBS`. ESR-1/ESR-2 (SP11) no longer exist.
-HANDOFF.md and the older papers use the old names; spinpy uses the 2.13 names.
+HANDOFF.md and the older papers use the old names; respinach uses the 2.13 names.
 
 ### 3.2 Graphs
 
@@ -248,7 +248,7 @@ These are propagation-time reductions and belong with the propagation step.
   `k > 2√(h/r)·erfc⁻¹(ξ·erfc(½√(r/h)))`. Proton NMR with J ≈ 5 Hz, r ≈ 1 Hz
   needs `k ≈ 8` for 1 %. Without relaxation the truncated simulation is
   still exact for `t ≤ (k−1)/(2h)`.
-- Validation observables used by the authors, which become spinpy's
+- Validation observables used by the authors, which become respinach's
   regression tests: (i) squared norm of the projection of ρ(t) onto each
   correlation order (`correlation()` filter), log scale; (ii) convergence of
   the spectrum with `inter_level`; (iii) invariance of integrals and phases
@@ -302,14 +302,14 @@ These are propagation-time reductions and belong with the propagation step.
   state is the sum over classical indices; RF-phase dimensions are summed
   out at the end of a pulse.
 
-### 5.3 Implications for spinpy
+### 5.3 Implications for respinach
 
 1. **Basis**: dense `int` array `(nstates, nspins)` on `Basis`, plus
    `tot_proj`, `tot_cord`, the per-substance membership, and cached product
    tables. Rows sorted lexicographically, unit row first. Substances are
    handled in `basis()` and `kinetics()` only; `operator`/`state`/
    `hamiltonian` never need to know about them.
-2. **State vectors** are 1-D complex arrays of length `nstates` (spinpy
+2. **State vectors** are 1-D complex arrays of length `nstates` (respinach
    already returns 1-D time series). A composite state is a 1-D array of
    length `n_classical·nstates` with the spin index fastest, viewed as
    `(…, nstates)` in C order; the MATLAB `vec(B V Aᵀ)` trick becomes

@@ -112,7 +112,7 @@ def is_executed(text: str) -> bool:
 def execute(notebook: dict) -> dict:
     """Run a notebook top to bottom in a fresh kernel and return it with outputs.
 
-    The kernel imports spinpy from this checkout's src/, whatever is
+    The kernel imports respinach from this checkout's src/, whatever is
     installed, and runs in docs/notebooks/ as it would when opened there.
     """
     import nbclient

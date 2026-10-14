@@ -2,7 +2,7 @@
   "side": "spinach",
   "case": "zulf_pf6_1d",
   "created_utc": "2026-10-12T20:14:13Z",
-  "spinach_root": "/Users/alexej/Documents/PROG/spinpy-spinach",
+  "spinach_root": "/Users/alexej/Documents/PROG/respinach-spinach",
   "spinach_commit": "03a88b7e912ffbb3122dd24829cc5d216209c804",
   "spinach_describe": "2.13",
   "spinach_dirty": false,

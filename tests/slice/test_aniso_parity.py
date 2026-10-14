@@ -1,6 +1,6 @@
 """Parity of anisotropic interactions against Spinach fixtures (FR-004).
 
-Each stage of oracle/matlab/dumps/dump_aniso.m is recomputed with spinpy and
+Each stage of oracle/matlab/dumps/dump_aniso.m is recomputed with respinach and
 compared with the stored MATLAB result; the case definitions below must
 stay identical to the dump script's. Tests skip when the fixtures are not
 available.
@@ -14,9 +14,9 @@ import numpy as np
 import pytest
 import scipy.sparse as sps
 
-import spinpy
-from spinpy.conventions import eeqq2nqi, wigner
-from spinpy.oracle import assert_matches, find_case, load_fixture
+import respinach
+from respinach.conventions import eeqq2nqi, wigner
+from respinach.oracle import assert_matches, find_case, load_fixture
 
 NONE_L = {"formalism": "sphten-liouv", "approximation": "none"}
 NONE_H = {"formalism": "zeeman-hilb", "approximation": "none"}
@@ -80,7 +80,7 @@ def fx(case):
 @pytest.fixture
 def spin_system(case):
     spec = CASES[case]
-    return spinpy.basis(spinpy.create(spec["sys"], spec["inter"]), spec["bas"])
+    return respinach.basis(respinach.create(spec["sys"], spec["inter"]), spec["bas"])
 
 
 def dense(x):
@@ -114,18 +114,18 @@ def test_interaction_tensors(fx, spin_system):
 
 
 def test_hamiltonian_components(fx, case, spin_system):
-    assumed = spinpy.assume(spin_system, CASES[case]["assumptions"])
-    I, Q = spinpy.hamiltonian(assumed, aniso=True)
+    assumed = respinach.assume(spin_system, CASES[case]["assumptions"])
+    I, Q = respinach.hamiltonian(assumed, aniso=True)
     assert_matches(I, fx["/ham/I"], **HAMILTONIAN_TOL, name="I")
     for rank, key in ((0, "/ham/Q1"), (1, "/ham/Q2")):
         ref = fx[key]
         for k in range(2 * rank + 3):
             for m in range(2 * rank + 3):
                 assert_matches(Q[rank][k][m], ref[k, m], **HAMILTONIAN_TOL, name=f"Q{rank + 1}[{k},{m}]")
-    I_off = spinpy.frqoffset(spin_system, I, CASES[case]["pars"])
+    I_off = respinach.frqoffset(spin_system, I, CASES[case]["pars"])
     assert_matches(I_off, fx["/ham/I_off"], **HAMILTONIAN_TOL, name="I_off")
     for k, angles in enumerate(ORIENTATIONS, start=1):
-        H = I_off + spinpy.orientation(Q, angles)
+        H = I_off + respinach.orientation(Q, angles)
         H = (H + H.conj().T) / 2
         assert_matches(H, fx[f"/ham/H_orient_{k}"], **HAMILTONIAN_TOL, name=f"H orientation {k}")
     for rank in (1, 2, 3):
@@ -134,7 +134,7 @@ def test_hamiltonian_components(fx, case, spin_system):
 
 def test_grids_match_spinach(fx):
     for name in GRIDS:
-        grid = spinpy.load_grid(name)
+        grid = respinach.load_grid(name)
         ref = fx[f"/grids/{name}"]
         np.testing.assert_array_equal(np.column_stack([grid["alphas"], grid["betas"], grid["gammas"], grid["weights"]]), ref)
 
@@ -143,15 +143,15 @@ def test_crystal_and_powder_fids(fx, case, spin_system):
     spec = CASES[case]
     pars = dict(spec["pars"])
     det = pars["spins"][0]
-    pars["rho0"] = spinpy.state(spin_system, "L+", det)
-    pars["coil"] = spinpy.state(spin_system, "L+", det)
+    pars["rho0"] = respinach.state(spin_system, "L+", det)
+    pars["coil"] = respinach.state(spin_system, "L+", det)
     assert_matches(column(pars["rho0"]) if pars["rho0"].ndim == 1 else pars["rho0"], fx["/states/rho0"]
                    if pars["rho0"].ndim == 2 else column(fx["/states/rho0"]), rtol=1e-14, atol=0)
-    fid = spinpy.crystal(spin_system, spinpy.acquire, {**pars, "orientation": ORIENTATIONS[1]}, spec["assumptions"])
+    fid = respinach.crystal(spin_system, respinach.acquire, {**pars, "orientation": ORIENTATIONS[1]}, spec["assumptions"])
     assert_matches(fid, column(fx["/fid/crystal"]), **FID_TOL, name="crystal")
-    fid = spinpy.powder(spin_system, spinpy.acquire, {**pars, "grid": "leb_2ang_rank_11"}, spec["assumptions"])
+    fid = respinach.powder(spin_system, respinach.acquire, {**pars, "grid": "leb_2ang_rank_11"}, spec["assumptions"])
     assert_matches(fid, column(fx["/fid/powder_leb11"]), **FID_TOL, name="powder leb11")
-    fid = spinpy.powder(spin_system, spinpy.acquire, {**pars, "grid": "rep_2ang_100pts_sph"}, spec["assumptions"])
+    fid = respinach.powder(spin_system, respinach.acquire, {**pars, "grid": "rep_2ang_100pts_sph"}, spec["assumptions"])
     assert_matches(fid, column(fx["/fid/powder_rep100"]), **FID_TOL, name="powder rep100")
     spectrum = np.fft.fftshift(np.fft.fft(fid, pars["zerofill"]))
     assert_matches(spectrum, column(fx["/spectrum/powder_rep100"]), **FID_TOL, name="spectrum")

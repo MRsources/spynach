@@ -1,6 +1,6 @@
-== zulf_pf6_1d (Spinach /Users/alexej/Documents/PROG/spinpy-spinach) -> /Users/alexej/Documents/PROG/spinpy/comparison/runs/zulf_pf6_1d/spinach
+== zulf_pf6_1d (Spinach /Users/alexej/Documents/PROG/respinach-spinach) -> /Users/alexej/Documents/PROG/respinach/comparison/runs/zulf_pf6_1d/spinach
 Running startup checks...
-[...> run_comparison > zulf_pf6_1d_spinach > create ]  scratch location: /Users/alexej/Documents/PROG/spinpy-spinach/scratch
+[...> run_comparison > zulf_pf6_1d_spinach > create ]  scratch location: /Users/alexej/Documents/PROG/respinach-spinach/scratch
 [...parison > zulf_pf6_1d_spinach > create > banner ]   
 [...parison > zulf_pf6_1d_spinach > create > banner ]  ============================================
 [...parison > zulf_pf6_1d_spinach > create > banner ]  =                                          =

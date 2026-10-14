@@ -1,10 +1,10 @@
-"""Tests of spinpy.molecules: the strychnine spin system of Spinach's etc/molecules/strychnine.m."""
+"""Tests of respinach.molecules: the strychnine spin system of Spinach's etc/molecules/strychnine.m."""
 
 import numpy as np
 import pytest
 
-import spinpy
-from spinpy.molecules import strychnine
+import respinach
+from respinach.molecules import strychnine
 
 
 def test_strychnine_protons():
@@ -23,7 +23,7 @@ def test_strychnine_protons():
 def test_strychnine_basis_size():
     sys_, inter = strychnine(["1H"])
     sys_.update(magnet=5.9, tols={"prox_cutoff": 4.0})
-    ss = spinpy.basis(spinpy.create(sys_, inter),
+    ss = respinach.basis(respinach.create(sys_, inter),
                       {"formalism": "sphten-liouv", "approximation": "IK-2", "connectivity": "scalar_couplings", "prox_level": 3})
     assert ss.basis.nstates == 12316                     # noesy_strychnine.m basis, as recorded in README.md
 

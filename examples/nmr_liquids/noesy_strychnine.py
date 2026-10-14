@@ -21,14 +21,14 @@ and after the F1 Fourier transform respectively, then run it in MATLAB:
     save('noesy_strychnine.mat','fid_cos','fid_sin','spectrum','-v7');  % after 'F1 Fourier transform'
 
 and run this script with --compare noesy_strychnine.mat. It prints the normwise relative
-error ||spinpy - spinach||_F / ||spinach||_F of the two FIDs and the spectrum, the metric of
-spinpy.oracle.compare. The sizes must match: run both at the same npoints and zerofill.
+error ||respinach - spinach||_F / ||spinach||_F of the two FIDs and the spectrum, the metric of
+respinach.oracle.compare. The sizes must match: run both at the same npoints and zerofill.
 
 Differences from the MATLAB script: sys.enable={'greedy'} is a Spinach parallelisation
-hint with no effect on the numbers and is omitted (spinpy refuses unknown enable tokens);
-spinpy runs serially. Full size (512 x 512, 12 316 states) takes 2 min 50 s on four cores in the
+hint with no effect on the numbers and is omitted (respinach refuses unknown enable tokens);
+respinach runs serially. Full size (512 x 512, 12 316 states) takes 2 min 50 s on four cores in the
 development container (Spinach: "minutes"); 64 x 64 takes 15 s. The figure is drawn by
-spinpy.plotting.plot_2d, which bins the 2048 x 2048 spectrum to 512 x 512 for the HTML file.
+respinach.plotting.plot_2d, which bins the 2048 x 2048 spectrum to 512 x 512 for the HTML file.
 """
 
 from __future__ import annotations
@@ -41,8 +41,8 @@ from pathlib import Path
 
 import numpy as np
 
-import spinpy
-from spinpy.molecules import strychnine
+import respinach
+from respinach.molecules import strychnine
 
 
 class Timer:
@@ -68,7 +68,7 @@ def simulate(npoints: int = 512, zerofill: int = 2048, timer: Timer | None = Non
     The stages are timed with ``timer`` (default: one that prints); the labels
     are those of comparison/cases/noesy_strychnine, keep them in step. ``gpu``
     adds ``'gpu'`` to ``sys['enable']`` as Spinach's ``sys.enable={'gpu'}``
-    would; spinpy refuses it until the GPU backend exists (porting/gpu-notes.md).
+    would; respinach refuses it until the GPU backend exists (porting/gpu-notes.md).
     """
     timer = Timer() if timer is None else timer
 
@@ -96,9 +96,9 @@ def simulate(npoints: int = 512, zerofill: int = 2048, timer: Timer | None = Non
 
     # Spinach housekeeping
     with timer("create"):
-        spin_system = spinpy.create(sys_, inter)
+        spin_system = respinach.create(sys_, inter)
     with timer("basis"):
-        spin_system = spinpy.basis(spin_system, bas)
+        spin_system = respinach.basis(spin_system, bas)
 
     # Sequence parameters
     parameters = {
@@ -114,12 +114,12 @@ def simulate(npoints: int = 512, zerofill: int = 2048, timer: Timer | None = Non
 
     # Simulation
     with timer("liquid/noesy"):
-        fid = spinpy.liquid(spin_system, spinpy.noesy, parameters, "nmr")
+        fid = respinach.liquid(spin_system, respinach.noesy, parameters, "nmr")
 
     with timer("processing"):
         # Apodisation
-        cos = spinpy.apodisation(fid["cos"], [("sqcos",), ("sqcos",)])
-        sin = spinpy.apodisation(fid["sin"], [("sqcos",), ("sqcos",)])
+        cos = respinach.apodisation(fid["cos"], [("sqcos",), ("sqcos",)])
+        sin = respinach.apodisation(fid["sin"], [("sqcos",), ("sqcos",)])
 
         # F2 Fourier transform
         f1_cos = np.real(np.fft.fftshift(np.fft.fft(cos, parameters["zerofill"][1], axis=0), axes=0))
@@ -136,7 +136,7 @@ def simulate(npoints: int = 512, zerofill: int = 2048, timer: Timer | None = Non
 
 def plot(spin_system, parameters, spectrum, timer: Timer | None = None):
     """The figure of the Spinach script: plot_2d(spin_system,-real(spectrum),parameters,20,[0.01 0.1 0.01 0.1],2,256,6,'both')."""
-    from spinpy.plotting import plot_2d
+    from respinach.plotting import plot_2d
 
     timer = Timer() if timer is None else timer
     with timer("plot"):
@@ -145,10 +145,10 @@ def plot(spin_system, parameters, spectrum, timer: Timer | None = None):
 
 
 def relative_error(actual: np.ndarray, expected: np.ndarray) -> float:
-    """||actual - expected||_F / ||expected||_F, the normwise metric of spinpy.oracle.compare."""
+    """||actual - expected||_F / ||expected||_F, the normwise metric of respinach.oracle.compare."""
     actual, expected = np.asarray(actual), np.asarray(expected)
     if actual.shape != expected.shape:
-        raise ValueError(f"shape mismatch: spinpy {actual.shape}, Spinach {expected.shape}")
+        raise ValueError(f"shape mismatch: respinach {actual.shape}, Spinach {expected.shape}")
     return float(np.linalg.norm(actual - expected) / np.linalg.norm(expected))
 
 
