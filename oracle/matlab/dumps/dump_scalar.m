@@ -120,9 +120,10 @@ for n=1:numel(cases)
         for f={'srfk_tau_c','srfk_mdepth','srsk_sources'}
             if isfield(inter_base,f{1}), inter_base=rmfield(inter_base,f{1}); end
         end
-        ss_base=basis(create(sys,inter_base),bas);
+        sys_base=sys; sys_base.output=fullfile(case_dir,'spinach_base.log');
+        ss_base=basis(create(sys_base,inter_base),bas);
         oracle_write(h5_file,'/rlx/R_base',relaxation(ss_base));
-        fclose(ss_base.sys.output);
+        close_log(ss_base.sys.output);
     end
 
     % Lab-frame Hamiltonian (left) and thermal equilibrium
@@ -146,11 +147,16 @@ for n=1:numel(cases)
     oracle_meta(case_dir,dump_file,spin_system,inputs);
 
     % Close the Spinach log
-    fclose(spin_system.sys.output);
+    close_log(spin_system.sys.output);
     progress(case_label,'finished');
 
 end
 
+end
+
+% Close a Spinach log handle if it is still open
+function close_log(fid)
+if isnumeric(fid)&&isscalar(fid)&&(~isempty(fopen(fid))), fclose(fid); end
 end
 
 % Timestamped progress line on the console
