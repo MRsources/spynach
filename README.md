@@ -29,8 +29,8 @@ Relaxation (Redfield theory, T1/T2 and damping models, thermalisation)
 is ported and verified against Spinach 2.13 fixtures
 (`tests/slice/test_relax_parity.py`) and the Solomon equations; scalar
 relaxation of the first and second kind (`SRFK`, `SRSK`) is ported and
-checked against Abragam's expressions and the explicit integral
-(`tests/slice/test_scalar_parity.py` once FR-008 is fulfilled).
+verified against Spinach 2.13 fixtures (`tests/slice/test_scalar_parity.py`),
+Abragam's expressions and the explicit integral.
 Magic angle spinning in Fokker-Planck form (`singlerot`) is ported and
 verified against Spinach 2.13 fixtures (`tests/slice/test_mas_parity.py`),
 rotor echoes and the fast-spinning limit.
