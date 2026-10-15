@@ -14,10 +14,16 @@ so the figure follows the light and dark themes and needs no file fetch
 
 writes assets/liouvillian-strychnine.png, replaces the data URI in
 index.html, and prints the matrix statistics quoted in the figure caption.
+It also writes alternative renderings to assets/ for later selection:
+``*-third.png`` (the first third of the states, top-left block, same
+mask style) and ``*-density.png`` / ``*-third-density.png`` (opaque
+colour-mapped density images, ``--cmap`` selects the Matplotlib colormap,
+``--background`` the colour of empty bins).
 """
 
 from __future__ import annotations
 
+import argparse
 import base64
 import io
 import re
@@ -26,6 +32,7 @@ from pathlib import Path
 
 import numpy as np
 import scipy.sparse as sps
+from matplotlib import colormaps
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -60,11 +67,18 @@ def liouvillian() -> sps.csr_array:
     return L
 
 
-def render(matrix: sps.csr_array, pixels: int = PIXELS, thicken: int = THICKEN) -> Image.Image:
+def bin_counts(matrix: sps.csr_array, pixels: int = PIXELS) -> np.ndarray:
+    """Number of nonzeros falling into each of ``pixels x pixels`` bins."""
     n = matrix.shape[0]
     rows, cols = matrix.nonzero()
     counts = np.zeros((pixels, pixels))
     np.add.at(counts, (rows * pixels // n, cols * pixels // n), 1)
+    return counts
+
+
+def render(matrix: sps.csr_array, pixels: int = PIXELS, thicken: int = THICKEN) -> Image.Image:
+    """Greyscale luminance mask: brightness grows with the log of the bin count."""
+    counts = bin_counts(matrix, pixels)
     weight = np.log1p(counts) / np.log1p(counts.max())
     alpha = np.where(counts > 0, 0.45 + 0.55 * weight, 0.0)
     for shift in range(1, thicken + 1):
@@ -72,6 +86,27 @@ def render(matrix: sps.csr_array, pixels: int = PIXELS, thicken: int = THICKEN) 
             for direction in (shift, -shift):
                 alpha = np.maximum(alpha, 0.55 * np.roll(alpha, direction, axis=axis))
     return Image.fromarray((255 * np.clip(alpha, 0, 1)).astype(np.uint8), "L")
+
+
+def render_density(matrix: sps.csr_array, cmap: str, background: str, pixels: int = PIXELS,
+                   thicken: int = THICKEN) -> Image.Image:
+    """Opaque colour-mapped density: log of the bin count through a Matplotlib colormap, empty bins in ``background``."""
+    counts = bin_counts(matrix, pixels)
+    for shift in range(1, thicken + 1):
+        for axis in (0, 1):
+            for direction in (shift, -shift):
+                counts = np.maximum(counts, 0.6 * np.roll(counts, direction, axis=axis))
+    weight = np.log1p(counts) / np.log1p(counts.max())
+    rgb = (255 * colormaps[cmap](0.12 + 0.88 * weight)[..., :3]).astype(np.uint8)
+    bg = np.array([int(background.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4)], np.uint8)
+    rgb[counts == 0] = bg
+    return Image.fromarray(rgb, "RGB")
+
+
+def first_third(matrix: sps.csr_array) -> sps.csr_array:
+    """The top-left block covering the first third of the states."""
+    k = matrix.shape[0] // 3
+    return sps.csr_array(matrix[:k, :k])
 
 
 def embed(image: Image.Image, page: Path) -> int:
@@ -87,15 +122,27 @@ def embed(image: Image.Image, page: Path) -> int:
     return len(uri)
 
 
-def main() -> None:
+def main(argv=None) -> None:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--cmap", default="viridis", help="Matplotlib colormap of the density images (default viridis)")
+    parser.add_argument("--background", default="#15191c", help="colour of empty bins in the density images")
+    parser.add_argument("--no-embed", action="store_true", help="do not rewrite the data URI in index.html")
+    args = parser.parse_args(argv)
+    assets = ROOT / "assets"
     L = liouvillian()
     n = L.shape[0]
-    out = ROOT / "assets" / "liouvillian-strychnine.png"
     image = render(L)
-    image.save(out, optimize=True)
-    size = embed(image, ROOT / "index.html")
-    print(f"{out}: {n} states, {L.nnz} nonzeros, density {100 * L.nnz / n**2:.3f}%; "
-          f"embedded in index.html as a {size / 1024:.0f} KB data URI")
+    image.save(assets / "liouvillian-strychnine.png", optimize=True)
+    print(f"liouvillian-strychnine.png: {n} states, {L.nnz} nonzeros, density {100 * L.nnz / n**2:.3f}%")
+    if not args.no_embed:
+        size = embed(image, ROOT / "index.html")
+        print(f"embedded in index.html as a {size / 1024:.0f} KB data URI")
+    third = first_third(L)
+    render(third).save(assets / "liouvillian-strychnine-third.png", optimize=True)
+    print(f"liouvillian-strychnine-third.png: first {third.shape[0]} states, {third.nnz} nonzeros")
+    for name, matrix in (("liouvillian-strychnine-density.png", L), ("liouvillian-strychnine-third-density.png", third)):
+        render_density(matrix, args.cmap, args.background).save(assets / name, optimize=True)
+        print(f"{name}: {args.cmap} on {args.background}")
 
 
 if __name__ == "__main__":
