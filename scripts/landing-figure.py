@@ -1,14 +1,16 @@
 """Render the hero figure of the landing page (index.html).
 
-The figure is the sparsity pattern of the Liouvillian respinach builds for
+The figures are sparsity patterns of the Liouvillian respinach builds for
 examples/nmr_liquids/noesy_strychnine.py: the Hamiltonian commutation
 superoperator plus i times the Redfield relaxation superoperator of the 22
 protons of strychnine in the IK-2 basis. Nonzeros are binned into pixels;
 the pixel brightness grows with the logarithm of the count. The greyscale
-PNG is a luminance mask: index.html embeds it as a data URI inside an
-inline SVG <mask> over a rectangle filled with the page's accent colour,
-so the figure follows the light and dark themes and needs no file fetch
-(CSS mask images are CORS-fetched and fail for pages opened from file://).
+PNG is a luminance mask meant for an inline SVG <mask> in index.html over
+a rectangle filled with the page's accent colour (data URI, so no file
+fetch: CSS mask images are CORS-fetched and fail for pages opened from
+file://); the page follows the light and dark themes with it. The page
+currently shows assets/Spinoza.jpeg instead; the embedding step is then
+skipped and the renderings stay in assets/ for later selection.
 
     OPENBLAS_NUM_THREADS=4 PYTHONPATH=src python scripts/landing-figure.py
 
@@ -133,7 +135,7 @@ def embed(image: Image.Image, page: Path) -> int:
     html = page.read_text()
     pattern = re.compile(r'(<image id="hero-mask-image" [^>]*href=")[^"]*(")')
     if not pattern.search(html):
-        raise SystemExit(f"{page}: hero mask image element not found")
+        return 0   # the page does not currently use the mask as its hero figure
     page.write_text(pattern.sub(lambda m: m.group(1) + uri + m.group(2), html, count=1))
     return len(uri)
 
@@ -156,7 +158,10 @@ def main(argv=None) -> None:
     print(f"liouvillian-strychnine.png: {n} states, {L.nnz} nonzeros, density {100 * L.nnz / n**2:.3f}%")
     if not args.no_embed:
         size = embed(image, ROOT / "index.html")
-        print(f"embedded in index.html as a {size / 1024:.0f} KB data URI")
+        if size:
+            print(f"embedded in index.html as a {size / 1024:.0f} KB data URI")
+        else:
+            print("index.html has no hero mask element; nothing embedded")
     third = first_third(L)
     render(third).save(assets / "liouvillian-strychnine-third.png", optimize=True)
     print(f"liouvillian-strychnine-third.png: first {third.shape[0]} states, {third.nnz} nonzeros")

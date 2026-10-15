@@ -133,12 +133,11 @@ Pages from the root of `main` (Settings > Pages > Deploy from a branch >
 It is hand-maintained: when a guide or a comparison case is added, add
 its row or card there. Reports are linked relatively, so they are served
 by Pages; guides and notebooks link to GitHub and nbviewer. Its hero
-figure, `assets/liouvillian-strychnine.png`, is the sparsity pattern of
-the strychnine NOESY Liouvillian rendered by `scripts/landing-figure.py`
-(needs Pillow and Matplotlib, which the `compare` extra brings in); the
-script also embeds it in `index.html` as a data URI, so the page stays
-self-contained, and writes alternative renderings next to it (first third
-of the states, colour-mapped densities) for later selection.
+figure is `assets/Spinoza.jpeg`. `assets/liouvillian-strychnine*.png`
+are sparsity patterns of the strychnine NOESY Liouvillian rendered by
+`scripts/landing-figure.py` (needs Pillow and Matplotlib, which the
+`compare` extra brings in), kept as alternatives; the script embeds the
+full-matrix mask into the page when the page carries its SVG mask element.
 
 `src/respinach/_isotope_data.py` is generated from Spinach's `spin.m` by
 `porting/tools/gen_isotopes.py`; do not edit it by hand.
