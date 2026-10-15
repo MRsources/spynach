@@ -132,7 +132,10 @@ Pages from the root of `main` (Settings > Pages > Deploy from a branch >
 `main`, `/ (root)`; `.nojekyll` keeps Pages from preprocessing the tree).
 It is hand-maintained: when a guide or a comparison case is added, add
 its row or card there. Reports are linked relatively, so they are served
-by Pages; guides and notebooks link to GitHub and nbviewer.
+by Pages; guides and notebooks link to GitHub and nbviewer. Its hero
+figure, `assets/liouvillian-strychnine.png`, is the sparsity pattern of
+the strychnine NOESY Liouvillian rendered by `scripts/landing-figure.py`
+(needs Pillow, which the `compare` extra brings in).
 
 `src/respinach/_isotope_data.py` is generated from Spinach's `spin.m` by
 `porting/tools/gen_isotopes.py`; do not edit it by hand.
