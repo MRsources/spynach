@@ -16,7 +16,10 @@ writes assets/liouvillian-strychnine.png, replaces the data URI in
 index.html, and prints the matrix statistics quoted in the figure caption.
 It also writes alternative renderings to assets/ for later selection:
 ``*-third.png`` (the first third of the states, top-left block, same
-mask style) and ``*-density.png`` / ``*-third-density.png`` (opaque
+mask style), ``*-tenth-<start>.png`` (a diagonal window of a tenth of the
+states beginning at state ``<start>``, ``--tenth-start`` chooses the
+windows; the defaults show the Redfield blocks along the diagonal and the
+coupling bands) and ``*-density.png`` variants of each (opaque
 colour-mapped density images, ``--cmap`` selects the Matplotlib colormap,
 ``--background`` the colour of empty bins).
 """
@@ -109,6 +112,12 @@ def first_third(matrix: sps.csr_array) -> sps.csr_array:
     return sps.csr_array(matrix[:k, :k])
 
 
+def tenth(matrix: sps.csr_array, start: int) -> sps.csr_array:
+    """A diagonal block covering a tenth of the states, beginning at ``start``."""
+    k = matrix.shape[0] // 10
+    return sps.csr_array(matrix[start:start + k, start:start + k])
+
+
 def embed(image: Image.Image, page: Path) -> int:
     """Replace the data URI of the hero mask image in index.html; returns the encoded size in bytes."""
     buffer = io.BytesIO()
@@ -126,6 +135,8 @@ def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--cmap", default="viridis", help="Matplotlib colormap of the density images (default viridis)")
     parser.add_argument("--background", default="#15191c", help="colour of empty bins in the density images")
+    parser.add_argument("--tenth-start", type=int, nargs="*", default=[1100, 3213],
+                        help="first state of each tenth-of-the-states diagonal window (default 1100 3213)")
     parser.add_argument("--no-embed", action="store_true", help="do not rewrite the data URI in index.html")
     args = parser.parse_args(argv)
     assets = ROOT / "assets"
@@ -140,7 +151,14 @@ def main(argv=None) -> None:
     third = first_third(L)
     render(third).save(assets / "liouvillian-strychnine-third.png", optimize=True)
     print(f"liouvillian-strychnine-third.png: first {third.shape[0]} states, {third.nnz} nonzeros")
-    for name, matrix in (("liouvillian-strychnine-density.png", L), ("liouvillian-strychnine-third-density.png", third)):
+    blocks = {"third": third}
+    for start in args.tenth_start:
+        blocks[f"tenth-{start}"] = tenth(L, start)
+        render(blocks[f"tenth-{start}"]).save(assets / f"liouvillian-strychnine-tenth-{start}.png", optimize=True)
+        print(f"liouvillian-strychnine-tenth-{start}.png: states {start} to {start + L.shape[0] // 10 - 1}, "
+              f"{blocks[f'tenth-{start}'].nnz} nonzeros")
+    for suffix, matrix in [("", L)] + [(f"-{k}", m) for k, m in blocks.items()]:
+        name = f"liouvillian-strychnine{suffix}-density.png"
         render_density(matrix, args.cmap, args.background).save(assets / name, optimize=True)
         print(f"{name}: {args.cmap} on {args.background}")
 
