@@ -135,7 +135,8 @@ its row or card there. Reports are linked relatively, so they are served
 by Pages; guides and notebooks link to GitHub and nbviewer. Its hero
 figure, `assets/liouvillian-strychnine.png`, is the sparsity pattern of
 the strychnine NOESY Liouvillian rendered by `scripts/landing-figure.py`
-(needs Pillow, which the `compare` extra brings in).
+(needs Pillow, which the `compare` extra brings in); the script also
+embeds it in `index.html` as a data URI, so the page stays self-contained.
 
 `src/respinach/_isotope_data.py` is generated from Spinach's `spin.m` by
 `porting/tools/gen_isotopes.py`; do not edit it by hand.

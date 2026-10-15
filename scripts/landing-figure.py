@@ -4,18 +4,23 @@ The figure is the sparsity pattern of the Liouvillian respinach builds for
 examples/nmr_liquids/noesy_strychnine.py: the Hamiltonian commutation
 superoperator plus i times the Redfield relaxation superoperator of the 22
 protons of strychnine in the IK-2 basis. Nonzeros are binned into pixels;
-the pixel alpha grows with the logarithm of the count. Only the alpha
-channel matters: index.html uses the PNG as a CSS mask filled with the
-page's accent colour, so the figure follows the light and dark themes.
+the pixel brightness grows with the logarithm of the count. The greyscale
+PNG is a luminance mask: index.html embeds it as a data URI inside an
+inline SVG <mask> over a rectangle filled with the page's accent colour,
+so the figure follows the light and dark themes and needs no file fetch
+(CSS mask images are CORS-fetched and fail for pages opened from file://).
 
     OPENBLAS_NUM_THREADS=4 PYTHONPATH=src python scripts/landing-figure.py
 
-writes assets/liouvillian-strychnine.png and prints the matrix statistics
-quoted in the figure caption.
+writes assets/liouvillian-strychnine.png, replaces the data URI in
+index.html, and prints the matrix statistics quoted in the figure caption.
 """
 
 from __future__ import annotations
 
+import base64
+import io
+import re
 import sys
 from pathlib import Path
 
@@ -66,19 +71,31 @@ def render(matrix: sps.csr_array, pixels: int = PIXELS, thicken: int = THICKEN) 
         for axis in (0, 1):
             for direction in (shift, -shift):
                 alpha = np.maximum(alpha, 0.55 * np.roll(alpha, direction, axis=axis))
-    mask = (255 * np.clip(alpha, 0, 1)).astype(np.uint8)
-    rgba = np.zeros((pixels, pixels, 4), np.uint8)
-    rgba[..., :3] = (0x0F, 0x6E, 0x63)   # the light-theme accent, for viewers that ignore the mask
-    rgba[..., 3] = mask
-    return Image.fromarray(rgba, "RGBA")
+    return Image.fromarray((255 * np.clip(alpha, 0, 1)).astype(np.uint8), "L")
+
+
+def embed(image: Image.Image, page: Path) -> int:
+    """Replace the data URI of the hero mask image in index.html; returns the encoded size in bytes."""
+    buffer = io.BytesIO()
+    image.save(buffer, "PNG", optimize=True)
+    uri = "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")
+    html = page.read_text()
+    pattern = re.compile(r'(<image id="hero-mask-image" [^>]*href=")[^"]*(")')
+    if not pattern.search(html):
+        raise SystemExit(f"{page}: hero mask image element not found")
+    page.write_text(pattern.sub(lambda m: m.group(1) + uri + m.group(2), html, count=1))
+    return len(uri)
 
 
 def main() -> None:
     L = liouvillian()
     n = L.shape[0]
     out = ROOT / "assets" / "liouvillian-strychnine.png"
-    render(L).save(out, optimize=True)
-    print(f"{out}: {n} states, {L.nnz} nonzeros, density {100 * L.nnz / n**2:.3f}%")
+    image = render(L)
+    image.save(out, optimize=True)
+    size = embed(image, ROOT / "index.html")
+    print(f"{out}: {n} states, {L.nnz} nonzeros, density {100 * L.nnz / n**2:.3f}%; "
+          f"embedded in index.html as a {size / 1024:.0f} KB data URI")
 
 
 if __name__ == "__main__":
