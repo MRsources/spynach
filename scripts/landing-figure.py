@@ -17,9 +17,9 @@ index.html, and prints the matrix statistics quoted in the figure caption.
 It also writes alternative renderings to assets/ for later selection:
 ``*-third.png`` (the first third of the states, top-left block, same
 mask style), ``*-tenth-<start>.png`` (a diagonal window of a tenth of the
-states beginning at state ``<start>``, ``--tenth-start`` chooses the
-windows; the defaults show the Redfield blocks along the diagonal and the
-coupling bands) and ``*-density.png`` variants of each (opaque
+states beginning at state ``<start>``; by default the first tenth,
+``--tenth-start`` chooses other windows, for example 1100 or 3213 where
+Redfield blocks sit along the diagonal) and ``*-density.png`` variants of each (opaque
 colour-mapped density images, ``--cmap`` selects the Matplotlib colormap,
 ``--background`` the colour of empty bins).
 """
@@ -135,8 +135,8 @@ def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--cmap", default="viridis", help="Matplotlib colormap of the density images (default viridis)")
     parser.add_argument("--background", default="#15191c", help="colour of empty bins in the density images")
-    parser.add_argument("--tenth-start", type=int, nargs="*", default=[1100, 3213],
-                        help="first state of each tenth-of-the-states diagonal window (default 1100 3213)")
+    parser.add_argument("--tenth-start", type=int, nargs="*", default=[0],
+                        help="first state of each tenth-of-the-states diagonal window (default 0, the first tenth)")
     parser.add_argument("--no-embed", action="store_true", help="do not rewrite the data URI in index.html")
     args = parser.parse_args(argv)
     assets = ROOT / "assets"
