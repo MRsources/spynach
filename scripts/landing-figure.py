@@ -19,7 +19,9 @@ It also writes alternative renderings to assets/ for later selection:
 mask style), ``*-tenth-<start>.png`` (a diagonal window of a tenth of the
 states beginning at state ``<start>``; by default the first tenth,
 ``--tenth-start`` chooses other windows, for example 1100 or 3213 where
-Redfield blocks sit along the diagonal) and ``*-density.png`` variants of each (opaque
+Redfield blocks sit along the diagonal), ``*-first-<N>.png`` (the
+top-left block of the first ``N`` states, ``--first`` chooses the sizes,
+default 1000) and ``*-density.png`` variants of each (opaque
 colour-mapped density images, ``--cmap`` selects the Matplotlib colormap,
 ``--background`` the colour of empty bins).
 """
@@ -112,6 +114,11 @@ def first_third(matrix: sps.csr_array) -> sps.csr_array:
     return sps.csr_array(matrix[:k, :k])
 
 
+def first(matrix: sps.csr_array, count: int) -> sps.csr_array:
+    """The top-left block covering the first ``count`` states."""
+    return sps.csr_array(matrix[:count, :count])
+
+
 def tenth(matrix: sps.csr_array, start: int) -> sps.csr_array:
     """A diagonal block covering a tenth of the states, beginning at ``start``."""
     k = matrix.shape[0] // 10
@@ -137,6 +144,8 @@ def main(argv=None) -> None:
     parser.add_argument("--background", default="#15191c", help="colour of empty bins in the density images")
     parser.add_argument("--tenth-start", type=int, nargs="*", default=[0],
                         help="first state of each tenth-of-the-states diagonal window (default 0, the first tenth)")
+    parser.add_argument("--first", type=int, nargs="*", default=[1000],
+                        help="sizes of top-left blocks to render, in states (default 1000)")
     parser.add_argument("--no-embed", action="store_true", help="do not rewrite the data URI in index.html")
     args = parser.parse_args(argv)
     assets = ROOT / "assets"
@@ -157,6 +166,10 @@ def main(argv=None) -> None:
         render(blocks[f"tenth-{start}"]).save(assets / f"liouvillian-strychnine-tenth-{start}.png", optimize=True)
         print(f"liouvillian-strychnine-tenth-{start}.png: states {start} to {start + L.shape[0] // 10 - 1}, "
               f"{blocks[f'tenth-{start}'].nnz} nonzeros")
+    for count in args.first:
+        blocks[f"first-{count}"] = first(L, count)
+        render(blocks[f"first-{count}"]).save(assets / f"liouvillian-strychnine-first-{count}.png", optimize=True)
+        print(f"liouvillian-strychnine-first-{count}.png: first {count} states, {blocks[f'first-{count}'].nnz} nonzeros")
     for suffix, matrix in [("", L)] + [(f"-{k}", m) for k, m in blocks.items()]:
         name = f"liouvillian-strychnine{suffix}-density.png"
         render_density(matrix, args.cmap, args.background).save(assets / name, optimize=True)
