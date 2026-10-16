@@ -284,6 +284,18 @@ def _spins_in_substance(spin_system: SpinSystem, s: int, entry: Any, field: str)
 
 
 def _grumble(spin_system: SpinSystem, bas: dict[str, Any]) -> None:
+    """Validate ``bas`` as ``basis.m`` does, with Spinach's messages; raise on unported options."""
+    formalism, approximation = _check_fields(bas)
+    if formalism == "zeeman-hilb":
+        _check_zeeman_hilb(spin_system, bas, approximation)
+    else:
+        _check_sphten_liouv(spin_system, bas, approximation)
+        _check_filters(spin_system, bas)
+    _check_option_scope(bas, approximation)
+
+
+def _check_fields(bas: dict[str, Any]) -> tuple[str, str]:
+    """Field names, formalism and approximation present and ported; returns both."""
     for name, message in RETIRED.items():
         if name in bas:
             raise ValueError(message)
@@ -299,63 +311,76 @@ def _grumble(spin_system: SpinSystem, bas: dict[str, Any]) -> None:
         raise NotImplementedError("permutation symmetry (bas['sym_group']) not ported yet.")
     if "approximation" not in bas:
         raise ValueError(f"approximation level must be specified in bas['approximation'] for {formalism} formalism.")
-    approximation = bas["approximation"]
+    return formalism, bas["approximation"]
+
+
+def _check_zeeman_hilb(spin_system: SpinSystem, bas: dict[str, Any], approximation: str) -> None:
+    if approximation != "none":
+        raise ValueError("bas['approximation'] should be set to 'none' in zeeman-hilb formalism.")
+    for name in ("projections", "longitudinal", "zero_quantum"):
+        if name in bas:
+            raise ValueError(f"bas['{name}'] option is only available for sphten-liouv formalism.")
+    if spin_system.chem.nparts > 1:
+        raise ValueError("chemical reaction modelling is only available for sphten-liouv formalism.")
+
+
+def _check_sphten_liouv(spin_system: SpinSystem, bas: dict[str, Any], approximation: str) -> None:
+    """Approximation level and the connectivity and tracing depths it needs."""
+    nspins = spin_system.nspins
+    if np.any(spin_system.mults > 16):
+        raise ValueError("multiplicities above 16 are not supported by sphten-liouv formalism.")
+    if approximation not in APPROXIMATIONS:
+        raise ValueError("unrecognized approximation - see the basis preparation section of the manual.")
+    if approximation in ("IK-DNP", "IK-SBS"):
+        raise NotImplementedError(f"approximation {approximation!r} not ported yet.")
+    if approximation in ("IK-1", "IK-2"):
+        if "connectivity" not in bas:
+            raise ValueError("connectivity type must be specified in bas['connectivity'].")
+        if bas["connectivity"] not in ("scalar_couplings", "full_tensors"):
+            raise ValueError("unknown connectivity type - see the basis preparation section of the manual.")
+    if approximation in ("IK-0", "IK-1"):
+        if "inter_level" not in bas:
+            raise ValueError("connectivity tracing depth must be specified in bas['inter_level'].")
+        _check_level(bas["inter_level"], nspins, "inter_level")
+    if approximation in ("IK-1", "IK-2"):
+        if "prox_level" not in bas:
+            raise ValueError("proximity tracing depth must be specified in bas['prox_level'].")
+        _check_level(bas["prox_level"], nspins, "prox_level")
+
+
+def _check_filters(spin_system: SpinSystem, bas: dict[str, Any]) -> None:
+    """``manual``, ``projections``, ``longitudinal`` and ``zero_quantum`` (sphten-liouv only)."""
     nspins, nparts = spin_system.nspins, spin_system.chem.nparts
+    if "manual" in bas:
+        manual = np.asarray(bas["manual"])
+        if manual.ndim != 2 or manual.shape[1] != nspins:
+            raise ValueError(
+                "the number of columns in bas['manual'] must be equal to the number of spins in the system."
+            )
+    if "projections" in bas:
+        if len(bas["projections"]) != nparts:
+            raise ValueError("bas['projections'] must be a list with one element per chemical substance.")
+        for entry in bas["projections"]:
+            if entry is not None and any(int(p) != p for p in np.atleast_1d(entry)):
+                raise ValueError("elements of bas['projections'] must be empty or lists of integers.")
+    for name in ("longitudinal", "zero_quantum"):
+        if name not in bas:
+            continue
+        if len(bas[name]) != nparts:
+            raise ValueError(f"bas['{name}'] must be a list with one element per chemical substance.")
+        for entries in bas[name]:
+            for entry in entries:
+                if isinstance(entry, str):
+                    if entry not in spin_system.isotopes:
+                        raise ValueError(f"bas['{name}'] refers to spins that are not present in the system.")
+                elif any(int(n) != n or n < 0 or n >= nspins for n in np.atleast_1d(entry)):
+                    raise ValueError(
+                        f"numeric entries in bas['{name}'] must be spin numbers between 0 and {nspins - 1}."
+                    )
 
-    if formalism == "zeeman-hilb":
-        if approximation != "none":
-            raise ValueError("bas['approximation'] should be set to 'none' in zeeman-hilb formalism.")
-        for name in ("projections", "longitudinal", "zero_quantum"):
-            if name in bas:
-                raise ValueError(f"bas['{name}'] option is only available for sphten-liouv formalism.")
-        if nparts > 1:
-            raise ValueError("chemical reaction modelling is only available for sphten-liouv formalism.")
 
-    if formalism == "sphten-liouv":
-        if np.any(spin_system.mults > 16):
-            raise ValueError("multiplicities above 16 are not supported by sphten-liouv formalism.")
-        if approximation not in APPROXIMATIONS:
-            raise ValueError("unrecognized approximation - see the basis preparation section of the manual.")
-        if approximation in ("IK-DNP", "IK-SBS"):
-            raise NotImplementedError(f"approximation {approximation!r} not ported yet.")
-        if approximation in ("IK-1", "IK-2"):
-            if "connectivity" not in bas:
-                raise ValueError("connectivity type must be specified in bas['connectivity'].")
-            if bas["connectivity"] not in ("scalar_couplings", "full_tensors"):
-                raise ValueError("unknown connectivity type - see the basis preparation section of the manual.")
-        if approximation in ("IK-0", "IK-1"):
-            if "inter_level" not in bas:
-                raise ValueError("connectivity tracing depth must be specified in bas['inter_level'].")
-            _check_level(bas["inter_level"], nspins, "inter_level")
-        if approximation in ("IK-1", "IK-2"):
-            if "prox_level" not in bas:
-                raise ValueError("proximity tracing depth must be specified in bas['prox_level'].")
-            _check_level(bas["prox_level"], nspins, "prox_level")
-        if "manual" in bas:
-            manual = np.asarray(bas["manual"])
-            if manual.ndim != 2 or manual.shape[1] != nspins:
-                raise ValueError(
-                    "the number of columns in bas['manual'] must be equal to the number of spins in the system."
-                )
-        if "projections" in bas:
-            if len(bas["projections"]) != nparts:
-                raise ValueError("bas['projections'] must be a list with one element per chemical substance.")
-            for entry in bas["projections"]:
-                if entry is not None and any(int(p) != p for p in np.atleast_1d(entry)):
-                    raise ValueError("elements of bas['projections'] must be empty or lists of integers.")
-        for name in ("longitudinal", "zero_quantum"):
-            if name in bas:
-                if len(bas[name]) != nparts:
-                    raise ValueError(f"bas['{name}'] must be a list with one element per chemical substance.")
-                for entries in bas[name]:
-                    for entry in entries:
-                        if isinstance(entry, str):
-                            if entry not in spin_system.isotopes:
-                                raise ValueError(f"bas['{name}'] refers to spins that are not present in the system.")
-                        elif any(int(n) != n or n < 0 or n >= nspins for n in np.atleast_1d(entry)):
-                            raise ValueError(
-                                f"numeric entries in bas['{name}'] must be spin numbers between 0 and {nspins - 1}."
-                            )
+def _check_option_scope(bas: dict[str, Any], approximation: str) -> None:
+    """Options that only some approximation levels accept."""
     if "inter_level" in bas and approximation not in ("IK-0", "IK-1", "IK-DNP", "IK-SBS"):
         raise ValueError("bas['inter_level'] is only applicable to IK-0,1,2,DNP,SBS basis sets.")
     if "prox_level" in bas and approximation not in ("IK-1", "IK-2"):

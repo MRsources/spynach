@@ -258,22 +258,10 @@ def evolution(
     if isinstance(rho, (list, tuple)):
         raise NotImplementedError("state stacks as lists are not ported yet; stack column vectors in an array.")
     if spin_system.basis.formalism == "zeeman-hilb":
-        if output != "observable":
-            raise NotImplementedError(f"evolution output {output!r} not ported yet in zeeman-hilb; only 'observable'.")
-        if coil is None:
-            raise ValueError("coil state must be given for the observable output.")
-        if coil.shape != rho.shape:
-            raise ValueError("coil and rho must have identical dimensions.")
-        P = propagator(spin_system, L, timestep)
-        P_dag = dagger(P)
-        answer = np.empty(nsteps + 1, dtype=complex)
-        for n in range(nsteps + 1):
-            answer[n] = hdot(coil, rho)
-            rho = P @ rho @ P_dag
-        return answer
+        return _evolution_hilbert(spin_system, L, rho, timestep, nsteps, output, coil)
     if spin_system.basis.formalism != "sphten-liouv":
         raise NotImplementedError(f"formalism {spin_system.basis.formalism!r} not ported yet.")
-    if output not in ("observable", "final", "trajectory", "multichannel", "refocus"):
+    if output not in _OUTPUTS:
         raise NotImplementedError(f"evolution output {output!r} not ported yet.")
 
     from respinach.reduction import reduce  # noqa: PLC0415  (reduction imports step from this module)
@@ -285,85 +273,37 @@ def evolution(
     rho = rho.reshape(rho.shape[0], -1)
     if output == "trajectory" and rho.shape[1] > 1:
         raise ValueError("trajectory output is not available for state vector stacks.")
+    detected = output in ("observable", "multichannel")
+    if detected and coil is None:
+        raise ValueError("coil state must be given for the observable and multichannel outputs.")
     if coil is not None:
-        coil = (
-            be.dense(coil, dtype=complex).reshape(-1, 1) if be.dense(coil).ndim == 1 else be.dense(coil, dtype=complex)
-        )
+        coil = be.dense(coil, dtype=complex)
+        coil = coil.reshape(-1, 1) if coil.ndim == 1 else coil
+
+    # Trajectory-level reduction, run backwards from the destination or coil state where there is one
     if "dss" in spin_system.disable:
         projectors = reduce(spin_system, L, rho)
     elif destination is not None:
         projectors = reduce(spin_system, dagger(L), destination)
-    elif output in ("observable", "multichannel"):
-        if coil is None:
-            raise ValueError("coil state must be given for the observable and multichannel outputs.")
+    elif detected:
         projectors = reduce(spin_system, dagger(L), coil)
     else:
         projectors = reduce(spin_system, L, rho)
 
+    evolve = _OUTPUTS[output]
+    answer = _result_array(output, rho, coil, nsteps)
     use_krylov = "krylov" in spin_system.enable
-    if output == "observable":
-        answer = np.zeros((nsteps + 1, rho.shape[1]), dtype=complex)
-    elif output == "multichannel":
-        answer = np.zeros((coil.shape[1], nsteps + 1, rho.shape[1]), dtype=complex)
-    elif output in ("final", "refocus"):
-        answer = np.zeros_like(rho)
-    else:
-        answer = np.zeros((rho.shape[0], nsteps + 1), dtype=complex)
     for P in projectors:
         P_dag = P.conj().T
         L_loc = clean_up(tols, as_matrix(P_dag @ L @ P), tols.liouv_zero)
         rho_loc = chop(P_dag @ rho, tols.zte_tol)
-        dim = L_loc.shape[0]
-        krylov_path = use_krylov or (dim >= tols.krylov_tol and "krylov" not in spin_system.disable)
+        coil_loc = chop(P_dag @ coil, tols.zte_tol) if detected else None
+        krylov_path = use_krylov or (L_loc.shape[0] >= tols.krylov_tol and "krylov" not in spin_system.disable)
         # GPU: evolution.m moves P, rho_loc and coil_loc to the device for the loops below
         # and gathers the observables; the propagator itself is built as above
-        if output == "observable":
-            coil_loc = chop(P_dag @ coil, tols.zte_tol)
-            if krylov_path:
-                answer += krylov(spin_system, L_loc, rho_loc, timestep, nsteps, "observable", coil=coil_loc)
-            else:
-                prop = propagator(spin_system, L_loc, timestep)
-                for n in range(nsteps + 1):
-                    answer[n] += _detect(coil_loc, rho_loc)
-                    rho_loc = prop @ rho_loc
-        elif output == "multichannel":
-            coil_loc = chop(P_dag @ coil, tols.zte_tol)
-            if krylov_path:
-                answer += krylov(spin_system, L_loc, rho_loc, timestep, nsteps, "multichannel", coil=coil_loc)
-            else:
-                prop = propagator(spin_system, L_loc, timestep)
-                for n in range(nsteps + 1):
-                    answer[:, n, :] += coil_loc.conj().T @ rho_loc
-                    rho_loc = prop @ rho_loc
-        elif output == "refocus":
-            if krylov_path:
-                rho_loc = krylov(spin_system, L_loc, rho_loc, timestep, nsteps, "refocus")
-            else:
-                prop = propagator(spin_system, L_loc, timestep)
-                rho_loc = rho_loc.copy()
-                for n in range(1, rho_loc.shape[1]):
-                    rho_loc[:, n:] = prop @ rho_loc[:, n:]
-            answer += P @ chop(rho_loc, tols.zte_tol)
-        elif output == "final":
-            if krylov_path:
-                rho_loc = krylov(spin_system, L_loc, rho_loc, timestep, nsteps, "final")
-            else:
-                # Optimal stepping: fewer, longer steps when the propagator is cheap relative to the stack
-                nsteps_opt = max(1, math.ceil(math.log2(dim / (rho_loc.shape[1] * math.log(2)))))
-                prop = propagator(spin_system, L_loc, timestep * nsteps / nsteps_opt)
-                for _ in range(nsteps_opt):
-                    rho_loc = prop @ rho_loc
-            answer += P @ chop(rho_loc, tols.zte_tol)
-        else:
-            if krylov_path:
-                traj = krylov(spin_system, L_loc, rho_loc, timestep, nsteps, "trajectory")
-            else:
-                prop = propagator(spin_system, L_loc, timestep)
-                traj = np.zeros((dim, nsteps + 1), dtype=complex)
-                for n in range(nsteps + 1):
-                    traj[:, n] = rho_loc[:, 0]
-                    rho_loc = prop @ rho_loc
-            answer += P @ chop(traj, tols.zte_tol)
+        result = evolve(spin_system, L_loc, rho_loc, coil_loc, timestep, nsteps, krylov_path)
+        # Detected outputs add up over the subspaces; state outputs are projected back into the full space
+        answer += result if detected else P @ chop(result, tols.zte_tol)
     if output in ("final", "refocus"):
         answer = chop(answer, tols.zte_tol)
     if single and output in ("observable", "final", "refocus"):
@@ -371,6 +311,112 @@ def evolution(
     elif single and output == "multichannel":
         answer = answer[:, :, 0]
     return answer
+
+
+def _evolution_hilbert(
+    spin_system: SpinSystem, H: Matrix, rho: Matrix, timestep: float, nsteps: int, output: str, coil: Matrix | None
+) -> np.ndarray:
+    """``hdot(coil, rho(t))`` under ``P rho P^H`` steps; the ``zeeman-hilb`` branch of :func:`evolution`."""
+    if output != "observable":
+        raise NotImplementedError(f"evolution output {output!r} not ported yet in zeeman-hilb; only 'observable'.")
+    if coil is None:
+        raise ValueError("coil state must be given for the observable output.")
+    if coil.shape != rho.shape:
+        raise ValueError("coil and rho must have identical dimensions.")
+    P = propagator(spin_system, H, timestep)
+    P_dag = dagger(P)
+    answer = np.empty(nsteps + 1, dtype=complex)
+    for n in range(nsteps + 1):
+        answer[n] = hdot(coil, rho)
+        rho = P @ rho @ P_dag
+    return answer
+
+
+def _result_array(output: str, rho: np.ndarray, coil: np.ndarray | None, nsteps: int) -> np.ndarray:
+    """Zero array of the shape :func:`evolution` returns for a stack ``rho`` of shape ``(nstates, k)``."""
+    if output == "observable":
+        return np.zeros((nsteps + 1, rho.shape[1]), dtype=complex)
+    if output == "multichannel":
+        return np.zeros((coil.shape[1], nsteps + 1, rho.shape[1]), dtype=complex)
+    if output in ("final", "refocus"):
+        return np.zeros_like(rho)
+    return np.zeros((rho.shape[0], nsteps + 1), dtype=complex)
+
+
+# One function per evolution() output, all with the signature
+# (spin_system, L, rho, coil, timestep, nsteps, krylov_path) on one reduced subspace:
+# L is the reduced generator, rho the reduced stack (nstates, k), coil the reduced
+# detection state(s) or None; krylov_path selects step()-based propagation over the
+# exponential propagator. Detected outputs return their observable, the others the
+# propagated stack, which evolution() projects back into the full space.
+
+
+def _evolve_observable(spin_system, L, rho, coil, timestep, nsteps, krylov_path) -> np.ndarray:
+    """``coil^H rho(t)`` at ``nsteps + 1`` points: ``(nsteps + 1, k)``."""
+    if krylov_path:
+        return krylov(spin_system, L, rho, timestep, nsteps, "observable", coil=coil)
+    prop = propagator(spin_system, L, timestep)
+    answer = np.zeros((nsteps + 1, rho.shape[1]), dtype=complex)
+    for n in range(nsteps + 1):
+        answer[n] = _detect(coil, rho)
+        rho = prop @ rho
+    return answer
+
+
+def _evolve_multichannel(spin_system, L, rho, coil, timestep, nsteps, krylov_path) -> np.ndarray:
+    """Every column of ``coil`` detected at every point: ``(ncoils, nsteps + 1, k)``."""
+    if krylov_path:
+        return krylov(spin_system, L, rho, timestep, nsteps, "multichannel", coil=coil)
+    prop = propagator(spin_system, L, timestep)
+    answer = np.zeros((coil.shape[1], nsteps + 1, rho.shape[1]), dtype=complex)
+    for n in range(nsteps + 1):
+        answer[:, n, :] = coil.conj().T @ rho
+        rho = prop @ rho
+    return answer
+
+
+def _evolve_final(spin_system, L, rho, coil, timestep, nsteps, krylov_path) -> np.ndarray:
+    """The stack after ``nsteps`` steps."""
+    if krylov_path:
+        return krylov(spin_system, L, rho, timestep, nsteps, "final")
+    # Optimal stepping: fewer, longer steps when the propagator is cheap relative to the stack
+    nsteps_opt = max(1, math.ceil(math.log2(L.shape[0] / (rho.shape[1] * math.log(2)))))
+    prop = propagator(spin_system, L, timestep * nsteps / nsteps_opt)
+    for _ in range(nsteps_opt):
+        rho = prop @ rho
+    return rho
+
+
+def _evolve_refocus(spin_system, L, rho, coil, timestep, nsteps, krylov_path) -> np.ndarray:
+    """Column ``k`` of the stack propagated for ``k`` steps (``nsteps`` is ignored)."""
+    if krylov_path:
+        return krylov(spin_system, L, rho, timestep, nsteps, "refocus")
+    prop = propagator(spin_system, L, timestep)
+    rho = rho.copy()
+    for n in range(1, rho.shape[1]):
+        rho[:, n:] = prop @ rho[:, n:]
+    return rho
+
+
+def _evolve_trajectory(spin_system, L, rho, coil, timestep, nsteps, krylov_path) -> np.ndarray:
+    """The single state vector at every point: ``(nstates, nsteps + 1)``."""
+    if krylov_path:
+        return krylov(spin_system, L, rho, timestep, nsteps, "trajectory")
+    prop = propagator(spin_system, L, timestep)
+    traj = np.zeros((L.shape[0], nsteps + 1), dtype=complex)
+    for n in range(nsteps + 1):
+        traj[:, n] = rho[:, 0]
+        rho = prop @ rho
+    return traj
+
+
+_OUTPUTS = {
+    "observable": _evolve_observable,
+    "multichannel": _evolve_multichannel,
+    "final": _evolve_final,
+    "refocus": _evolve_refocus,
+    "trajectory": _evolve_trajectory,
+}
 
 
 def _detect(coil: np.ndarray, rho: np.ndarray) -> np.ndarray:

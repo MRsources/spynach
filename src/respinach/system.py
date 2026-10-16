@@ -256,28 +256,47 @@ def create(sys: dict[str, Any], inter: dict[str, Any]) -> SpinSystem:
     )
 
 
+RELAXATION_OPTIONS = (
+    "rlx_keep", "equilibrium", "tau_c", "damp_rate", "r1_rates", "r2_rates", "rlx_dfs",
+    "srfk_tau_c", "srfk_mdepth", "srsk_sources",
+)  # fmt: skip
+
+
 def _relaxation_settings(nspins: int, chem: Chemistry, inter: dict[str, Any]) -> Relaxation:
-    """Relaxation inputs, validated as in the relaxation section of create.m."""
+    """Relaxation inputs, validated as in the relaxation section of create.m, one helper per theory."""
     theories = tuple(inter.get("relaxation", []))
     temperature = float(inter.get("temperature", 298.0))
     if temperature < 0:
         raise ValueError("inter['temperature'] must be non-negative.")
     if not theories:
-        for name in (
-            "rlx_keep",
-            "equilibrium",
-            "tau_c",
-            "damp_rate",
-            "r1_rates",
-            "r2_rates",
-            "rlx_dfs",
-            "srfk_tau_c",
-            "srfk_mdepth",
-            "srsk_sources",
-        ):
+        for name in RELAXATION_OPTIONS:
             if name in inter:
                 raise ValueError(f"inter['{name}'] requires a relaxation theory in inter['relaxation'].")
         return Relaxation(temperature=temperature)
+    keep, equilibrium, dfs = _relaxation_policies(theories, inter)
+    tau_c = _tau_c(theories, chem, inter)
+    damp_rate = _damp_rate(theories, inter)
+    r1_rates, r2_rates = _t1_t2_rates(theories, nspins, inter)
+    srfk_tau_c, srfk_mdepth = _srfk_settings(theories, nspins, inter)
+    srsk_sources = _srsk_sources(theories, nspins, inter)
+    return Relaxation(
+        theories=theories,
+        keep=keep,
+        equilibrium=equilibrium,
+        dfs=dfs,
+        temperature=temperature,
+        tau_c=tau_c,
+        damp_rate=damp_rate,
+        r1_rates=r1_rates,
+        r2_rates=r2_rates,
+        srfk_tau_c=srfk_tau_c,
+        srfk_mdepth=srfk_mdepth,
+        srsk_sources=srsk_sources,
+    )
+
+
+def _relaxation_policies(theories: tuple[str, ...], inter: dict[str, Any]) -> tuple[str, str, str]:
+    """Theories ported, then the retention, equilibrium and dynamic frequency shift policies."""
     unported = set(theories) & UNPORTED_THEORIES
     if unported:
         raise NotImplementedError(
@@ -296,94 +315,93 @@ def _relaxation_settings(nspins: int, chem: Chemistry, inter: dict[str, Any]) ->
     dfs = inter.get("rlx_dfs", "ignore")
     if dfs not in ("keep", "ignore"):
         raise ValueError("allowed values for inter['rlx_dfs'] are 'keep' and 'ignore'.")
+    return inter["rlx_keep"], inter["equilibrium"], dfs
 
-    tau_c: tuple[np.ndarray, ...] = ()
-    if "redfield" in theories:
-        if "tau_c" not in inter:
-            raise ValueError("correlation time(s) must be specified in inter['tau_c'] with Redfield theory.")
-        tau_c = tuple(np.atleast_1d(np.asarray(t, dtype=float)) for t in inter["tau_c"])
-        if len(tau_c) != chem.nparts:
-            raise ValueError("the number of elements in inter['tau_c'] must match the number of chemical subsystems.")
-        for t in tau_c:
-            if t.ndim != 1 or not 1 <= t.size <= 3 or np.any(t <= 0):
-                raise ValueError("elements of inter['tau_c'] must be lists of one to three positive correlation times.")
-    elif "tau_c" in inter:
-        raise ValueError("inter['tau_c'] requires Redfield relaxation theory.")
 
-    damp_rate = None
-    if "damp" in theories:
-        if "damp_rate" not in inter:
-            raise ValueError(
-                "damping rate or tensor must be specified in inter['damp_rate'] with non-selective damping."
-            )
-        damp_rate = np.asarray(inter["damp_rate"], dtype=float)
-        if damp_rate.shape not in ((), (3, 3)):
-            raise ValueError("inter['damp_rate'] must be a scalar or a 3x3 matrix.")
+def _tau_c(theories: tuple[str, ...], chem: Chemistry, inter: dict[str, Any]) -> tuple[np.ndarray, ...]:
+    """Rotational correlation times of Redfield theory, one array of one to three values per substance."""
+    if "redfield" not in theories:
+        if "tau_c" in inter:
+            raise ValueError("inter['tau_c'] requires Redfield relaxation theory.")
+        return ()
+    if "tau_c" not in inter:
+        raise ValueError("correlation time(s) must be specified in inter['tau_c'] with Redfield theory.")
+    tau_c = tuple(np.atleast_1d(np.asarray(t, dtype=float)) for t in inter["tau_c"])
+    if len(tau_c) != chem.nparts:
+        raise ValueError("the number of elements in inter['tau_c'] must match the number of chemical subsystems.")
+    for t in tau_c:
+        if t.ndim != 1 or not 1 <= t.size <= 3 or np.any(t <= 0):
+            raise ValueError("elements of inter['tau_c'] must be lists of one to three positive correlation times.")
+    return tau_c
 
-    r1_rates: tuple[np.ndarray, ...] = ()
-    r2_rates: tuple[np.ndarray, ...] = ()
-    if "t1_t2" in theories:
-        if "r1_rates" not in inter or "r2_rates" not in inter:
-            raise ValueError(
-                "R1 and R2 rates must be specified in inter['r1_rates'] and inter['r2_rates'] "
-                "with extended T1,T2 theory."
-            )
-        r1_rates = _rate_list(inter["r1_rates"], nspins, "r1_rates")
-        r2_rates = _rate_list(inter["r2_rates"], nspins, "r2_rates")
 
-    srfk_tau_c: tuple[tuple[float, float], ...] = ()
-    srfk_mdepth: tuple[tuple[float | None, ...], ...] = ()
-    if "SRFK" in theories:
-        if "srfk_tau_c" not in inter:
-            raise ValueError(
-                "SRFK requires modulation correlation time to be specified in inter['srfk_tau_c'] variable."
-            )
-        if "srfk_mdepth" not in inter:
-            raise ValueError("SRFK requires modulation depths to be specified in inter['srfk_mdepth'] variable.")
-        components = []
-        for component in inter["srfk_tau_c"]:
-            pair = np.asarray(component, dtype=float).reshape(-1)
-            if pair.size != 2 or not np.all(np.isreal(component)):
-                raise ValueError("inter['srfk_tau_c'] must be a list of 2-element [weight, tau] pairs.")
-            if pair[1] < 0:
-                raise ValueError("correlation times in inter['srfk_tau_c'] must be non-negative.")
-            components.append((float(pair[0]), float(pair[1])))
-        srfk_tau_c = tuple(components)
-        depths = _check_square(inter["srfk_mdepth"], nspins, "inter['srfk_mdepth']")
-        srfk_mdepth = tuple(
-            tuple(None if depths[n][k] is None else float(depths[n][k]) for k in range(nspins)) for n in range(nspins)
+def _damp_rate(theories: tuple[str, ...], inter: dict[str, Any]) -> np.ndarray | None:
+    """Non-selective damping rate, a scalar or a 3x3 tensor."""
+    if "damp" not in theories:
+        return None
+    if "damp_rate" not in inter:
+        raise ValueError("damping rate or tensor must be specified in inter['damp_rate'] with non-selective damping.")
+    damp_rate = np.asarray(inter["damp_rate"], dtype=float)
+    if damp_rate.shape not in ((), (3, 3)):
+        raise ValueError("inter['damp_rate'] must be a scalar or a 3x3 matrix.")
+    return damp_rate
+
+
+def _t1_t2_rates(
+    theories: tuple[str, ...], nspins: int, inter: dict[str, Any]
+) -> tuple[tuple[np.ndarray, ...], tuple[np.ndarray, ...]]:
+    """R1 and R2 of the extended T1/T2 model, one scalar or tensor per spin."""
+    if "t1_t2" not in theories:
+        return (), ()
+    if "r1_rates" not in inter or "r2_rates" not in inter:
+        raise ValueError(
+            "R1 and R2 rates must be specified in inter['r1_rates'] and inter['r2_rates'] with extended T1,T2 theory."
         )
-    else:
+    return _rate_list(inter["r1_rates"], nspins, "r1_rates"), _rate_list(inter["r2_rates"], nspins, "r2_rates")
+
+
+def _srfk_settings(
+    theories: tuple[str, ...], nspins: int, inter: dict[str, Any]
+) -> tuple[tuple[tuple[float, float], ...], tuple[tuple[float | None, ...], ...]]:
+    """Scalar relaxation of the first kind: ``(weight, tau)`` components and the modulation depth matrix."""
+    if "SRFK" not in theories:
         for name in ("srfk_tau_c", "srfk_mdepth"):
             if name in inter:
                 raise ValueError(f"inter['{name}'] requires SRFK relaxation theory.")
-
-    srsk_sources: tuple[int, ...] = ()
-    if "SRSK" in theories:
-        if "srsk_sources" not in inter:
-            raise ValueError("SRSK requires source spin list in inter['srsk_sources'] variable.")
-        sources = np.atleast_1d(np.asarray(inter["srsk_sources"]))
-        if sources.ndim != 1 or sources.size == 0 or not np.issubdtype(sources.dtype, np.integer):
-            raise ValueError("inter['srsk_sources'] must be a list of 0-based spin indices.")
-        if np.any(sources < 0) or np.any(sources >= nspins) or len(set(sources.tolist())) != sources.size:
-            raise ValueError(f"inter['srsk_sources'] must hold unique spin indices between 0 and {nspins - 1}.")
-        srsk_sources = tuple(int(k) for k in sources)
-    elif "srsk_sources" in inter:
-        raise ValueError("inter['srsk_sources'] requires SRSK relaxation theory.")
-    return Relaxation(
-        theories=theories,
-        keep=inter["rlx_keep"],
-        equilibrium=inter["equilibrium"],
-        dfs=dfs,
-        temperature=temperature,
-        tau_c=tau_c,
-        damp_rate=damp_rate,
-        r1_rates=r1_rates,
-        r2_rates=r2_rates,
-        srfk_tau_c=srfk_tau_c,
-        srfk_mdepth=srfk_mdepth,
-        srsk_sources=srsk_sources,
+        return (), ()
+    if "srfk_tau_c" not in inter:
+        raise ValueError("SRFK requires modulation correlation time to be specified in inter['srfk_tau_c'] variable.")
+    if "srfk_mdepth" not in inter:
+        raise ValueError("SRFK requires modulation depths to be specified in inter['srfk_mdepth'] variable.")
+    components = []
+    for component in inter["srfk_tau_c"]:
+        pair = np.asarray(component, dtype=float).reshape(-1)
+        if pair.size != 2 or not np.all(np.isreal(component)):
+            raise ValueError("inter['srfk_tau_c'] must be a list of 2-element [weight, tau] pairs.")
+        if pair[1] < 0:
+            raise ValueError("correlation times in inter['srfk_tau_c'] must be non-negative.")
+        components.append((float(pair[0]), float(pair[1])))
+    depths = _check_square(inter["srfk_mdepth"], nspins, "inter['srfk_mdepth']")
+    srfk_mdepth = tuple(
+        tuple(None if depths[n][k] is None else float(depths[n][k]) for k in range(nspins)) for n in range(nspins)
     )
+    return tuple(components), srfk_mdepth
+
+
+def _srsk_sources(theories: tuple[str, ...], nspins: int, inter: dict[str, Any]) -> tuple[int, ...]:
+    """Scalar relaxation of the second kind: the 0-based indices of the fast-relaxing source spins."""
+    if "SRSK" not in theories:
+        if "srsk_sources" in inter:
+            raise ValueError("inter['srsk_sources'] requires SRSK relaxation theory.")
+        return ()
+    if "srsk_sources" not in inter:
+        raise ValueError("SRSK requires source spin list in inter['srsk_sources'] variable.")
+    sources = np.atleast_1d(np.asarray(inter["srsk_sources"]))
+    if sources.ndim != 1 or sources.size == 0 or not np.issubdtype(sources.dtype, np.integer):
+        raise ValueError("inter['srsk_sources'] must be a list of 0-based spin indices.")
+    if np.any(sources < 0) or np.any(sources >= nspins) or len(set(sources.tolist())) != sources.size:
+        raise ValueError(f"inter['srsk_sources'] must hold unique spin indices between 0 and {nspins - 1}.")
+    return tuple(int(k) for k in sources)
 
 
 def _rate_list(values: Sequence[Any], nspins: int, name: str) -> tuple[np.ndarray, ...]:
