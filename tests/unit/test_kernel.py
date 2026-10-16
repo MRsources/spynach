@@ -124,7 +124,9 @@ def test_taylor_propagator_large_dimension(norm_target, prop_chop, rtol):
     w, V = np.linalg.eigh(H)
     dt = norm_target / np.abs(w).max()
     exact = (V * np.exp(-1j * w * dt)) @ V.conj().T
-    ss = respinach.basis(respinach.create({"isotopes": ["1H"], "magnet": 14.1, "tols": {"prop_chop": prop_chop}}, {}), HILB)
+    ss = respinach.basis(
+        respinach.create({"isotopes": ["1H"], "magnet": 14.1, "tols": {"prop_chop": prop_chop}}, {}), HILB
+    )
     P = respinach.propagator(ss, sps.csr_array(H), dt)
     assert_matches(P, exact, rtol=rtol, atol=0, name=f"Taylor P, ||H dt||={norm_target}, prop_chop={prop_chop}")
 
@@ -156,7 +158,7 @@ def test_chemistry_defaults_and_exchange():
         {"isotopes": ["1H", "1H"], "magnet": 14.1},
         {"zeeman": {"scalar": [0.0, 3.0]}, "chem": {"parts": [[1], [0]], "rates": rates, "concs": [1, 1]}},
     )
-    assert ss.chem.parts == ((1,), (0,))      # parts keep their order, spins inside are sorted
+    assert ss.chem.parts == ((1,), (0,))  # parts keep their order, spins inside are sorted
     np.testing.assert_array_equal(ss.chem.rates, rates)
 
 

@@ -30,7 +30,7 @@ import subprocess
 import sys
 import time
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from types import ModuleType
 
@@ -119,7 +119,9 @@ def parse_options(pairs: list[str]) -> dict:
 
 def _git(*args: str) -> str:
     try:
-        return subprocess.run(["git", "-C", str(ROOT), *args], capture_output=True, text=True, check=True).stdout.strip()
+        return subprocess.run(
+            ["git", "-C", str(ROOT), *args], capture_output=True, text=True, check=True
+        ).stdout.strip()
     except (OSError, subprocess.CalledProcessError):
         return "unknown"
 
@@ -150,18 +152,31 @@ def make_meta(case: str, options: dict) -> dict:
     import respinach
 
     # The run's own outputs under comparison/runs are excluded, otherwise every run would report itself as dirty.
-    status = [line for line in _git("status", "--porcelain", "--", ".", ":(exclude)comparison/runs").splitlines() if line.strip()]
+    status = [
+        line
+        for line in _git("status", "--porcelain", "--", ".", ":(exclude)comparison/runs").splitlines()
+        if line.strip()
+    ]
     dirty = any(not line.startswith("??") or line.strip().endswith(".py") for line in status)
     return {
-        "side": "respinach", "case": case,
-        "created_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "respinach_root": str(ROOT), "respinach_commit": _git("rev-parse", "HEAD"),
-        "respinach_describe": _git("describe", "--tags", "--always") + ("-dirty" if dirty else ""), "respinach_dirty": dirty,
+        "side": "respinach",
+        "case": case,
+        "created_utc": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "respinach_root": str(ROOT),
+        "respinach_commit": _git("rev-parse", "HEAD"),
+        "respinach_describe": _git("describe", "--tags", "--always") + ("-dirty" if dirty else ""),
+        "respinach_dirty": dirty,
         "respinach_version": getattr(respinach, "__version__", "0.0.1"),
-        "python_version": platform.python_version(), "numpy_version": np.__version__, "scipy_version": scipy.__version__,
-        "platform": platform.platform(), "hostname": socket.gethostname(),
-        "cores": os.cpu_count(), "blas": blas_info(), "thread_env": thread_env(),
-        "gpu": bool(options.get("gpu", False)), "gpu_device": "",
+        "python_version": platform.python_version(),
+        "numpy_version": np.__version__,
+        "scipy_version": scipy.__version__,
+        "platform": platform.platform(),
+        "hostname": socket.gethostname(),
+        "cores": os.cpu_count(),
+        "blas": blas_info(),
+        "thread_env": thread_env(),
+        "gpu": bool(options.get("gpu", False)),
+        "gpu_device": "",
         "options": options,
     }
 
@@ -197,10 +212,11 @@ def _png_with_matplotlib(fig, path: Path) -> None:
     import re
 
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    strip = lambda text: re.sub(r"<[^>]+>", "", text or "")   # noqa: E731
+    strip = lambda text: re.sub(r"<[^>]+>", "", text or "")  # noqa: E731
     is_2d = any(trace.type == "contour" for trace in fig.data)
     mpl_fig, ax = plt.subplots(figsize=(7, 7) if is_2d else (9, 4))
     for trace in fig.data:
@@ -208,9 +224,18 @@ def _png_with_matplotlib(fig, path: Path) -> None:
             start, end, size = trace.contours.start, trace.contours.end, trace.contours.size
             levels = np.arange(start, end + size / 2, size)
             scale = trace.colorscale
-            colours = [scale[min(int(round(k * (len(scale) - 1) / max(len(levels) - 1, 1))), len(scale) - 1)][1]
-                       for k in range(len(levels))]
-            ax.contour(np.asarray(trace.x), np.asarray(trace.y), np.asarray(trace.z), levels=levels, colors=colours, linewidths=0.6)
+            colours = [
+                scale[min(int(round(k * (len(scale) - 1) / max(len(levels) - 1, 1))), len(scale) - 1)][1]
+                for k in range(len(levels))
+            ]
+            ax.contour(
+                np.asarray(trace.x),
+                np.asarray(trace.y),
+                np.asarray(trace.z),
+                levels=levels,
+                colors=colours,
+                linewidths=0.6,
+            )
         elif trace.type in ("scatter", "scattergl"):
             ax.plot(np.asarray(trace.x), np.asarray(trace.y), lw=0.8, label=trace.name or None)
     layout = fig.layout
@@ -283,7 +308,9 @@ def main(argv=None) -> None:
     ap.add_argument("cases", nargs="*", help="case directories under comparison/cases (default: all)")
     ap.add_argument("--gpu", action="store_true", help="gpu=True for the case; results go to runs/<case>-gpu/")
     ap.add_argument("--tag", default=None, help="run name suffix: runs/<case>[-gpu]-<tag>/")
-    ap.add_argument("--option", action="append", default=[], metavar="KEY=VALUE", help="keyword argument for the case's run()")
+    ap.add_argument(
+        "--option", action="append", default=[], metavar="KEY=VALUE", help="keyword argument for the case's run()"
+    )
     ap.add_argument("--no-profile", action="store_true")
     ap.add_argument("--top", type=int, default=40, help="profiler functions to keep")
     ap.add_argument("--report", action="store_true", help="build runs/<case>/report.html afterwards")

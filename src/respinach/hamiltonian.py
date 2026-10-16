@@ -28,7 +28,7 @@ from respinach.utilities import Matrix, clean_up
 
 SQRT23 = np.sqrt(2 / 3)
 SQRT18 = np.sqrt(1 / 8)
-RANK1, RANK2 = slice(0, 3), slice(3, 8)      # columns of the 8-element coefficient rows: [+1 0 -1 | +2 +1 0 -1 -2]
+RANK1, RANK2 = slice(0, 3), slice(3, 8)  # columns of the 8-element coefficient rows: [+1 0 -1 | +2 +1 0 -1 -2]
 
 # Two-spin product operators of each bilinear coupling strength and their coefficients
 # (ist_coeff index, value) in the rank-1 [+1, 0, -1] and rank-2 [+2, ..., -2] components (hamiltonian.m)
@@ -66,7 +66,13 @@ _ZEEMAN_TERMS = {
     "ignore": {},
 }
 _QUAD_TERMS = {
-    "strong": {("T2,2",): {3: 1.0}, ("T2,1",): {4: 1.0}, ("T2,0",): {5: 1.0}, ("T2,-1",): {6: 1.0}, ("T2,-2",): {7: 1.0}},
+    "strong": {
+        ("T2,2",): {3: 1.0},
+        ("T2,1",): {4: 1.0},
+        ("T2,0",): {5: 1.0},
+        ("T2,-1",): {6: 1.0},
+        ("T2,-2",): {7: 1.0},
+    },
     "secular": {("T2,0",): {5: 1.0}},
     "ignore": {},
 }
@@ -84,7 +90,9 @@ class _Term:
         self.irr = np.zeros(8, dtype=complex)
 
 
-def hamiltonian(spin_system: SpinSystem, operator_type: str = "comm", aniso: bool = False) -> Matrix | tuple[Matrix, list]:
+def hamiltonian(
+    spin_system: SpinSystem, operator_type: str = "comm", aniso: bool = False
+) -> Matrix | tuple[Matrix, list]:
     """Isotropic Hamiltonian in rad/s, and optionally its anisotropic irreducible components.
 
     Interaction strengths are those set by :func:`respinach.assume`. In
@@ -125,7 +133,7 @@ def hamiltonian(spin_system: SpinSystem, operator_type: str = "comm", aniso: boo
         if strength != "ignore":
             zeeman_iso = np.trace(spin_system.zeeman_matrix[n]) / 3
             if strength == "secular":
-                zeeman_iso -= spin_system.basefrqs[n]       # rotating frame: subtract the carrier frequency
+                zeeman_iso -= spin_system.basefrqs[n]  # rotating frame: subtract the carrier frequency
             if abs(zeeman_iso) > tols.liouv_zero:
                 term(["Lz"], [n]).iso += zeeman_iso
         if aniso:
@@ -135,7 +143,9 @@ def hamiltonian(spin_system: SpinSystem, operator_type: str = "comm", aniso: boo
             quad = spin_system.coupling_matrix[n][n]
             if quad is not None and np.linalg.norm(quad, 2) > 2 * np.pi * tols.inter_cutoff:
                 iso_quad, lam_quad, phi_quad = mat2sphten(quad)
-                if abs(iso_quad) > 1e-6 * np.linalg.norm(phi_quad) or np.linalg.norm(lam_quad) > 1e-6 * np.linalg.norm(phi_quad):
+                if abs(iso_quad) > 1e-6 * np.linalg.norm(phi_quad) or np.linalg.norm(lam_quad) > 1e-6 * np.linalg.norm(
+                    phi_quad
+                ):
                     raise ValueError("quadratic couplings must be traceless and symmetric.")
                 strength_quad = spin_system.assumptions.coupling[n][n]
                 if strength_quad not in _QUAD_TERMS:
@@ -161,7 +171,8 @@ def hamiltonian(spin_system: SpinSystem, operator_type: str = "comm", aniso: boo
 
     # Drop rows that contribute to neither part, then build every operator once
     rows = [
-        t for t in terms.values()
+        t
+        for t in terms.values()
         if abs(t.iso) >= tols.liouv_zero
         or (np.abs(t.irr).sum() >= tols.liouv_zero and np.abs(t.ist).sum() >= tols.liouv_zero)
     ]
@@ -192,7 +203,9 @@ def hamiltonian(spin_system: SpinSystem, operator_type: str = "comm", aniso: boo
     return H, Q
 
 
-def _triplets(spin_system: SpinSystem, t: _Term, operator_type: str, liouville: bool) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def _triplets(
+    spin_system: SpinSystem, t: _Term, operator_type: str, liouville: bool
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """COO triplets of one term's operator, summing the opspecs of composite labels (Lx, Ly)."""
     if liouville:
         opspecs, coeffs = human2opspec(spin_system, list(t.ops), list(t.spins))
@@ -208,7 +221,7 @@ def _triplets(spin_system: SpinSystem, t: _Term, operator_type: str, liouville: 
 
 
 def orientation(Q: list, euler_angles: Sequence[float]) -> Matrix:
-    """Anisotropic part of the Hamiltonian at the orientation given by ZYZ Euler angles (rad); port of ``orientation.m``."""
+    """Anisotropic part of the Hamiltonian at the orientation of ZYZ Euler angles in rad (port of ``orientation.m``)."""
     euler_angles = np.asarray(euler_angles, dtype=float).reshape(-1)
     if euler_angles.size != 3:
         raise ValueError("euler_angles must be a three-element real vector.")

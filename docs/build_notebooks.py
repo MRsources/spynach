@@ -40,7 +40,7 @@ INTRO = (
     " edit the Markdown guide, not this notebook.*\n\n"
     "Run the cells in order: later cells use names defined by earlier ones."
     " The saved outputs come from running the notebook top to bottom;"
-    " plotting cells need Plotly (`pip install -e \".[docs]\"`)."
+    ' plotting cells need Plotly (`pip install -e ".[docs]"`).'
 )
 
 # Run before the first cell when executing, and not saved: store Plotly figures
@@ -73,7 +73,7 @@ def build_notebook(guide: Path) -> dict:
     cells: list[tuple[str, str]] = []
     position = 0
     for match in FENCE.finditer(text):
-        cells.extend(("markdown", part) for part in _split_prose(text[position:match.start()]))
+        cells.extend(("markdown", part) for part in _split_prose(text[position : match.start()]))
         cells.append(("code", match.group(1)))
         position = match.end()
     cells.extend(("markdown", part) for part in _split_prose(text[position:]))
@@ -122,11 +122,20 @@ def execute(notebook: dict) -> dict:
     os.environ["PYTHONPATH"] = os.pathsep.join(p for p in (str(DOCS.parent / "src"), env_path) if p)
     os.environ.setdefault("OPENBLAS_NUM_THREADS", "4")
 
-    setup = {"cell_type": "code", "id": "setup", "metadata": {}, "source": SETUP,
-             "execution_count": None, "outputs": []}
+    setup = {
+        "cell_type": "code",
+        "id": "setup",
+        "metadata": {},
+        "source": SETUP,
+        "execution_count": None,
+        "outputs": [],
+    }
     node = nbformat.reads(json.dumps({**notebook, "cells": [setup, *notebook["cells"]]}), as_version=4)
     nbclient.NotebookClient(
-        node, timeout=600, kernel_name="python3", record_timing=False,
+        node,
+        timeout=600,
+        kernel_name="python3",
+        record_timing=False,
         resources={"metadata": {"path": str(NOTEBOOKS)}},
     ).execute()
 

@@ -42,7 +42,9 @@ def apodisation(fid: np.ndarray, window_functions: Sequence[Sequence[Any] | None
             raise ValueError(f"window function type {name!r} is not implemented.")
         needs_parameter = name in ("exp", "gauss", "kaiser")
         if needs_parameter != (len(params) == 1):
-            raise ValueError(f"window function {name!r} takes {'one parameter' if needs_parameter else 'no parameters'}.")
+            raise ValueError(
+                f"window function {name!r} takes {'one parameter' if needs_parameter else 'no parameters'}."
+            )
         if name == "none":
             wf = np.ones(npts)
         elif name == "crisp":

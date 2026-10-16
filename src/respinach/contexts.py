@@ -29,9 +29,7 @@ from respinach.utilities import Matrix, clean_up
 PulseSequence = Callable[[SpinSystem, dict[str, Any], Matrix, Matrix, Matrix], Any]
 
 
-def liquid(
-    spin_system: SpinSystem, pulse_sequence: PulseSequence, parameters: dict[str, Any], assumptions: str
-) -> Any:
+def liquid(spin_system: SpinSystem, pulse_sequence: PulseSequence, parameters: dict[str, Any], assumptions: str) -> Any:
     """Run ``pulse_sequence(spin_system, parameters, H, R, K)`` in the isotropic liquid context.
 
     ``parameters`` must contain ``'spins'`` (isotopes of the working channels)
@@ -71,9 +69,7 @@ def crystal(
     return pulse_sequence(spin_system, parameters, H, R, K)
 
 
-def powder(
-    spin_system: SpinSystem, pulse_sequence: PulseSequence, parameters: dict[str, Any], assumptions: str
-) -> Any:
+def powder(spin_system: SpinSystem, pulse_sequence: PulseSequence, parameters: dict[str, Any], assumptions: str) -> Any:
     """Powder average of a pulse sequence over the spherical grid ``parameters['grid']``.
 
     The grid names are Spinach's (``'rep_2ang_6400pts_sph'``, ``'leb_2ang_rank_23'``,
@@ -92,7 +88,11 @@ def powder(
     spin_system = assume(spin_system, assumptions)
     I, Q = hamiltonian(spin_system, aniso=True)
     I = frqoffset(spin_system, I, parameters)
-    K = kinetics(spin_system) if spin_system.basis.formalism == "sphten-liouv" else sps.csr_array(I.shape, dtype=complex)
+    K = (
+        kinetics(spin_system)
+        if spin_system.basis.formalism == "sphten-liouv"
+        else sps.csr_array(I.shape, dtype=complex)
+    )
     parameters["spc_dim"], parameters["spn_dim"] = 1, I.shape[0]
     results = []
     for alpha, beta, gamma in zip(grid["alphas"], grid["betas"], grid["gammas"]):
@@ -219,11 +219,15 @@ def fourdif(npoints: int, order: int) -> tuple[np.ndarray, np.ndarray]:
     elif m == 2:
         if N % 2 == 0:
             topc = 1 / np.sin(np.arange(1, n2 + 1) * h / 2) ** 2
-            col1 = np.concatenate([[-np.pi**2 / 3 / h**2 - 1 / 6], -0.5 * (-1.0) ** kk * np.concatenate([topc, topc[:n1][::-1]])])
+            col1 = np.concatenate(
+                [[-(np.pi**2) / 3 / h**2 - 1 / 6], -0.5 * (-1.0) ** kk * np.concatenate([topc, topc[:n1][::-1]])]
+            )
         else:
             angles = np.arange(1, n2 + 1) * h / 2
             topc = 1 / np.sin(angles) / np.tan(angles)
-            col1 = np.concatenate([[-np.pi**2 / 3 / h**2 + 1 / 12], -0.5 * (-1.0) ** kk * np.concatenate([topc, -topc[:n1][::-1]])])
+            col1 = np.concatenate(
+                [[-(np.pi**2) / 3 / h**2 + 1 / 12], -0.5 * (-1.0) ** kk * np.concatenate([topc, -topc[:n1][::-1]])]
+            )
         row1 = col1
     else:
         N1 = (N - 1) // 2

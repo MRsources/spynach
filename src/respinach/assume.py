@@ -52,7 +52,9 @@ def assume(spin_system: SpinSystem, assumptions: str, retention: str | None = No
         zeeman = ["full"] * nspins
         coupling = [["strong"] * nspins for _ in range(nspins)]
     else:
-        raise NotImplementedError(f"assumption set {assumptions!r} not ported yet; 'nmr', 'esr', 'deer', 'deer-zz', 'labframe' are")
+        raise NotImplementedError(
+            f"assumption set {assumptions!r} not ported yet; 'nmr', 'esr', 'deer', 'deer-zz', 'labframe' are"
+        )
     if retention == "couplings":
         zeeman = ["ignore"] * nspins
     elif retention == "zeeman":
@@ -61,7 +63,5 @@ def assume(spin_system: SpinSystem, assumptions: str, retention: str | None = No
         raise ValueError("retention must be 'zeeman', 'couplings', or None.")
     return replace(
         spin_system,
-        assumptions=Assumptions(
-            name=assumptions, zeeman=tuple(zeeman), coupling=tuple(tuple(row) for row in coupling)
-        ),
+        assumptions=Assumptions(name=assumptions, zeeman=tuple(zeeman), coupling=tuple(tuple(row) for row in coupling)),
     )

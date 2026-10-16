@@ -1,6 +1,7 @@
 """Equilibration of a two-site 7Li exchange system: translation of user_ml/Li_exchange_equilibrium.m.
 
-    OPENBLAS_NUM_THREADS=4 PYTHONPATH=src python examples/user_ml/li_exchange_equilibrium.py [--nsteps-ex N] [--nsteps-eq N] [--out DIR] [--no-plot]
+    OPENBLAS_NUM_THREADS=4 PYTHONPATH=src python examples/user_ml/li_exchange_equilibrium.py \
+        [--nsteps-ex N] [--nsteps-eq N] [--out DIR] [--no-plot]
 
 The contributed script (Florin Teleanu, 2026): two 7Li sites A and B at 1.93 T with quadrupolar
 couplings of 30 and 90 kHz, axial shift tensors (45 and 135 ppm anisotropy), two-site exchange
@@ -60,17 +61,28 @@ def simulate(nsteps_ex: int = 1_000_000, nsteps_eq: int = 200_000, timer: Timer 
     timer = Timer() if timer is None else timer
 
     # Magnet and spins
-    sys_ = {"magnet": 1.93, "isotopes": ["7Li", "7Li"]}      # nu_7Li = 32 MHz
+    sys_ = {"magnet": 1.93, "isotopes": ["7Li", "7Li"]}  # nu_7Li = 32 MHz
 
     # Quadrupolar tensors for A and B (Cq in Hz, eta, I = 3/2, Euler angles in rad)
     Cq = 30e3
-    coupling_matrix = [[eeqq2nqi(Cq, 0, 3 / 2, [0, 0, 0]).tolist(), None], [None, eeqq2nqi(3 * Cq, 0, 3 / 2, [0, 0, 0]).tolist()]]
+    coupling_matrix = [
+        [eeqq2nqi(Cq, 0, 3 / 2, [0, 0, 0]).tolist(), None],
+        [None, eeqq2nqi(3 * Cq, 0, 3 / 2, [0, 0, 0]).tolist()],
+    ]
 
     # Chemical shifts (ppm)
     sigma_iso, delta_sigma, eta = -1.0, 45.0, 0.0
     zeeman_matrix = [
-        np.diag([sigma_iso - delta_sigma / 2 * (1 + eta), sigma_iso - delta_sigma / 2 * (1 - eta), sigma_iso + delta_sigma]).tolist(),
-        np.diag([sigma_iso - 3 * delta_sigma / 2 * (1 + eta), sigma_iso - 3 * delta_sigma / 2 * (1 - eta), sigma_iso + 3 * delta_sigma]).tolist(),
+        np.diag(
+            [sigma_iso - delta_sigma / 2 * (1 + eta), sigma_iso - delta_sigma / 2 * (1 - eta), sigma_iso + delta_sigma]
+        ).tolist(),
+        np.diag(
+            [
+                sigma_iso - 3 * delta_sigma / 2 * (1 + eta),
+                sigma_iso - 3 * delta_sigma / 2 * (1 - eta),
+                sigma_iso + 3 * delta_sigma,
+            ]
+        ).tolist(),
     ]
 
     # Chemical exchange A <-> B
@@ -79,7 +91,7 @@ def simulate(nsteps_ex: int = 1_000_000, nsteps_eq: int = 200_000, timer: Timer 
     kex = 1e3
     kAB, kBA = pB * kex, pA * kex
     rates = np.array([[-kAB, kBA], [kAB, -kBA]])
-    concs = respinach.equilibrate(rates, np.array([1.0, kAB / kBA]))      # sanity check, as in the script
+    concs = respinach.equilibrate(rates, np.array([1.0, kAB / kBA]))  # sanity check, as in the script
 
     inter = {
         "coupling": {"matrix": coupling_matrix},
@@ -87,7 +99,10 @@ def simulate(nsteps_ex: int = 1_000_000, nsteps_eq: int = 200_000, timer: Timer 
         "chem": {"parts": [[0], [1]], "rates": rates.tolist(), "concs": concs.tolist()},
         "temperature": 298,
         # Relaxation model
-        "relaxation": ["redfield"], "rlx_keep": "secular", "equilibrium": "zero", "tau_c": [[1e-9], [1e-9]],
+        "relaxation": ["redfield"],
+        "rlx_keep": "secular",
+        "equilibrium": "zero",
+        "tau_c": [[1e-9], [1e-9]],
     }
 
     # Basis and formalism
@@ -107,13 +122,17 @@ def simulate(nsteps_ex: int = 1_000_000, nsteps_eq: int = 200_000, timer: Timer 
         K = respinach.kinetics(spin_system)
     with timer("equilibrium"):
         rho_eq = respinach.equilibrium(spin_system, H0)
-        rho_eq_ex = respinach.evolution(spin_system, H + 1j * K, None, rho_eq, 1e-5, nsteps_ex, "final")   # 10 s of chemical equilibration
+        rho_eq_ex = respinach.evolution(
+            spin_system, H + 1j * K, None, rho_eq, 1e-5, nsteps_ex, "final"
+        )  # 10 s of chemical equilibration
     with timer("relaxation"):
         R = respinach.thermalize(spin_system, respinach.relaxation(spin_system), None, None, rho_eq_ex, "IME")
         L0 = H + 1j * R + 1j * K
     with timer("trajectory"):
-        rho_pert = respinach.step(spin_system, Lx, rho_eq_ex, 0)                                   # apply perturbation
-        traj_eq = respinach.evolution(spin_system, L0, None, rho_pert, 1e-5, nsteps_eq, "trajectory")   # 2 s for full equilibration
+        rho_pert = respinach.step(spin_system, Lx, rho_eq_ex, 0)  # apply perturbation
+        traj_eq = respinach.evolution(
+            spin_system, L0, None, rho_pert, 1e-5, nsteps_eq, "trajectory"
+        )  # 2 s for full equilibration
 
     # Analyse the trajectory during equilibration
     with timer("analysis"):
@@ -137,9 +156,16 @@ def simulate(nsteps_ex: int = 1_000_000, nsteps_eq: int = 200_000, timer: Timer 
         unit_population = np.conj(unit) @ rho_eq_ex / np.linalg.norm(unit)
         print(f"Unity State population in the targeted state: {unit_population.real:g}")
 
-    data = {"rho_eq": rho_eq, "rho_eq_ex": rho_eq_ex, "rho_final": traj_eq[:, -1], "tensors": tensors,
-            "corr_order": corr_order, "coh_order": coh_order, "spin_total": spin_total,
-            "unit_population": np.array(unit_population)}
+    data = {
+        "rho_eq": rho_eq,
+        "rho_eq_ex": rho_eq_ex,
+        "rho_final": traj_eq[:, -1],
+        "tensors": tensors,
+        "corr_order": corr_order,
+        "coh_order": coh_order,
+        "spin_total": spin_total,
+        "unit_population": np.array(unit_population),
+    }
     labels = {"corr_order": corr_labels, "coh_order": coh_labels, "spin_total": spin_labels}
     return spin_system, time_eq, data, labels
 
@@ -151,14 +177,38 @@ def plot(spin_system, time_eq, data, labels, timer: Timer | None = None) -> dict
     timer = Timer() if timer is None else timer
     with timer("plot"):
         figs = {
-            "tensors": plot_time_series(time_eq, data["tensors"], names=["T10", "T20", "T30"],
-                                        xlabel="Equilibration time (s)", ylabel="projection", title="T(l,0) tensors"),
-            "correlation": plot_time_series(time_eq, data["corr_order"], names=labels["corr_order"],
-                                            xlabel="Equilibration time (s)", ylabel="correlation order amplitude", title="correlation orders"),
-            "coherence": plot_time_series(time_eq, data["coh_order"], names=labels["coh_order"],
-                                          xlabel="Equilibration time (s)", ylabel="coherence order amplitude", title="coherence orders"),
-            "spins": plot_time_series(time_eq, data["spin_total"], names=labels["spin_total"],
-                                      xlabel="Equilibration time (s)", ylabel="density touching each spin", title="spin populations"),
+            "tensors": plot_time_series(
+                time_eq,
+                data["tensors"],
+                names=["T10", "T20", "T30"],
+                xlabel="Equilibration time (s)",
+                ylabel="projection",
+                title="T(l,0) tensors",
+            ),
+            "correlation": plot_time_series(
+                time_eq,
+                data["corr_order"],
+                names=labels["corr_order"],
+                xlabel="Equilibration time (s)",
+                ylabel="correlation order amplitude",
+                title="correlation orders",
+            ),
+            "coherence": plot_time_series(
+                time_eq,
+                data["coh_order"],
+                names=labels["coh_order"],
+                xlabel="Equilibration time (s)",
+                ylabel="coherence order amplitude",
+                title="coherence orders",
+            ),
+            "spins": plot_time_series(
+                time_eq,
+                data["spin_total"],
+                names=labels["spin_total"],
+                xlabel="Equilibration time (s)",
+                ylabel="density touching each spin",
+                title="spin populations",
+            ),
         }
     return figs
 
@@ -170,7 +220,7 @@ def main(argv=None) -> None:
     ap.add_argument("--out", type=Path, default=Path(__file__).with_name("out"))
     ap.add_argument("--no-plot", action="store_true")
     args = ap.parse_args(argv)
-    logging.basicConfig(level=logging.INFO, format="%(message)s")      # stateinfo reports, as Spinach prints them
+    logging.basicConfig(level=logging.INFO, format="%(message)s")  # stateinfo reports, as Spinach prints them
 
     spin_system, time_eq, data, labels = simulate(args.nsteps_ex, args.nsteps_eq, Timer())
     args.out.mkdir(parents=True, exist_ok=True)

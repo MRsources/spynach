@@ -1,6 +1,7 @@
 """ZULF spectrum of PF6- after an adiabatic field drop and a selective pulse: translation of user_ml/ZULF_PF6_1D.m.
 
-    OPENBLAS_NUM_THREADS=4 PYTHONPATH=src python examples/user_ml/zulf_pf6_1d.py [--npoints N] [--zerofill N] [--out DIR] [--no-plot]
+    OPENBLAS_NUM_THREADS=4 PYTHONPATH=src python examples/user_ml/zulf_pf6_1d.py \
+        [--npoints N] [--zerofill N] [--out DIR] [--no-plot]
 
 The contributed script (Florin Teleanu, 2024): 31P with six equivalent 19F (1J_PF = 710 Hz, octahedral
 coordinates at 1.6 Angstrom) in a 2.7 uT solenoid field, complete sphten-liouv basis (16 384 states),
@@ -60,14 +61,18 @@ class Timer:
 
 def load_matlab_csv(path: Path | str) -> np.ndarray:
     """Reads a column written by MATLAB's csvwrite: real or complex numbers in ``a+bi`` form."""
-    return np.array([complex(line.strip().replace("i", "j")) for line in Path(path).read_text().split() if line.strip()])
+    return np.array(
+        [complex(line.strip().replace("i", "j")) for line in Path(path).read_text().split() if line.strip()]
+    )
 
 
 def _dense(v) -> np.ndarray:
     return np.asarray(v.toarray() if sps.issparse(v) else v).reshape(-1)
 
 
-def simulate(npoints: int = 4 * 4096, zerofill: int = 4 * 4096, timer: Timer | None = None, rho_path: Path | str = RHO_PATH):
+def simulate(
+    npoints: int = 4 * 4096, zerofill: int = 4 * 4096, timer: Timer | None = None, rho_path: Path | str = RHO_PATH
+):
     """Runs the experiment; returns (spin_system, parameters, data) with data = rho0, rho_pulse, fid, spectrum."""
     timer = Timer() if timer is None else timer
 
@@ -89,7 +94,9 @@ def simulate(npoints: int = 4 * 4096, zerofill: int = 4 * 4096, timer: Timer | N
     bas = {"formalism": "sphten-liouv", "approximation": "none"}
 
     # Relaxation theory (validated by create; R is never built, as in the script)
-    inter.update(relaxation=["redfield"], equilibrium="dibari", temperature=298, rlx_keep="labframe", tau_c=[[0.065e-9]])
+    inter.update(
+        relaxation=["redfield"], equilibrium="dibari", temperature=298, rlx_keep="labframe", tau_c=[[0.065e-9]]
+    )
 
     # Spinach housekeeping
     with timer("create"):
@@ -105,25 +112,46 @@ def simulate(npoints: int = 4 * 4096, zerofill: int = 4 * 4096, timer: Timer | N
         raise ValueError(f"{rho_path} has {rho.size} entries, the basis has {spin_system.basis.nstates} states")
 
     # Sequence parameters
-    parameters = {"sweep": 6000, "npoints": npoints, "zerofill": zerofill, "offset": 0, "spins": ["19F"],
-                  "axis_units": "Hz", "invert_axis": 0, "detection": "quadrature"}
+    parameters = {
+        "sweep": 6000,
+        "npoints": npoints,
+        "zerofill": zerofill,
+        "offset": 0,
+        "spins": ["19F"],
+        "axis_units": "Hz",
+        "invert_axis": 0,
+        "detection": "quadrature",
+    }
 
     with timer("operators"):
         # Magnetogyric ratio weights relative to 19F
         weights = spin_system.gammas / spin("19F")[0]
 
         # Gamma-weighted detection states
-        coilPF6X = sum(weights[n] * (_dense(respinach.state(spin_system, "L+", n)) + _dense(respinach.state(spin_system, "L-", n))) / 2 for n in range(7))
+        coilPF6X = sum(
+            weights[n]
+            * (_dense(respinach.state(spin_system, "L+", n)) + _dense(respinach.state(spin_system, "L-", n)))
+            / 2
+            for n in range(7)
+        )
         coilPF6Z = sum(weights[n] * _dense(respinach.state(spin_system, "Lz", n)) for n in range(7))
 
         # Gamma-weighted pulse operators
-        Sy = sum(weights[n] * (respinach.operator(spin_system, "L+", n) - respinach.operator(spin_system, "L-", n)) / 2j for n in range(7))
-        Sx = sum(weights[n] * (respinach.operator(spin_system, "L+", n) + respinach.operator(spin_system, "L-", n)) / 2 for n in range(7))
+        Sy = sum(
+            weights[n] * (respinach.operator(spin_system, "L+", n) - respinach.operator(spin_system, "L-", n)) / 2j
+            for n in range(7)
+        )
+        Sx = sum(
+            weights[n] * (respinach.operator(spin_system, "L+", n) + respinach.operator(spin_system, "L-", n)) / 2
+            for n in range(7)
+        )
 
     with timer("pulse"):
         rho_pulse = respinach.evolution(spin_system, H + spin("19F")[0] * 30e-6 * Sy, None, rho, 1e-6, 150, "final")
     with timer("acquisition"):
-        fid = respinach.evolution(spin_system, H, coilPF6Z, rho_pulse, 1 / parameters["sweep"], parameters["npoints"] - 1, "observable")
+        fid = respinach.evolution(
+            spin_system, H, coilPF6Z, rho_pulse, 1 / parameters["sweep"], parameters["npoints"] - 1, "observable"
+        )
 
     with timer("processing"):
         # Apodisation (legacy apodization(fid-mean(fid),'exp-1d',1))
@@ -132,8 +160,15 @@ def simulate(npoints: int = 4 * 4096, zerofill: int = 4 * 4096, timer: Timer | N
         # Fourier transform
         spectrum = np.fft.fftshift(np.fft.fft(fid_ap, parameters["zerofill"]))
 
-    data = {"rho0": rho, "rho_pulse": rho_pulse, "fid": fid, "spectrum": spectrum, "coil_x": coilPF6X, "coil_z": coilPF6Z}
-    del Sx   # built as in the script, unused in the 1D experiment
+    data = {
+        "rho0": rho,
+        "rho_pulse": rho_pulse,
+        "fid": fid,
+        "spectrum": spectrum,
+        "coil_x": coilPF6X,
+        "coil_z": coilPF6Z,
+    }
+    del Sx  # built as in the script, unused in the 1D experiment
     return spin_system, parameters, data
 
 
@@ -143,7 +178,12 @@ def plot(spin_system, parameters, spectrum, timer: Timer | None = None):
 
     timer = Timer() if timer is None else timer
     with timer("plot"):
-        return plot_1d(spin_system, np.abs(spectrum), parameters, title="PF6- ZULF spectrum after adiabatic drop and selective pulse")
+        return plot_1d(
+            spin_system,
+            np.abs(spectrum),
+            parameters,
+            title="PF6- ZULF spectrum after adiabatic drop and selective pulse",
+        )
 
 
 def main(argv=None) -> None:

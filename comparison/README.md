@@ -166,10 +166,12 @@ end
 
 ```python
 from comparison.run_respinach import load_example
-example = load_example("nmr_liquids/<case>")     # reuse the translation in examples/ when there is one
+
+example = load_example("nmr_liquids/<case>")  # reuse the translation in examples/ when there is one
+
 
 def run(timer, npoints=512, zerofill=2048):
-    ...                                           # with timer("basis"): ss = respinach.basis(ss, bas)
+    ...  # with timer("basis"): ss = respinach.basis(ss, bas)
     return {"fid_cos": ..., "fid_sin": ..., "spectrum": ...}, {"noesy": fig}
 ```
 

@@ -8,12 +8,11 @@ coefficient of the unit state ``E / sqrt(dim)``.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Sequence
 
 import numpy as np
 import scipy.sparse as sps
-
-import logging
 
 from respinach.operators import human2opspec, lin2lm, operator, superop
 from respinach.system import SpinSystem
@@ -112,7 +111,7 @@ def trajan(spin_system: SpinSystem, traj: np.ndarray, property: str) -> tuple[np
     if traj.ndim != 2 or traj.shape[0] != basis.shape[0]:
         raise ValueError("trajectory must be a (nstates, npoints) array.")
     traj = traj.copy()
-    traj[0, :] = 0                                        # the unit state is projected out
+    traj[0, :] = 0  # the unit state is projected out
     if property == "correlation_order":
         orders = (basis != 0).sum(axis=1)
         classes = [o for o in np.unique(orders) if o != 0]
@@ -136,7 +135,9 @@ def trajan(spin_system: SpinSystem, traj: np.ndarray, property: str) -> tuple[np
     return result, labels
 
 
-def stateinfo(spin_system: SpinSystem, rho: np.ndarray, npops: int) -> list[tuple[tuple[tuple[int, int], ...], complex, int]]:
+def stateinfo(
+    spin_system: SpinSystem, rho: np.ndarray, npops: int
+) -> list[tuple[tuple[tuple[int, int], ...], complex, int]]:
     """The ``npops`` largest coefficients of a ``sphten-liouv`` state vector (port of ``stateinfo.m``).
 
     Returns ``[(state, coefficient, index), ...]`` in descending magnitude,

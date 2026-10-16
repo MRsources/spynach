@@ -32,7 +32,7 @@ class NumpyBackend:
     """CPU backend: NumPy arrays and SciPy ``csr_array`` sparse matrices."""
 
     name: str = "numpy"
-    xp: Any = np          # array module (CuPy would go here)
+    xp: Any = np  # array module (CuPy would go here)
 
     @staticmethod
     def issparse(x: Any) -> bool:

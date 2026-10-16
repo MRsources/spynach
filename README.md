@@ -122,6 +122,17 @@ reinstall. Point VS Code's interpreter at `.venv-mac/bin/python`.
 the same environment (with the `compare` extra), so that both sides of a
 report are timed on the same machine.
 
+Code style is enforced by [ruff](https://docs.astral.sh/ruff/) (`pip install
+-e ".[dev]"`), configured in `pyproject.toml`: 120-character lines, import
+sorting, pyupgrade and bugbear checks. Before committing, run
+
+```
+ruff format && ruff check
+```
+
+Spinach's own matrix names (`I`, `Q`, `L`, `A`, `B`, ...) are kept where a
+function mirrors a Spinach function, so the ambiguous-name check is off.
+
 Every user-facing change comes with user documentation in the same
 commit; see [`docs/README.md`](docs/README.md) for the conventions. After
 editing a guide, regenerate its notebook with

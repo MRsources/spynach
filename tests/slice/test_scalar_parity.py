@@ -24,31 +24,60 @@ LIOUV = {"formalism": "sphten-liouv", "approximation": "none"}
 CASES = {
     "srfk_pair": dict(
         sys={"isotopes": ["1H", "1H"], "magnet": 14.1},
-        inter={"zeeman": {"scalar": [0.0, 2.0]}, "relaxation": ["SRFK"], "rlx_keep": "kite", "equilibrium": "zero",
-               "srfk_tau_c": [[1.0, 1e-3]], "srfk_mdepth": [[None, 15.0], [None, None]]},
-        noe={"dt": 1e-2, "nsteps": 100}, base=False,
+        inter={
+            "zeeman": {"scalar": [0.0, 2.0]},
+            "relaxation": ["SRFK"],
+            "rlx_keep": "kite",
+            "equilibrium": "zero",
+            "srfk_tau_c": [[1.0, 1e-3]],
+            "srfk_mdepth": [[None, 15.0], [None, None]],
+        },
+        noe={"dt": 1e-2, "nsteps": 100},
+        base=False,
     ),
     "srsk_hn": dict(
         sys={"isotopes": ["1H", "14N"], "magnet": 11.75},
-        inter={"zeeman": {"scalar": [0.0, 0.0]}, "coordinates": [[0, 0, 0], [0, 0, 1.0]],
-               "coupling": {"scalar": [[0, 50], [0, 0]], "eigs": [[None, None], [None, [1e6, 1e6, -2e6]]],
-                            "euler": [[None, None], [None, [0, 0, 0]]]},
-               "relaxation": ["redfield", "SRSK"], "srsk_sources": [1], "rlx_keep": "secular", "equilibrium": "zero",
-               "tau_c": [[1e-9]]},
-        noe={"dt": 1e-3, "nsteps": 100}, base=True,
+        inter={
+            "zeeman": {"scalar": [0.0, 0.0]},
+            "coordinates": [[0, 0, 0], [0, 0, 1.0]],
+            "coupling": {
+                "scalar": [[0, 50], [0, 0]],
+                "eigs": [[None, None], [None, [1e6, 1e6, -2e6]]],
+                "euler": [[None, None], [None, [0, 0, 0]]],
+            },
+            "relaxation": ["redfield", "SRSK"],
+            "srsk_sources": [1],
+            "rlx_keep": "secular",
+            "equilibrium": "zero",
+            "tau_c": [[1e-9]],
+        },
+        noe={"dt": 1e-3, "nsteps": 100},
+        base=True,
     ),
     "srfk_srsk_3spin": dict(
         sys={"isotopes": ["1H", "1H", "14N"], "magnet": 11.75},
-        inter={"zeeman": {"scalar": [1.0, 2.0, 0.0], "eigs": [[-3, -3, 6], None, [-100, -100, 200]],
-                          "euler": [[0, 0, 0], None, [0.3, 0.6, 0.9]]},
-               "coordinates": [[0, 0, 0], [1.8, 0, 0], [0, 0, 1.0]],
-               "coupling": {"scalar": [[0, 10, 40], [0, 0, 5], [0, 0, 0]],
-                            "eigs": [[None, None, None], [None, None, None], [None, None, [1e6, 1e6, -2e6]]],
-                            "euler": [[None, None, None], [None, None, None], [None, None, [0.3, 0.6, 0.9]]]},
-               "relaxation": ["redfield", "SRFK", "SRSK"], "srsk_sources": [2], "rlx_keep": "kite", "equilibrium": "zero",
-               "tau_c": [[1e-9]], "srfk_tau_c": [[1.0, 1e-3]],
-               "srfk_mdepth": [[None, None, 15.0], [None, None, None], [None, None, None]]},
-        noe={"dt": 1e-2, "nsteps": 100}, base=True,
+        inter={
+            "zeeman": {
+                "scalar": [1.0, 2.0, 0.0],
+                "eigs": [[-3, -3, 6], None, [-100, -100, 200]],
+                "euler": [[0, 0, 0], None, [0.3, 0.6, 0.9]],
+            },
+            "coordinates": [[0, 0, 0], [1.8, 0, 0], [0, 0, 1.0]],
+            "coupling": {
+                "scalar": [[0, 10, 40], [0, 0, 5], [0, 0, 0]],
+                "eigs": [[None, None, None], [None, None, None], [None, None, [1e6, 1e6, -2e6]]],
+                "euler": [[None, None, None], [None, None, None], [None, None, [0.3, 0.6, 0.9]]],
+            },
+            "relaxation": ["redfield", "SRFK", "SRSK"],
+            "srsk_sources": [2],
+            "rlx_keep": "kite",
+            "equilibrium": "zero",
+            "tau_c": [[1e-9]],
+            "srfk_tau_c": [[1.0, 1e-3]],
+            "srfk_mdepth": [[None, None, 15.0], [None, None, None], [None, None, None]],
+        },
+        noe={"dt": 1e-2, "nsteps": 100},
+        base=True,
     ),
 }
 R_TOL = dict(rtol=1e-9, atol=0)
@@ -96,8 +125,16 @@ def test_relaxation_superoperators(fx, case, spin_system):
         from dataclasses import replace
 
         rlx = spin_system.rlx
-        base = replace(spin_system, rlx=replace(rlx, theories=tuple(t for t in rlx.theories if t not in ("SRFK", "SRSK")),
-                                                srfk_tau_c=(), srfk_mdepth=(), srsk_sources=()))
+        base = replace(
+            spin_system,
+            rlx=replace(
+                rlx,
+                theories=tuple(t for t in rlx.theories if t not in ("SRFK", "SRSK")),
+                srfk_tau_c=(),
+                srfk_mdepth=(),
+                srsk_sources=(),
+            ),
+        )
         assert_matches(respinach.relaxation(base), fx["/rlx/R_base"], **R_TOL, name="R without scalar relaxation")
 
 

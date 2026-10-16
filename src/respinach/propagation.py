@@ -36,7 +36,7 @@ def propagator(spin_system: SpinSystem, L: Matrix, timestep: float) -> Matrix:
     tols = spin_system.tols
     be = get_backend()
     if L.shape[0] < tols.small_matrix:
-        return be.expm((-1j * timestep) * be.dense(L))   # GPU: small matrices stay on the host, as in Spinach
+        return be.expm((-1j * timestep) * be.dense(L))  # GPU: small matrices stay on the host, as in Spinach
 
     # GPU: Spinach moves A to the device above 500 states and runs the Taylor loop and the
     # squarings there (sparse-sparse products); clean_up must then work on device arrays
@@ -45,8 +45,10 @@ def propagator(spin_system: SpinSystem, L: Matrix, timestep: float) -> Matrix:
     if mat_norm > 1e9:
         raise ValueError("norm of -i*L*dt exceeds 1e9, check your L and your dt.")
     if mat_norm > 1024:
-        log.warning("time step greatly exceeds the timescale of system dynamics; "
-                    "exponentiation tolerance tightened up to eps('double').")
+        log.warning(
+            "time step greatly exceeds the timescale of system dynamics; "
+            "exponentiation tolerance tightened up to eps('double')."
+        )
         tols = replace(tols, prop_chop=np.finfo(float).eps)
     elif mat_norm > 16:
         log.warning("time step exceeds the timescale of system dynamics.")
@@ -68,7 +70,7 @@ def propagator(spin_system: SpinSystem, L: Matrix, timestep: float) -> Matrix:
     P = clean_up(tols, P, tols.prop_chop)
     for _ in range(n_squarings):
         P = clean_up(tols, P @ P, tols.prop_chop)
-    return be.to_host(P)   # GPU: propagators are returned to the host, as Spinach gathers them
+    return be.to_host(P)  # GPU: propagators are returned to the host, as Spinach gathers them
 
 
 def step(spin_system: SpinSystem, L: Matrix | Sequence[Matrix], rho: Matrix, timestep: float) -> Matrix:
@@ -168,12 +170,18 @@ def _commutator_series(H: Matrix, rho: Matrix, t: float, nsteps: int) -> Matrix:
 
 
 def krylov(
-    spin_system: SpinSystem, L: Matrix, coil: np.ndarray | None, rho: np.ndarray, timestep: float, nsteps: int, output: str
+    spin_system: SpinSystem,
+    L: Matrix,
+    coil: np.ndarray | None,
+    rho: np.ndarray,
+    timestep: float,
+    nsteps: int,
+    output: str,
 ) -> np.ndarray:
     """Propagation by repeated :func:`step` calls, for generators too large to exponentiate (port of ``krylov.m``)."""
     if spin_system.basis is None or spin_system.basis.formalism != "sphten-liouv":
         raise NotImplementedError("krylov() is only ported for the sphten-liouv formalism.")
-    rho = get_backend().dense(rho, dtype=complex)   # GPU: krylov.m keeps L, rho and coil on the device across steps
+    rho = get_backend().dense(rho, dtype=complex)  # GPU: krylov.m keeps L, rho and coil on the device across steps
     if output == "final":
         return step(spin_system, L, rho, timestep * nsteps)
     if output == "trajectory":
@@ -267,7 +275,9 @@ def evolution(
     if output == "trajectory" and rho.shape[1] > 1:
         raise ValueError("trajectory output is not available for state vector stacks.")
     if coil is not None:
-        coil = be.dense(coil, dtype=complex).reshape(-1, 1) if be.dense(coil).ndim == 1 else be.dense(coil, dtype=complex)
+        coil = (
+            be.dense(coil, dtype=complex).reshape(-1, 1) if be.dense(coil).ndim == 1 else be.dense(coil, dtype=complex)
+        )
     if "dss" in spin_system.disable:
         projectors = reduce(spin_system, L, rho)
     elif destination is not None:

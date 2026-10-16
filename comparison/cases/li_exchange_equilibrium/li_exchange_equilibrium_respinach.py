@@ -17,7 +17,9 @@ example = load_example("user_ml/li_exchange_equilibrium")
 def run(timer, nsteps_ex: int = 1_000_000, nsteps_eq: int = 200_000, gpu: bool = False) -> tuple[dict, dict]:
     """Returns (data, figs): the states, T(l,0) projections, trajan amplitudes and unit population; four figures."""
     if gpu:
-        raise NotImplementedError("sys['enable'] 'gpu' is not available yet: the GPU backend is planned, see porting/gpu-notes.md")
+        raise NotImplementedError(
+            "sys['enable'] 'gpu' is not available yet: the GPU backend is planned, see porting/gpu-notes.md"
+        )
     # stateinfo reports go to the console log, as Spinach's do
     logger = logging.getLogger("respinach")
     handler = logging.StreamHandler(sys.stdout)

@@ -30,8 +30,17 @@ from respinach.operators import lin2lm
 from respinach.system import Basis, SpinSystem
 
 BAS_FIELDS = {
-    "formalism", "approximation", "connectivity", "inter_level", "prox_level",
-    "projections", "longitudinal", "zero_quantum", "manual", "sym_group", "sym_spins",
+    "formalism",
+    "approximation",
+    "connectivity",
+    "inter_level",
+    "prox_level",
+    "projections",
+    "longitudinal",
+    "zero_quantum",
+    "manual",
+    "sym_group",
+    "sym_spins",
 }
 RETIRED = {
     "level": "bas['level'] has been renamed bas['inter_level'].",
@@ -104,8 +113,10 @@ def row_hashes(descriptor: np.ndarray, mults: np.ndarray) -> tuple[np.ndarray, n
     nspins = descriptor.shape[1]
     width = int(np.max(mults)) ** 2
     rng = np.random.default_rng(0x5EED_5EED)
-    hash_table = rng.integers(0, 2**63 - 1, size=(nspins, width), dtype=np.int64).astype(np.uint64) * np.uint64(2) + np.uint64(1)
-    hash_table[:, 0] = 0          # the unit operator contributes nothing, so the all-unit row hashes to zero
+    hash_table = rng.integers(0, 2**63 - 1, size=(nspins, width), dtype=np.int64).astype(np.uint64) * np.uint64(
+        2
+    ) + np.uint64(1)
+    hash_table[:, 0] = 0  # the unit operator contributes nothing, so the all-unit row hashes to zero
     row_hash = np.zeros(descriptor.shape[0], dtype=np.uint64)
     for n in range(nspins):
         row_hash += hash_table[n, descriptor[:, n]]
@@ -133,7 +144,6 @@ def _sphten_basis(spin_system: SpinSystem, bas: dict[str, Any]) -> np.ndarray:
         for entry in entries:
             for n in _spins_in_substance(spin_system, s, entry, "longitudinal"):
                 state_lists[n] = state_lists[n][lin2lm(state_lists[n])[1] == 0]
-    spin_dims = np.array([len(lst) for lst in state_lists])
 
     # Coupling and proximity graphs (every spin connected and proximate to itself)
     if approximation in ("IK-1", "IK-2"):
@@ -167,11 +177,13 @@ def _sphten_basis(spin_system: SpinSystem, bas: dict[str, Any]) -> np.ndarray:
         inside = manual[:, spins]
         crosses = (inside.sum(axis=1) != manual.sum(axis=1)) & inside.any(axis=1)
         if crosses.any():
-            raise ValueError(f"row {np.flatnonzero(crosses)[0]} of bas['manual'] crosses chemical substance boundaries.")
+            raise ValueError(
+                f"row {np.flatnonzero(crosses)[0]} of bas['manual'] crosses chemical substance boundaries."
+            )
         manual_sg = inside[inside.sum(axis=1) == manual.sum(axis=1)]
 
         rows = np.vstack([coupling_sg, proximity_sg, manual_sg])
-        rows[:, mults[spins] == 1] = False          # spin-zero particles carry no states
+        rows[:, mults[spins] == 1] = False  # spin-zero particles carry no states
         rows = rows[rows.any(axis=1)]
         rows = prune_subgraphs(np.unique(rows, axis=0))
         for row in rows:
@@ -322,7 +334,9 @@ def _grumble(spin_system: SpinSystem, bas: dict[str, Any]) -> None:
         if "manual" in bas:
             manual = np.asarray(bas["manual"])
             if manual.ndim != 2 or manual.shape[1] != nspins:
-                raise ValueError("the number of columns in bas['manual'] must be equal to the number of spins in the system.")
+                raise ValueError(
+                    "the number of columns in bas['manual'] must be equal to the number of spins in the system."
+                )
         if "projections" in bas:
             if len(bas["projections"]) != nparts:
                 raise ValueError("bas['projections'] must be a list with one element per chemical substance.")
@@ -339,7 +353,9 @@ def _grumble(spin_system: SpinSystem, bas: dict[str, Any]) -> None:
                             if entry not in spin_system.isotopes:
                                 raise ValueError(f"bas['{name}'] refers to spins that are not present in the system.")
                         elif any(int(n) != n or n < 0 or n >= nspins for n in np.atleast_1d(entry)):
-                            raise ValueError(f"numeric entries in bas['{name}'] must be spin numbers between 0 and {nspins - 1}.")
+                            raise ValueError(
+                                f"numeric entries in bas['{name}'] must be spin numbers between 0 and {nspins - 1}."
+                            )
     if "inter_level" in bas and approximation not in ("IK-0", "IK-1", "IK-DNP", "IK-SBS"):
         raise ValueError("bas['inter_level'] is only applicable to IK-0,1,2,DNP,SBS basis sets.")
     if "prox_level" in bas and approximation not in ("IK-1", "IK-2"):

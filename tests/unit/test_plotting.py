@@ -63,7 +63,7 @@ def test_plot_1d_follows_spinach_defaults(ss):
     ppm, _ = axis_1d(ss, {"spins": ["1H"], "offset": 600, "sweep": 1000, "zerofill": 256, "axis_units": "ppm"})
     np.testing.assert_allclose(trace.x, ppm)
     np.testing.assert_array_equal(trace.y, spectrum)
-    assert fig.layout.xaxis.range == (ppm.max(), ppm.min())   # invert_axis=1
+    assert fig.layout.xaxis.range == (ppm.max(), ppm.min())  # invert_axis=1
     assert "<sup>1</sup>H chemical shift / ppm" == fig.layout.xaxis.title.text
     assert not fig.layout.showlegend
 
@@ -97,7 +97,7 @@ def test_plot_fid_time_axis():
     pytest.importorskip("plotly")
     fig = plot_fid(np.exp(-np.arange(100) / 20) * (1 + 0j), {"sweep": 500})
     assert [t.name for t in fig.data] == ["real", "imag"]
-    np.testing.assert_allclose(fig.data[0].x, 1e3 * np.arange(100) / 500)   # ms
+    np.testing.assert_allclose(fig.data[0].x, 1e3 * np.arange(100) / 500)  # ms
     assert fig.layout.xaxis.title.text == "time / ms"
 
 
@@ -109,12 +109,15 @@ def test_plot_2d_levels_and_binning():
     np.testing.assert_allclose(_level_index(levels, levels), [0, 1, 2])
     np.testing.assert_allclose(_level_index(np.array([0.25, 0.7]), levels), [0.5, 1.5])
     assert _level_index(np.array([-5.0]), levels) <= -1 and _level_index(np.array([50.0]), levels) >= 3
-    neg = contspacing(1.0, -1.0, (0.1, 0.5, 0.1, 0.5), 2, "both", 4)[2]       # descending values
+    neg = contspacing(1.0, -1.0, (0.1, 0.5, 0.1, 0.5), 2, "both", 4)[2]  # descending values
     np.testing.assert_allclose(_level_index(neg, neg), np.arange(4))
     np.testing.assert_allclose(_level_index(np.array([0.5]), np.array([0.5])), [0])
 
     # binning keeps the extreme of each bin (sign included) and averages the axis
-    spectrum = np.zeros((10, 3)); spectrum[3, 0] = -2.0; spectrum[2, 0] = 1.5; spectrum[9, 2] = 0.7
+    spectrum = np.zeros((10, 3))
+    spectrum[3, 0] = -2.0
+    spectrum[2, 0] = 1.5
+    spectrum[9, 2] = 0.7
     reduced, axis = _bin_extremes(spectrum, np.arange(10.0), 4, axis=0)
     assert reduced.shape == (4, 3) and reduced[1, 0] == -2.0 and reduced[3, 2] == 0.7
     np.testing.assert_allclose(axis, [1, 4, 7, 9])
@@ -124,12 +127,18 @@ def test_plot_2d_levels_and_binning():
     pytest.importorskip("plotly")
     ss = respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1}, {"zeeman": {"scalar": [1.0, 3.0]}})
     pars = {"spins": ["1H"], "offset": 1200.0, "sweep": [2000.0, 2000.0], "npoints": [8, 8], "zerofill": [64, 64]}
-    z = np.zeros((2000, 1500)); z[500, 300] = 1.0; z[1200, 900] = -0.5
+    z = np.zeros((2000, 1500))
+    z[500, 300] = 1.0
+    z[1200, 900] = -0.5
     fig = plot_2d(ss, z, pars, 20, (0.05, 0.5, 0.05, 0.5), 2, 256, 6, "both")
-    assert len(fig.data) == 2                                                  # one trace per sign
-    assert fig.data[0].z.shape == (500, 500) and fig.data[0].x.size == 500 and fig.data[0].y.size == 500   # 2000/4, 1500/3
+    assert len(fig.data) == 2  # one trace per sign
+    assert (
+        fig.data[0].z.shape == (500, 500) and fig.data[0].x.size == 500 and fig.data[0].y.size == 500
+    )  # 2000/4, 1500/3
     assert fig.data[0].contours.end == 19 and fig.data[1].contours.end == 19
-    fig_full = plot_2d(ss, z[450:550, 250:350], pars, 20, (0.05, 0.5, 0.05, 0.5), 2, 256, 6, "positive", max_points=None)
+    fig_full = plot_2d(
+        ss, z[450:550, 250:350], pars, 20, (0.05, 0.5, 0.05, 0.5), 2, 256, 6, "positive", max_points=None
+    )
     assert len(fig_full.data) == 1 and fig_full.data[0].z.shape == (100, 100)
 
 
@@ -141,11 +150,13 @@ def test_time_series_and_trajan_plots():
     fig = plot_time_series(t, [np.ones(5), np.arange(5.0)], names=["a", "b"], xlabel="time (s)", ylabel="y")
     assert len(fig.data) == 2 and fig.layout.xaxis.title.text == "time (s)"
     many = plot_time_series(t, np.ones((12, 5)))
-    assert len(many.data) == 12 and len({tr.line.color for tr in many.data}) == 12     # beyond the fixed palette
+    assert len(many.data) == 12 and len({tr.line.color for tr in many.data}) == 12  # beyond the fixed palette
     with pytest.raises(ValueError, match="as long as"):
         plot_time_series(t, np.ones(4))
-    ls = respinach.basis(respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1}, {}),
-                         {"formalism": "sphten-liouv", "approximation": "none"})
+    ls = respinach.basis(
+        respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1}, {}),
+        {"formalism": "sphten-liouv", "approximation": "none"},
+    )
     traj = np.stack([respinach.state(ls, ["Lz"], [0]), respinach.state(ls, ["L+"], [1])], axis=1)
     fig = plot_trajan(ls, traj, "coherence_order", np.array([0.0, 0.5]))
     assert len(fig.data) == 5 and fig.layout.title.text == "coherence orders"

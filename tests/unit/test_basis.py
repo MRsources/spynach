@@ -44,16 +44,19 @@ def test_ik0_state_count(level):
 def test_ik1_and_ik2_on_a_chain():
     ss = chain(6)
     ik2 = respinach.basis(ss, {**NONE, "approximation": "IK-2", "connectivity": "scalar_couplings", "prox_level": 1})
-    ik1 = respinach.basis(ss, {**NONE, "approximation": "IK-1", "connectivity": "scalar_couplings",
-                            "inter_level": 3, "prox_level": 1})
+    ik1 = respinach.basis(
+        ss, {**NONE, "approximation": "IK-1", "connectivity": "scalar_couplings", "inter_level": 3, "prox_level": 1}
+    )
     # States supported on up to three consecutive spins: 1 + 6*3 + 9*9 + 4*27
     assert ik2.basis.nstates == ik1.basis.nstates == 208
-    ik1_2 = respinach.basis(ss, {**NONE, "approximation": "IK-1", "connectivity": "scalar_couplings",
-                              "inter_level": 2, "prox_level": 1})
+    ik1_2 = respinach.basis(
+        ss, {**NONE, "approximation": "IK-1", "connectivity": "scalar_couplings", "inter_level": 2, "prox_level": 1}
+    )
     assert ik1_2.basis.nstates == 1 + 6 * 3 + 5 * 9
     # Uncoupled spins only get single-spin states under IK-2
-    isolated = respinach.basis(system(["1H"] * 3), {**NONE, "approximation": "IK-2",
-                                                  "connectivity": "scalar_couplings", "prox_level": 2})
+    isolated = respinach.basis(
+        system(["1H"] * 3), {**NONE, "approximation": "IK-2", "connectivity": "scalar_couplings", "prox_level": 2}
+    )
     assert isolated.basis.nstates == 1 + 3 * 3
 
 
@@ -76,8 +79,7 @@ def test_filters():
     zq = respinach.basis(ss, {**NONE, "zero_quantum": [["1H"]]})
     _, m = respinach.operators.lin2lm(zq.basis.basis[:, [0, 2]])
     assert np.all(m.sum(axis=1) == 0) and zq.basis.nstates == 6 * 4
-    manual = respinach.basis(ss, {**NONE, "approximation": "IK-0", "inter_level": 1,
-                               "manual": [[True, False, True]]})
+    manual = respinach.basis(ss, {**NONE, "approximation": "IK-0", "inter_level": 1, "manual": [[True, False, True]]})
     assert manual.basis.nstates == 1 + 3 * 3 + 9
 
 
@@ -97,7 +99,7 @@ def test_chemical_subsystems_share_only_the_unit_state():
 
 def test_dfpt_and_prune():
     con = np.eye(4, dtype=bool)
-    con[0, 1] = con[1, 0] = con[1, 2] = con[2, 1] = True      # chain 0-1-2, spin 3 isolated
+    con[0, 1] = con[1, 0] = con[1, 2] = con[2, 1] = True  # chain 0-1-2, spin 3 isolated
     two = dfpt(con, 2)
     assert sorted(map(tuple, two.astype(int))) == [(0, 0, 0, 1), (0, 1, 1, 0), (1, 1, 0, 0)]
     three = dfpt(con, 3)
@@ -109,19 +111,42 @@ def test_dfpt_and_prune():
 @pytest.mark.parametrize(
     "bas, exc, message",
     [
-        ({"formalism": "sphten-liouv", "approximation": "IK-0", "level": 2}, ValueError, "renamed bas\\['inter_level'\\]"),
-        ({"formalism": "sphten-liouv", "approximation": "IK-2", "connectivity": "scalar_couplings",
-          "space_level": 1}, ValueError, "renamed bas\\['prox_level'\\]"),
+        (
+            {"formalism": "sphten-liouv", "approximation": "IK-0", "level": 2},
+            ValueError,
+            "renamed bas\\['inter_level'\\]",
+        ),
+        (
+            {
+                "formalism": "sphten-liouv",
+                "approximation": "IK-2",
+                "connectivity": "scalar_couplings",
+                "space_level": 1,
+            },
+            ValueError,
+            "renamed bas\\['prox_level'\\]",
+        ),
         ({"formalism": "sphten-liouv", "approximation": "IK-0"}, ValueError, "inter_level"),
         ({"formalism": "sphten-liouv", "approximation": "IK-0", "inter_level": 7}, ValueError, "greater than"),
         ({"formalism": "sphten-liouv", "approximation": "IK-2", "prox_level": 1}, ValueError, "connectivity"),
         ({"formalism": "sphten-liouv", "approximation": "none", "inter_level": 1}, ValueError, "only applicable"),
         ({"formalism": "sphten-liouv", "approximation": "ESR-1"}, ValueError, "unrecognized approximation"),
-        ({"formalism": "sphten-liouv", "approximation": "IK-DNP", "inter_level": [1, 1, 1]}, NotImplementedError, "IK-DNP"),
-        ({"formalism": "sphten-liouv", "approximation": "none", "sym_group": ["S2"], "sym_spins": [[0, 1]]},
-         NotImplementedError, "symmetry"),
+        (
+            {"formalism": "sphten-liouv", "approximation": "IK-DNP", "inter_level": [1, 1, 1]},
+            NotImplementedError,
+            "IK-DNP",
+        ),
+        (
+            {"formalism": "sphten-liouv", "approximation": "none", "sym_group": ["S2"], "sym_spins": [[0, 1]]},
+            NotImplementedError,
+            "symmetry",
+        ),
         ({"formalism": "zeeman-liouv", "approximation": "none"}, NotImplementedError, "zeeman-liouv"),
-        ({"formalism": "sphten-liouv", "approximation": "none", "projections": [[1], [1]]}, ValueError, "one element per"),
+        (
+            {"formalism": "sphten-liouv", "approximation": "none", "projections": [[1], [1]]},
+            ValueError,
+            "one element per",
+        ),
         ({"formalism": "sphten-liouv", "approximation": "none", "longitudinal": [["19F"]]}, ValueError, "not present"),
     ],
 )

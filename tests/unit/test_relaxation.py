@@ -18,9 +18,16 @@ def dense(x):
 
 
 def redfield_pair(isotopes, r, tau_c, keep="kite", equilibrium="dibari", **extra):
-    inter = {"zeeman": {"scalar": [0.0, 0.0]}, "coordinates": [[0, 0, 0], [0, 0, r]],
-             "relaxation": ["redfield"], "equilibrium": equilibrium, "rlx_keep": keep,
-             "temperature": 298, "tau_c": [[tau_c]], **extra}
+    inter = {
+        "zeeman": {"scalar": [0.0, 0.0]},
+        "coordinates": [[0, 0, 0], [0, 0, r]],
+        "relaxation": ["redfield"],
+        "equilibrium": equilibrium,
+        "rlx_keep": keep,
+        "temperature": 298,
+        "tau_c": [[tau_c]],
+        **extra,
+    }
     ss = respinach.create({"isotopes": isotopes, "magnet": 14.1}, inter)
     return respinach.basis(ss, LIOUV)
 
@@ -32,7 +39,10 @@ def rate(R, bra, ket):
 
 def solomon(ss, r, tau_c):
     b = ss.gammas[0] * ss.gammas[1] * ss.tols.hbar * ss.tols.mu0 / (4 * np.pi * r**3)
-    J = lambda w: tau_c / (1 + (w * tau_c) ** 2)
+
+    def J(w):
+        return tau_c / (1 + (w * tau_c) ** 2)
+
     wI, wS = abs(ss.basefrqs[0]), abs(ss.basefrqs[1])
     return {
         "rho_I": (b**2 / 10) * (J(wI - wS) + 3 * J(wI) + 6 * J(wI + wS)),
@@ -64,40 +74,61 @@ def test_redfield_dipolar_rates_match_solomon(isotopes, r, tau_c):
 def test_retention_policies_and_dfs():
     ls_lab = redfield_pair(["1H", "13C"], 1.03, 100e-12, keep="labframe", equilibrium="zero", rlx_dfs="keep")
     R_lab = dense(respinach.relaxation(ls_lab))
-    assert np.abs(R_lab.imag).max() > 0                     # dynamic frequency shifts kept
+    assert np.abs(R_lab.imag).max() > 0  # dynamic frequency shifts kept
     R_sec = dense(respinach.relaxation(redfield_pair(["1H", "13C"], 1.03, 100e-12, keep="secular", equilibrium="zero")))
     _, projs = respinach.operators.lin2lm(ls_lab.basis.basis)
     frequencies = projs @ ls_lab.basefrqs
     rows, cols = np.nonzero(R_sec)
     assert np.all(frequencies[rows] == frequencies[cols])
-    R_diag = dense(respinach.relaxation(redfield_pair(["1H", "13C"], 1.03, 100e-12, keep="diagonal", equilibrium="zero")))
+    R_diag = dense(
+        respinach.relaxation(redfield_pair(["1H", "13C"], 1.03, 100e-12, keep="diagonal", equilibrium="zero"))
+    )
     assert np.allclose(R_diag, np.diag(np.diag(R_diag))) and R_diag[0, 0] == 0
     np.testing.assert_allclose(np.diag(R_diag), np.diag(R_lab.real), atol=1e-9)
 
 
 def test_t1_t2_model_and_damping():
-    ss = respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
-                       {"relaxation": ["t1_t2"], "equilibrium": "zero", "rlx_keep": "diagonal",
-                        "r1_rates": [1.0, 2.0], "r2_rates": [5.0, 7.0]})
+    ss = respinach.create(
+        {"isotopes": ["1H", "13C"], "magnet": 14.1},
+        {
+            "relaxation": ["t1_t2"],
+            "equilibrium": "zero",
+            "rlx_keep": "diagonal",
+            "r1_rates": [1.0, 2.0],
+            "r2_rates": [5.0, 7.0],
+        },
+    )
     ls = respinach.basis(ss, LIOUV)
     R = dense(respinach.relaxation(ls))
     assert np.allclose(R, np.diag(np.diag(R)))
-    row = lambda spec: np.flatnonzero((ls.basis.basis == spec).all(axis=1))[0]
+
+    def row(spec):
+        return np.flatnonzero((ls.basis.basis == spec).all(axis=1))[0]
+
     assert R[row([2, 0]), row([2, 0])] == -1.0 and R[row([0, 2]), row([0, 2])] == -2.0
     assert R[row([1, 0]), row([1, 0])] == -5.0 and R[row([1, 3]), row([1, 3])] == -12.0
     assert R[row([2, 2]), row([2, 2])] == -3.0 and R[0, 0] == 0
     # Anisotropic rates need an orientation; along z the zz element applies
-    aniso = respinach.create({"isotopes": ["1H"], "magnet": 14.1},
-                          {"relaxation": ["t1_t2"], "equilibrium": "zero", "rlx_keep": "diagonal",
-                           "r1_rates": [np.diag([1.0, 2.0, 3.0]).tolist()], "r2_rates": [4.0]})
+    aniso = respinach.create(
+        {"isotopes": ["1H"], "magnet": 14.1},
+        {
+            "relaxation": ["t1_t2"],
+            "equilibrium": "zero",
+            "rlx_keep": "diagonal",
+            "r1_rates": [np.diag([1.0, 2.0, 3.0]).tolist()],
+            "r2_rates": [4.0],
+        },
+    )
     la = respinach.basis(aniso, LIOUV)
     with pytest.raises(ValueError, match="Euler angles"):
         respinach.relaxation(la)
     assert dense(respinach.relaxation(la, [0, 0, 0]))[2, 2] == -3.0
     assert np.isclose(dense(respinach.relaxation(la, [0, np.pi / 2, 0]))[2, 2], -1.0)
     # Damping: every state but the unit state in Liouville space; everything in Hilbert space
-    damp = respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1},
-                         {"relaxation": ["damp"], "equilibrium": "zero", "rlx_keep": "diagonal", "damp_rate": 5.0})
+    damp = respinach.create(
+        {"isotopes": ["1H", "1H"], "magnet": 14.1},
+        {"relaxation": ["damp"], "equilibrium": "zero", "rlx_keep": "diagonal", "damp_rate": 5.0},
+    )
     R = dense(respinach.relaxation(respinach.basis(damp, LIOUV)))
     assert R[0, 0] == 0 and np.allclose(np.diag(R)[1:], -5.0)
     R = dense(respinach.relaxation(respinach.basis(damp, HILB)))
@@ -105,15 +136,16 @@ def test_t1_t2_model_and_damping():
 
 
 def test_equilibrium_and_thermalisation():
-    ss = respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1, "tols": {"small_matrix": 2}},
-                       {"relaxation": ["damp"], "equilibrium": "zero", "rlx_keep": "diagonal",
-                        "damp_rate": 5.0, "temperature": 40})
+    ss = respinach.create(
+        {"isotopes": ["1H", "13C"], "magnet": 14.1, "tols": {"small_matrix": 2}},
+        {"relaxation": ["damp"], "equilibrium": "zero", "rlx_keep": "diagonal", "damp_rate": 5.0, "temperature": 40},
+    )
     ls, hs = respinach.basis(ss, LIOUV), respinach.basis(ss, HILB)
     rho_eq = respinach.equilibrium(ls)
     beta = ss.tols.hbar / (ss.tols.kbol * 40)
     # High-temperature limit: polarisation of each spin is -tanh(beta*omega/2)*... = beta*omega/2 to first order
     Lz1 = respinach.state(ls, ["Lz"], [0])
-    polarisation = np.vdot(Lz1, rho_eq).real / np.vdot(Lz1, Lz1).real / 2    # in units of the 'exact' Lz state
+    polarisation = np.vdot(Lz1, rho_eq).real / np.vdot(Lz1, Lz1).real / 2  # in units of the 'exact' Lz state
     assert np.isclose(polarisation, -beta * ss.basefrqs[0] / 2, rtol=1e-3)
     assert rho_eq[0] == 1
     rho_h = dense(respinach.equilibrium(hs))
@@ -150,7 +182,7 @@ def test_transient_noe_follows_the_solomon_equations():
     t = dt * np.arange(nsteps + 1)
     expected = np.array([eq + sla.expm(M * tn) @ dev0 for tn in t]).T
     np.testing.assert_allclose(answer.real, expected, rtol=0, atol=2e-4 * abs(eq[0]))
-    assert np.allclose(answer[:, -1].real, eq, rtol=0.1)           # relaxed back after 4 s
+    assert np.allclose(answer[:, -1].real, eq, rtol=0.1)  # relaxed back after 4 s
 
 
 def test_relaxation_inputs_are_validated():
@@ -166,9 +198,20 @@ def test_relaxation_inputs_are_validated():
     with pytest.raises(NotImplementedError, match="lindblad"):
         respinach.create(base, {"relaxation": ["lindblad"], "rlx_keep": "kite", "equilibrium": "zero"})
     with pytest.raises(ValueError, match="validity condition"):
-        respinach.relaxation(redfield_pair(["1H", "1H"], 1.0, 1e-5, equilibrium="zero"))   # R2 tau_c >> 1
-    hs = respinach.basis(respinach.create(base, {"coordinates": [[0, 0, 0], [0, 0, 1.03]], "relaxation": ["redfield"],
-                                           "rlx_keep": "kite", "equilibrium": "zero", "tau_c": [[1e-10]]}), HILB)
+        respinach.relaxation(redfield_pair(["1H", "1H"], 1.0, 1e-5, equilibrium="zero"))  # R2 tau_c >> 1
+    hs = respinach.basis(
+        respinach.create(
+            base,
+            {
+                "coordinates": [[0, 0, 0], [0, 0, 1.03]],
+                "relaxation": ["redfield"],
+                "rlx_keep": "kite",
+                "equilibrium": "zero",
+                "tau_c": [[1e-10]],
+            },
+        ),
+        HILB,
+    )
     with pytest.raises(NotImplementedError, match="sphten-liouv"):
         respinach.relaxation(hs)
     assert respinach.relaxation(respinach.basis(respinach.create(base, {}), LIOUV)).count_nonzero() == 0
@@ -176,10 +219,20 @@ def test_relaxation_inputs_are_validated():
 
 def quadrupolar_pair(theories, **extra):
     """1H-14N pair with a 14N quadrupolar tensor and a 50 Hz scalar coupling; 14N relaxes fast."""
-    inter = {"zeeman": {"scalar": [0.0, 0.0]}, "coordinates": [[0, 0, 0], [0, 0, 1.0]],
-             "coupling": {"scalar": [[0, 50.0], [0, 0]], "eigs": [[None, None], [None, [1e6, 1e6, -2e6]]],
-                          "euler": [[None, None], [None, [0, 0, 0]]]},
-             "relaxation": theories, "rlx_keep": "secular", "equilibrium": "zero", "tau_c": [[1e-9]], **extra}
+    inter = {
+        "zeeman": {"scalar": [0.0, 0.0]},
+        "coordinates": [[0, 0, 0], [0, 0, 1.0]],
+        "coupling": {
+            "scalar": [[0, 50.0], [0, 0]],
+            "eigs": [[None, None], [None, [1e6, 1e6, -2e6]]],
+            "euler": [[None, None], [None, [0, 0, 0]]],
+        },
+        "relaxation": theories,
+        "rlx_keep": "secular",
+        "equilibrium": "zero",
+        "tau_c": [[1e-9]],
+        **extra,
+    }
     return respinach.basis(respinach.create({"isotopes": ["1H", "14N"], "magnet": 11.75}, inter), LIOUV)
 
 
@@ -195,15 +248,26 @@ def test_srsk_adds_abragam_rates_to_the_coupled_spin():
     R2add = (1 / 3) * A**2 * Sk * (Sk + 1) * (T1k + T2k / (1 + dw**2 * T2k**2))
     assert np.isclose(rate(R, Lz, Lz), rate(R_base, Lz, Lz) + R1add, rtol=1e-9)
     assert np.isclose(rate(R, Lp, Lp), rate(R_base, Lp, Lp) + R2add, rtol=1e-9)
-    assert np.isclose(rate(R, Nz, Nz), rate(R_base, Nz, Nz))          # the source spin itself is untouched
+    assert np.isclose(rate(R, Nz, Nz), rate(R_base, Nz, Nz))  # the source spin itself is untouched
     # too slow a source: the quadrupolar coupling a hundred times smaller
     slow = quadrupolar_pair(["redfield", "SRSK"], srsk_sources=[1])
-    slow = respinach.create({"isotopes": ["1H", "14N"], "magnet": 11.75},
-                            {"zeeman": {"scalar": [0.0, 0.0]}, "coordinates": [[0, 0, 0], [0, 0, 1.0]],
-                             "coupling": {"scalar": [[0, 50.0], [0, 0]], "eigs": [[None, None], [None, [1e4, 1e4, -2e4]]],
-                                          "euler": [[None, None], [None, [0, 0, 0]]]},
-                             "relaxation": ["redfield", "SRSK"], "srsk_sources": [1], "rlx_keep": "secular",
-                             "equilibrium": "zero", "tau_c": [[1e-9]]})
+    slow = respinach.create(
+        {"isotopes": ["1H", "14N"], "magnet": 11.75},
+        {
+            "zeeman": {"scalar": [0.0, 0.0]},
+            "coordinates": [[0, 0, 0], [0, 0, 1.0]],
+            "coupling": {
+                "scalar": [[0, 50.0], [0, 0]],
+                "eigs": [[None, None], [None, [1e4, 1e4, -2e4]]],
+                "euler": [[None, None], [None, [0, 0, 0]]],
+            },
+            "relaxation": ["redfield", "SRSK"],
+            "srsk_sources": [1],
+            "rlx_keep": "secular",
+            "equilibrium": "zero",
+            "tau_c": [[1e-9]],
+        },
+    )
     with pytest.raises(ValueError, match="source spin relaxation is too slow"):
         respinach.relaxation(respinach.basis(slow, LIOUV))
 
@@ -211,9 +275,17 @@ def test_srsk_adds_abragam_rates_to_the_coupled_spin():
 def test_srfk_is_the_scalar_redfield_integral():
     from respinach.relaxation import expmint
 
-    ss = respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1},
-                          {"zeeman": {"scalar": [0.0, 2.0]}, "relaxation": ["SRFK"], "rlx_keep": "labframe",
-                           "equilibrium": "zero", "srfk_tau_c": [[1.0, 1e-3]], "srfk_mdepth": [[None, 15.0], [None, None]]})
+    ss = respinach.create(
+        {"isotopes": ["1H", "1H"], "magnet": 14.1},
+        {
+            "zeeman": {"scalar": [0.0, 2.0]},
+            "relaxation": ["SRFK"],
+            "rlx_keep": "labframe",
+            "equilibrium": "zero",
+            "srfk_tau_c": [[1.0, 1e-3]],
+            "srfk_mdepth": [[None, 15.0], [None, None]],
+        },
+    )
     ss = respinach.basis(ss, LIOUV)
     R = dense(respinach.relaxation(ss))
     assert R.shape == (16, 16) and np.abs(R.imag).max() == 0 and R[0, 0] == 0
@@ -226,13 +298,21 @@ def test_srfk_is_the_scalar_redfield_integral():
     from respinach.utilities import clean_up
 
     tau, upper = 1e-3, 2 * 1e-3 * np.log(1 / ss.tols.rlx_integration)
-    H0c = dense(clean_up(ss.tols, H0, 1e-2 / upper))            # the coarse grid of rlx_scalar.m
+    H0c = dense(clean_up(ss.tols, H0, 1e-2 / upper))  # the coarse grid of rlx_scalar.m
     expected = -H1 @ dense(expmint(ss, H0c, H1.conj().T, H0c + (1j / tau) * np.eye(16), upper))
     assert_matches(R, expected.real, rtol=1e-9, atol=1e-12, name="SRFK")
     # validity: a modulation slower than the relaxation it causes is refused
-    too_slow = respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1},
-                                {"zeeman": {"scalar": [0.0, 2.0]}, "relaxation": ["SRFK"], "rlx_keep": "labframe",
-                                 "equilibrium": "zero", "srfk_tau_c": [[1.0, 1.0]], "srfk_mdepth": [[None, 150.0], [None, None]]})
+    too_slow = respinach.create(
+        {"isotopes": ["1H", "1H"], "magnet": 14.1},
+        {
+            "zeeman": {"scalar": [0.0, 2.0]},
+            "relaxation": ["SRFK"],
+            "rlx_keep": "labframe",
+            "equilibrium": "zero",
+            "srfk_tau_c": [[1.0, 1.0]],
+            "srfk_mdepth": [[None, 150.0], [None, None]],
+        },
+    )
     with pytest.raises(ValueError, match="srfk_tau_c validity"):
         respinach.relaxation(respinach.basis(too_slow, LIOUV))
 
@@ -245,9 +325,14 @@ def test_scalar_relaxation_inputs_are_validated():
     with pytest.raises(ValueError, match="srfk_mdepth"):
         respinach.create(sys_, {**base, "relaxation": ["SRFK"], "srfk_tau_c": [[1.0, 1e-3]]})
     with pytest.raises(ValueError, match="2-element"):
-        respinach.create(sys_, {**base, "relaxation": ["SRFK"], "srfk_tau_c": [[1.0]], "srfk_mdepth": [[None, 1.0], [None, None]]})
+        respinach.create(
+            sys_, {**base, "relaxation": ["SRFK"], "srfk_tau_c": [[1.0]], "srfk_mdepth": [[None, 1.0], [None, None]]}
+        )
     with pytest.raises(ValueError, match="non-negative"):
-        respinach.create(sys_, {**base, "relaxation": ["SRFK"], "srfk_tau_c": [[1.0, -1e-3]], "srfk_mdepth": [[None, 1.0], [None, None]]})
+        respinach.create(
+            sys_,
+            {**base, "relaxation": ["SRFK"], "srfk_tau_c": [[1.0, -1e-3]], "srfk_mdepth": [[None, 1.0], [None, None]]},
+        )
     with pytest.raises(ValueError, match="requires SRFK"):
         respinach.create(sys_, {**base, "relaxation": ["damp"], "damp_rate": 1.0, "srfk_tau_c": [[1.0, 1e-3]]})
     with pytest.raises(ValueError, match="srsk_sources"):

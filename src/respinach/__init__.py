@@ -7,10 +7,10 @@ from respinach.filters import coherence, correlation, decouple, homospoil
 from respinach.hamiltonian import frqoffset, hamiltonian, orientation
 from respinach.kinetics import equilibrate, kinetics
 from respinach.operators import operator
+from respinach.processing import apodisation
 from respinach.propagation import evolution, krylov, propagator, step
 from respinach.reduction import path_trace, reduce, zte
 from respinach.relaxation import equilibrium, relaxation, thermalize
-from respinach.processing import apodisation
 from respinach.sequences import acquire, cosy, hsqc, noesy
 from respinach.states import state, stateinfo, trajan
 from respinach.system import Chemistry, SpinSystem, create, dilute, kill_spin

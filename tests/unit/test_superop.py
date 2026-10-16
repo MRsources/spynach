@@ -106,15 +106,20 @@ def test_states_in_liouville_space():
     row = np.flatnonzero((ls.basis.basis == [2, 0]).all(axis=1))[0]
     assert lz_exact[row] == 0.5 and lz_cheap[row] == 1.0
     assert np.count_nonzero(lz_exact) == 1
-    assert_matches(respinach.state(ls, ["Lz", "L-"], [0, 1], "cheap"), 4 * respinach.state(ls, ["Lz", "L-"], [0, 1]), **TIGHT)
+    assert_matches(
+        respinach.state(ls, ["Lz", "L-"], [0, 1], "cheap"), 4 * respinach.state(ls, ["Lz", "L-"], [0, 1]), **TIGHT
+    )
     assert_matches(respinach.state(ls, "Lz", "all", "chem"), lz_exact + respinach.state(ls, "Lz", "13C"), **TIGHT)
     with pytest.raises(ValueError, match="not present in the basis"):
         respinach.state(respinach.basis(ss, {**LIOUV, "projections": [[1]]}), "Lz", "1H", "cheap")
 
 
 def test_chem_state_weights_by_concentration():
-    ss = system(["1H", "1H"], zeeman={"scalar": [0.0, 3.0]},
-                chem={"parts": [[0], [1]], "concs": [2.0, 0.5], "rates": [[-1.0, 1.0], [1.0, -1.0]]})
+    ss = system(
+        ["1H", "1H"],
+        zeeman={"scalar": [0.0, 3.0]},
+        chem={"parts": [[0], [1]], "concs": [2.0, 0.5], "rates": [[-1.0, 1.0], [1.0, -1.0]]},
+    )
     ls = respinach.basis(ss, LIOUV)
     exact, chem = respinach.state(ls, "L+", "1H"), respinach.state(ls, "L+", "1H", "chem")
     expected = exact.copy()

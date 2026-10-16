@@ -33,18 +33,42 @@ SERIES = {
 
 # Surface, ink, and rule colours
 CHROME = {
-    "light": {"surface": "#fcfcfb", "ink": "#0b0b0b", "ink2": "#52514e", "muted": "#898781",
-              "grid": "#e1e0d9", "axis": "#c3c2b7", "border": "rgba(11,11,11,0.10)"},
-    "dark": {"surface": "#1a1a19", "ink": "#ffffff", "ink2": "#c3c2b7", "muted": "#898781",
-             "grid": "#2c2c2a", "axis": "#383835", "border": "rgba(255,255,255,0.10)"},
+    "light": {
+        "surface": "#fcfcfb",
+        "ink": "#0b0b0b",
+        "ink2": "#52514e",
+        "muted": "#898781",
+        "grid": "#e1e0d9",
+        "axis": "#c3c2b7",
+        "border": "rgba(11,11,11,0.10)",
+    },
+    "dark": {
+        "surface": "#1a1a19",
+        "ink": "#ffffff",
+        "ink2": "#c3c2b7",
+        "muted": "#898781",
+        "grid": "#2c2c2a",
+        "axis": "#383835",
+        "border": "rgba(255,255,255,0.10)",
+    },
 }
 
 FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
 
 # Hover precision per axis unit
-_HOVER_FORMAT = {"ppm": ".4f", "Hz": ".2f", "kHz": ".4f", "MHz": ".6f", "MHz-labframe": ".6f",
-                 "GHz": ".6f", "GHz-labframe": ".6f", "Gauss": ".3f", "mT": ".4f", "gtensor": ".6f",
-                 "points": "d"}
+_HOVER_FORMAT = {
+    "ppm": ".4f",
+    "Hz": ".2f",
+    "kHz": ".4f",
+    "MHz": ".6f",
+    "MHz-labframe": ".6f",
+    "GHz": ".6f",
+    "GHz-labframe": ".6f",
+    "Gauss": ".3f",
+    "mT": ".4f",
+    "gtensor": ".6f",
+    "points": "d",
+}
 
 
 def ft_axis(offset: float, sweep: float, npoints: int) -> np.ndarray:
@@ -190,18 +214,30 @@ def contspacing(
     """
     delta = np.asarray(delta, dtype=float)
     if delta.size != 4 or np.any(delta < 0) or np.any(delta > 1) or delta[0] > delta[1] or delta[2] > delta[3]:
-        raise ValueError("delta must give ascending minimum and maximum contour fractions between 0 and 1 for each sign.")
+        raise ValueError(
+            "delta must give ascending minimum and maximum contour fractions between 0 and 1 for each sign."
+        )
     if signs not in ("positive", "negative", "both"):
         raise ValueError("signs must be 'positive', 'negative', or 'both'.")
     if int(k) != k or k < 1 or int(ncont) != ncont or ncont < 1:
         raise ValueError("k and ncont must be positive integers.")
     grid = np.linspace(0, 1, int(ncont)) ** k
-    pos = (delta[1] - delta[0]) * smax * grid + smax * delta[0] if smax > 0 and signs in ("positive", "both") else np.array([])
-    neg = (delta[3] - delta[2]) * smin * grid + smin * delta[2] if smin < 0 and signs in ("negative", "both") else np.array([])
+    pos = (
+        (delta[1] - delta[0]) * smax * grid + smax * delta[0]
+        if smax > 0 and signs in ("positive", "both")
+        else np.array([])
+    )
+    neg = (
+        (delta[3] - delta[2]) * smin * grid + smin * delta[2]
+        if smin < 0 and signs in ("negative", "both")
+        else np.array([])
+    )
     return np.concatenate([neg[::-1], pos]), pos, neg
 
 
-def axis_2d(spin_system: SpinSystem, spectrum: np.ndarray, parameters: dict[str, Any]) -> tuple[np.ndarray, np.ndarray, str, str]:
+def axis_2d(
+    spin_system: SpinSystem, spectrum: np.ndarray, parameters: dict[str, Any]
+) -> tuple[np.ndarray, np.ndarray, str, str]:
     """F1 and F2 axes and labels of a 2D spectrum, as ``plot_2d.m`` derives them.
 
     ``spectrum`` is ``(nF2, nF1)``: rows are the direct dimension F2
@@ -293,13 +329,13 @@ def plot_2d(
     reds, blues = ("#b3261e", "#f2b8b5"), ("#1d4ed8", "#bfdbfe")
 
     def shade(start: str, end: str, fraction: float) -> str:
-        a, b = (int(start[i:i + 2], 16) for i in (1, 3, 5)), (int(end[i:i + 2], 16) for i in (1, 3, 5))
-        return "#%02x%02x%02x" % tuple(int(round(x + (y - x) * fraction)) for x, y in zip(a, b))
+        a, b = (int(start[i : i + 2], 16) for i in (1, 3, 5)), (int(end[i : i + 2], 16) for i in (1, 3, 5))
+        return "#" + "".join(f"{int(round(x + (y - x) * fraction)):02x}" for x, y in zip(a, b))
 
     # One trace per sign: the spectrum is mapped through a monotone piecewise-linear function that sends
     # the n-th contour level to n, so Plotly's uniform levels 0, 1, ..., reproduce Spinach's non-uniform
     # ones exactly, and the colour scale over the level index gives each contour its own shade.
-    z = spectrum.T   # Plotly draws z[y, x]; x is F2 (rows of the spectrum), y is F1
+    z = spectrum.T  # Plotly draws z[y, x]; x is F2 (rows of the spectrum), y is F1
     for levels, (strong, weak) in ((pos, reds), (neg, blues)):
         if not len(levels):
             continue
@@ -309,28 +345,67 @@ def plot_2d(
         if nlev == 1:
             colorscale = [(0.0, colours[0]), (1.0, colours[0])]
         fig.add_contour(
-            x=axis_f2, y=axis_f1, z=_level_index(z, levels), showscale=False, hoverinfo="skip",
-            zmin=0, zmax=nlev - 1, autocontour=False,
-            contours={"type": "levels", "coloring": "lines", "start": 0, "end": nlev - 1, "size": 1, "showlabels": False},
-            colorscale=colorscale, line={"width": 1.2}, showlegend=False,
+            x=axis_f2,
+            y=axis_f1,
+            z=_level_index(z, levels),
+            showscale=False,
+            hoverinfo="skip",
+            zmin=0,
+            zmax=nlev - 1,
+            autocontour=False,
+            contours={
+                "type": "levels",
+                "coloring": "lines",
+                "start": 0,
+                "end": nlev - 1,
+                "size": 1,
+                "showlabels": False,
+            },
+            colorscale=colorscale,
+            line={"width": 1.2},
+            showlegend=False,
         )
     if not len(pos) and not len(neg):
         fig.add_annotation(text="all-zero spectrum", x=0.5, y=0.5, xref="paper", yref="paper", showarrow=False)
-    axis = {"showgrid": True, "gridcolor": c["grid"], "zeroline": False, "showline": True, "linecolor": c["axis"],
-            "ticks": "outside", "tickcolor": c["axis"], "tickfont": {"color": c["ink2"], "size": 12},
-            "title": {"font": {"color": c["ink2"], "size": 13}}, "mirror": True}
+    axis = {
+        "showgrid": True,
+        "gridcolor": c["grid"],
+        "zeroline": False,
+        "showline": True,
+        "linecolor": c["axis"],
+        "ticks": "outside",
+        "tickcolor": c["axis"],
+        "tickfont": {"color": c["ink2"], "size": 12},
+        "title": {"font": {"color": c["ink2"], "size": 13}},
+        "mirror": True,
+    }
     isotopes = list(parameters["spins"]) * 2 if len(parameters["spins"]) == 1 else list(parameters["spins"])
     fig.update_layout(
-        height=height, width=height, font={"family": FONT, "color": c["ink"], "size": 13},
-        paper_bgcolor=c["surface"], plot_bgcolor=c["surface"],
+        height=height,
+        width=height,
+        font={"family": FONT, "color": c["ink"], "size": 13},
+        paper_bgcolor=c["surface"],
+        plot_bgcolor=c["surface"],
         margin={"l": 72, "r": 24, "t": 56 if title else 24, "b": 64},
         title={"text": title, "x": 0, "xanchor": "left", "font": {"size": 15, "color": c["ink"]}} if title else None,
-        xaxis={**axis, "title": {**axis["title"], "text": _rich(label_f2, isotopes[1])},
-               "range": [float(axis_f2.max()), float(axis_f2.min())]},
-        yaxis={**axis, "title": {**axis["title"], "text": _rich(label_f1, isotopes[0])},
-               "range": [float(axis_f1.max()), float(axis_f1.min())]},
-        modebar={"bgcolor": "rgba(0,0,0,0)", "color": c["muted"], "activecolor": c["ink2"], "remove": ["lasso2d", "select2d"]},
-        dragmode="zoom", showlegend=False,
+        xaxis={
+            **axis,
+            "title": {**axis["title"], "text": _rich(label_f2, isotopes[1])},
+            "range": [float(axis_f2.max()), float(axis_f2.min())],
+        },
+        yaxis={
+            **axis,
+            "title": {**axis["title"], "text": _rich(label_f1, isotopes[0])},
+            "range": [float(axis_f1.max()), float(axis_f1.min())],
+        },
+        modebar={
+            "bgcolor": "rgba(0,0,0,0)",
+            "color": c["muted"],
+            "activecolor": c["ink2"],
+            "remove": ["lasso2d", "select2d"],
+        },
+        dragmode="zoom",
+        showlegend=False,
     )
     return fig
 
@@ -347,11 +422,15 @@ def _level_index(z: np.ndarray, levels: np.ndarray) -> np.ndarray:
     step = (xs[1] - xs[0]) if len(xs) > 1 else span
     last = (xs[-1] - xs[-2]) if len(xs) > 1 else span
     xs = np.concatenate([[xs[0] - step], xs, [xs[-1] + last]])
-    ys = np.concatenate([[ys[0] + (ys[0] - ys[1] if len(ys) > 1 else -1)], ys, [ys[-1] + (ys[-1] - ys[-2] if len(ys) > 1 else 1)]])
+    ys = np.concatenate(
+        [[ys[0] + (ys[0] - ys[1] if len(ys) > 1 else -1)], ys, [ys[-1] + (ys[-1] - ys[-2] if len(ys) > 1 else 1)]]
+    )
     return np.interp(z, xs, ys)
 
 
-def _bin_extremes(spectrum: np.ndarray, axis_values: np.ndarray, max_points: int, axis: int) -> tuple[np.ndarray, np.ndarray]:
+def _bin_extremes(
+    spectrum: np.ndarray, axis_values: np.ndarray, max_points: int, axis: int
+) -> tuple[np.ndarray, np.ndarray]:
     """Reduce ``spectrum`` along ``axis`` to at most ``max_points`` bins, keeping each bin's largest-magnitude value.
 
     The axis coordinate of a bin is the mean of its points. Returns the
@@ -452,34 +531,68 @@ def _figure(theme: str, title: str | None, height: int, traces: list[tuple[str, 
     c = CHROME[theme]
 
     axis = {
-        "showgrid": True, "gridcolor": c["grid"], "gridwidth": 1,
-        "zeroline": False, "showline": True, "linecolor": c["axis"], "linewidth": 1, "mirror": False,
-        "ticks": "outside", "tickcolor": c["axis"], "ticklen": 4,
-        "tickfont": {"color": c["ink2"], "size": 12}, "title": {"font": {"color": c["ink2"], "size": 13}},
-        "showspikes": True, "spikemode": "across", "spikesnap": "cursor", "spikethickness": 1,
-        "spikedash": "solid", "spikecolor": c["muted"],
+        "showgrid": True,
+        "gridcolor": c["grid"],
+        "gridwidth": 1,
+        "zeroline": False,
+        "showline": True,
+        "linecolor": c["axis"],
+        "linewidth": 1,
+        "mirror": False,
+        "ticks": "outside",
+        "tickcolor": c["axis"],
+        "ticklen": 4,
+        "tickfont": {"color": c["ink2"], "size": 12},
+        "title": {"font": {"color": c["ink2"], "size": 13}},
+        "showspikes": True,
+        "spikemode": "across",
+        "spikesnap": "cursor",
+        "spikethickness": 1,
+        "spikedash": "solid",
+        "spikecolor": c["muted"],
     }
     fig = go.Figure()
     fig.update_layout(
         height=height,
         font={"family": FONT, "color": c["ink"], "size": 13},
-        paper_bgcolor=c["surface"], plot_bgcolor=c["surface"],
+        paper_bgcolor=c["surface"],
+        plot_bgcolor=c["surface"],
         margin={"l": 64, "r": 24, "t": 56 if title else 24, "b": 56},
-        title={"text": title, "x": 0, "xanchor": "left", "xref": "paper",
-               "font": {"size": 15, "color": c["ink"]}} if title else None,
-        xaxis=axis, yaxis={**axis, "showspikes": False, "exponentformat": "power"},
-        legend={"orientation": "h", "x": 0, "xanchor": "left", "y": 1.02, "yanchor": "bottom",
-                "bgcolor": "rgba(0,0,0,0)", "font": {"color": c["ink2"]}},
+        title={"text": title, "x": 0, "xanchor": "left", "xref": "paper", "font": {"size": 15, "color": c["ink"]}}
+        if title
+        else None,
+        xaxis=axis,
+        yaxis={**axis, "showspikes": False, "exponentformat": "power"},
+        legend={
+            "orientation": "h",
+            "x": 0,
+            "xanchor": "left",
+            "y": 1.02,
+            "yanchor": "bottom",
+            "bgcolor": "rgba(0,0,0,0)",
+            "font": {"color": c["ink2"]},
+        },
         hoverlabel={"bgcolor": c["surface"], "bordercolor": c["border"], "font": {"color": c["ink"], "family": FONT}},
-        modebar={"bgcolor": "rgba(0,0,0,0)", "color": c["muted"], "activecolor": c["ink2"],
-                 "remove": ["lasso2d", "select2d"]},
-        dragmode="zoom", hovermode="x unified", showlegend=len(traces) > 1,
+        modebar={
+            "bgcolor": "rgba(0,0,0,0)",
+            "color": c["muted"],
+            "activecolor": c["ink2"],
+            "remove": ["lasso2d", "select2d"],
+        },
+        dragmode="zoom",
+        hovermode="x unified",
+        showlegend=len(traces) > 1,
     )
     if len(traces) > len(SERIES[theme]):
         raise ValueError(f"at most {len(SERIES[theme])} traces can be told apart by colour; plot fewer.")
     for n, (name, y) in enumerate(traces):
-        fig.add_scatter(y=y, name=name, mode="lines", line={"color": SERIES[theme][n], "width": 2},
-                        hovertemplate=f"{name}: %{{y:.4g}}<extra></extra>" if name else "%{y:.4g}<extra></extra>")
+        fig.add_scatter(
+            y=y,
+            name=name,
+            mode="lines",
+            line={"color": SERIES[theme][n], "width": 2},
+            hovertemplate=f"{name}: %{{y:.4g}}<extra></extra>" if name else "%{y:.4g}<extra></extra>",
+        )
     return fig
 
 
@@ -502,7 +615,11 @@ def plot_time_series(
     """
     import colorsys
 
-    rows = [np.asarray(series)] if isinstance(series, np.ndarray) and series.ndim == 1 else [np.asarray(r).real for r in series]
+    rows = (
+        [np.asarray(series)]
+        if isinstance(series, np.ndarray) and series.ndim == 1
+        else [np.asarray(r).real for r in series]
+    )
     rows = [r.real for r in rows]
     time_axis = np.asarray(time_axis, dtype=float)
     if any(r.ndim != 1 or r.size != time_axis.size for r in rows):
@@ -514,12 +631,23 @@ def plot_time_series(
     fig = _figure(theme, title, height, [])
     if theme not in CHROME:
         raise ValueError(f"theme must be 'light' or 'dark', not {theme!r}.")
-    palette = SERIES[theme] if len(rows) <= len(SERIES[theme]) else [
-        "#%02x%02x%02x" % tuple(int(255 * v) for v in colorsys.hsv_to_rgb((n + 1) / len(rows), 0.75, 0.75)) for n in range(len(rows))
-    ]
+    palette = (
+        SERIES[theme]
+        if len(rows) <= len(SERIES[theme])
+        else [
+            "#" + "".join(f"{int(255 * v):02x}" for v in colorsys.hsv_to_rgb((n + 1) / len(rows), 0.75, 0.75))
+            for n in range(len(rows))
+        ]
+    )
     for n, (name, y) in enumerate(zip(names, rows)):
-        fig.add_scatter(x=time_axis, y=y, name=name, mode="lines", line={"color": palette[n], "width": 2},
-                        hovertemplate=f"{name}: %{{y:.4g}}<extra></extra>" if name else "%{y:.4g}<extra></extra>")
+        fig.add_scatter(
+            x=time_axis,
+            y=y,
+            name=name,
+            mode="lines",
+            line={"color": palette[n], "width": 2},
+            hovertemplate=f"{name}: %{{y:.4g}}<extra></extra>" if name else "%{y:.4g}<extra></extra>",
+        )
     fig.update_layout(showlegend=len(rows) > 1)
     fig.update_xaxes(title_text=xlabel, range=[float(time_axis.min()), float(time_axis.max())], hoverformat=".4g")
     fig.update_yaxes(title_text=ylabel)
@@ -545,12 +673,28 @@ def plot_trajan(
 
     result, labels = trajan(spin_system, traj, property)
     x = np.arange(result.shape[1]) if time_axis is None else np.asarray(time_axis, dtype=float)
-    ylabel = {"correlation_order": "correlation order amplitude", "coherence_order": "coherence order amplitude",
-              "total_each_spin": "density touching each spin", "local_each_spin": "density local to each spin"}[property]
-    heading = {"correlation_order": "correlation orders", "coherence_order": "coherence orders",
-               "total_each_spin": "spin populations", "local_each_spin": "spin populations"}[property]
-    fig = plot_time_series(x, result, names=labels, xlabel="time / s" if time_axis is not None else "trajectory point",
-                           ylabel=ylabel, title=title or heading, theme=theme, height=height)
+    ylabel = {
+        "correlation_order": "correlation order amplitude",
+        "coherence_order": "coherence order amplitude",
+        "total_each_spin": "density touching each spin",
+        "local_each_spin": "density local to each spin",
+    }[property]
+    heading = {
+        "correlation_order": "correlation orders",
+        "coherence_order": "coherence orders",
+        "total_each_spin": "spin populations",
+        "local_each_spin": "spin populations",
+    }[property]
+    fig = plot_time_series(
+        x,
+        result,
+        names=labels,
+        xlabel="time / s" if time_axis is not None else "trajectory point",
+        ylabel=ylabel,
+        title=title or heading,
+        theme=theme,
+        height=height,
+    )
     top = float(result.max()) if result.size else 1.0
     fig.update_yaxes(range=[-0.05 * top, 1.05 * top])
     return fig

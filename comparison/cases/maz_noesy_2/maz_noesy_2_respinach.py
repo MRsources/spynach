@@ -1,4 +1,6 @@
-"""Comparison case: methylaziridine NOESY with scalar relaxation, examples/relaxation_theory/maz_noesy_2.py with timed stages.
+"""Comparison case: methylaziridine NOESY with scalar relaxation.
+
+examples/relaxation_theory/maz_noesy_2.py with timed stages.
 
 Stage labels must match maz_noesy_2_spinach.m: create, basis, liquid/noesy, processing, plot.
 """

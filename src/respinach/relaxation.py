@@ -64,7 +64,9 @@ def relaxation(spin_system: SpinSystem, euler_angles: Sequence[float] | None = N
     if not rlx.theories:
         return R
     if formalism != "sphten-liouv" and set(rlx.theories) != {"damp"}:
-        raise NotImplementedError("Redfield, T1/T2, SRFK and SRSK relaxation theories are only available in the sphten-liouv formalism.")
+        raise NotImplementedError(
+            "Redfield, T1/T2, SRFK and SRSK relaxation theories are only available in the sphten-liouv formalism."
+        )
 
     if "t1_t2" in rlx.theories:
         R = R + _t1_t2(spin_system, euler_angles)
@@ -262,7 +264,7 @@ def _corrfun(spin_system: SpinSystem, rank: int, k: int, m: int, p: int, q: int)
         elif tau.size == 2:
             D_ax, D_eq = 1 / (6 * tau[0]), 1 / (6 * tau[1])
             weights = np.array([(1 / (2 * rank + 1)) * (k == p) * (m == q)], dtype=float)
-            proj = rank - m          # projection quantum number of component m
+            proj = rank - m  # projection quantum number of component m
             rates = np.array([-(rank * (rank + 1) * D_eq + proj**2 * (D_ax - D_eq))])
         else:
             Dxx, Dyy, Dzz = 1 / (6 * tau)
@@ -272,10 +274,15 @@ def _corrfun(spin_system: SpinSystem, rank: int, k: int, m: int, p: int, q: int)
             if rank != 2:
                 raise ValueError("rhombic rotational diffusion only implemented for rank 2.")
             delta = np.sqrt(Dxx**2 + Dyy**2 + Dzz**2 - Dxx * Dyy - Dxx * Dzz - Dyy * Dzz)
-            rates = -np.array([
-                4 * Dxx + Dyy + Dzz, Dxx + 4 * Dyy + Dzz, Dxx + Dyy + 4 * Dzz,
-                2 * Dxx + 2 * Dyy + 2 * Dzz - 2 * delta, 2 * Dxx + 2 * Dyy + 2 * Dzz + 2 * delta,
-            ])
+            rates = -np.array(
+                [
+                    4 * Dxx + Dyy + Dzz,
+                    Dxx + 4 * Dyy + Dzz,
+                    Dxx + Dyy + 4 * Dzz,
+                    2 * Dxx + 2 * Dyy + 2 * Dzz - 2 * delta,
+                    2 * Dxx + 2 * Dyy + 2 * Dzz + 2 * delta,
+                ]
+            )
             lam_p = np.sqrt(2 / 3) * (Dxx + Dyy - 2 * Dzz + 2 * delta) / (Dxx - Dyy)
             lam_m = np.sqrt(2 / 3) * (Dxx + Dyy - 2 * Dzz - 2 * delta) / (Dxx - Dyy)
             h = np.zeros((5, 5))
@@ -304,7 +311,10 @@ def _srfk(spin_system: SpinSystem) -> Matrix:
     H0 = hamiltonian(assume(spin_system, "labframe"), "comm")
     nspins = spin_system.nspins
     modulated = tuple(
-        tuple(None if rlx.srfk_mdepth[n][k] is None else 2 * np.pi * rlx.srfk_mdepth[n][k] * np.eye(3) for k in range(nspins))
+        tuple(
+            None if rlx.srfk_mdepth[n][k] is None else 2 * np.pi * rlx.srfk_mdepth[n][k] * np.eye(3)
+            for k in range(nspins)
+        )
         for n in range(nspins)
     )
     local = replace(spin_system, coupling_matrix=modulated)
@@ -355,7 +365,11 @@ def _srsk(spin_system: SpinSystem, R: Matrix) -> Matrix:
         for n in range(nspins):
             if n in rlx.srsk_sources or spin_system.isotopes[n] == spin_system.isotopes[k]:
                 continue
-            A = sum(np.trace(C) / 3 for C in (spin_system.coupling_matrix[n][k], spin_system.coupling_matrix[k][n]) if C is not None)
+            A = sum(
+                np.trace(C) / 3
+                for C in (spin_system.coupling_matrix[n][k], spin_system.coupling_matrix[k][n])
+                if C is not None
+            )
             if (2 * np.pi / T1k) < 10 * abs(A) or (2 * np.pi / T2k) < 10 * abs(A):
                 raise ValueError("SRSK theory is not applicable: source spin relaxation is too slow")
             delta_omega = spin_system.basefrqs[n] - spin_system.basefrqs[k]
@@ -365,9 +379,15 @@ def _srsk(spin_system: SpinSystem, R: Matrix) -> Matrix:
             R2[n] += R2add
             if R1add > spin_system.tols.liouv_zero or R2add > spin_system.tols.liouv_zero:
                 log.info("  > onto spin %d (%s): +%g Hz to R1, +%g Hz to R2", n, spin_system.isotopes[n], R1add, R2add)
-    local = replace(spin_system, rlx=replace(
-        rlx, theories=("t1_t2",), r1_rates=tuple(np.float64(r) for r in R1), r2_rates=tuple(np.float64(r) for r in R2),
-    ))
+    local = replace(
+        spin_system,
+        rlx=replace(
+            rlx,
+            theories=("t1_t2",),
+            r1_rates=tuple(np.float64(r) for r in R1),
+            r2_rates=tuple(np.float64(r) for r in R2),
+        ),
+    )
     log.info("recursive call for SRSK relaxation terms...")
     RS = relaxation(local)
     log.info("SRSK relaxation theory terms have been incorporated.")
@@ -404,7 +424,7 @@ def _keep(spin_system: SpinSystem, R: Matrix) -> Matrix:
     dim = R.shape[0]
     if keep == "diagonal":
         diagonal = _diag(R).copy()
-        diagonal[0] = 0          # the unit state is never relaxed
+        diagonal[0] = 0  # the unit state is never relaxed
         return sps.diags_array(diagonal.astype(complex), format="csr")
     rows, cols, vals = _find(R)
     _, projs = lin2lm(spin_system.basis.basis)

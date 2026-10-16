@@ -12,24 +12,41 @@ import scipy.sparse as sps
 
 import respinach
 from respinach.contexts import fourdif
-from respinach.conventions import wigner
 from respinach.oracle import assert_matches, find_case, load_fixture
 
 LIOUV = {"formalism": "sphten-liouv", "approximation": "none", "projections": [[1]]}
-CSA = dict(sys={"isotopes": ["1H", "1H"], "magnet": 14.1},
-           inter={"zeeman": {"eigs": [[-7, -7, -1], [4, 2, 9]], "euler": [[0, 0, 0], [0.3, 0.9, 1.2]]}})
+CSA = dict(
+    sys={"isotopes": ["1H", "1H"], "magnet": 14.1},
+    inter={"zeeman": {"eigs": [[-7, -7, -1], [4, 2, 9]], "euler": [[0, 0, 0], [0.3, 0.9, 1.2]]}},
+)
 MAS = {"axis": [1, 1, 1], "max_rank": 7, "grid": "leb_2ang_rank_11", "sweep": 2e4, "npoints": 128, "zerofill": 512}
 
 CASES = {
     "csa": {**CSA, "pars": {"spins": ["1H"], "offset": 0, "rate": 500, **MAS}},
-    "dip": dict(sys={"isotopes": ["1H", "1H"], "magnet": 14.1},
-                inter={"zeeman": {"scalar": [5.0, -2.0]}, "coordinates": [[0, 0, 0], [0, 3.9, 0.1]]},
-                pars={"spins": ["1H"], "offset": 0, "rate": 1000, **MAS}),
-    "nqi": dict(sys={"isotopes": ["2H"], "magnet": 9.4},
-                inter={"coupling": {"eigs": [[[-1e3, -2e3, 3e3]]], "euler": [[[0, 0, 0]]]}},
-                pars={"spins": ["2H"], "offset": 0, "rate": 1000, **MAS}),
-    "crystal_offaxis": {**CSA, "pars": {"spins": ["1H"], "offset": 300, "rate": 800, "axis": [0.5, 0.2, 1], "max_rank": 5,
-                                        "grid": "single_crystal", "sweep": 2e4, "npoints": 128, "zerofill": 512}},
+    "dip": dict(
+        sys={"isotopes": ["1H", "1H"], "magnet": 14.1},
+        inter={"zeeman": {"scalar": [5.0, -2.0]}, "coordinates": [[0, 0, 0], [0, 3.9, 0.1]]},
+        pars={"spins": ["1H"], "offset": 0, "rate": 1000, **MAS},
+    ),
+    "nqi": dict(
+        sys={"isotopes": ["2H"], "magnet": 9.4},
+        inter={"coupling": {"eigs": [[[-1e3, -2e3, 3e3]]], "euler": [[[0, 0, 0]]]}},
+        pars={"spins": ["2H"], "offset": 0, "rate": 1000, **MAS},
+    ),
+    "crystal_offaxis": {
+        **CSA,
+        "pars": {
+            "spins": ["1H"],
+            "offset": 300,
+            "rate": 800,
+            "axis": [0.5, 0.2, 1],
+            "max_rank": 5,
+            "grid": "single_crystal",
+            "sweep": 2e4,
+            "npoints": 128,
+            "zerofill": 512,
+        },
+    },
 }
 GENERATOR_TOL = dict(rtol=1e-12, atol=0)
 FID_TOL = dict(rtol=1e-9, atol=0)

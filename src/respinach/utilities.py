@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Union
-
 import numpy as np
 import scipy.sparse as sps
 
 from respinach.tolerances import Tolerances
 
-Matrix = Union[np.ndarray, sps.csr_array]
+Matrix = np.ndarray | sps.csr_array
 
 
 def nnz(matrix: Matrix) -> int:

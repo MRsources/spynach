@@ -39,9 +39,22 @@ SYS_FIELDS = {"isotopes", "magnet", "tols", "labels", "enable", "disable"}
 ENABLE_TOKENS = {"krylov"}
 DISABLE_TOKENS = {"zte", "pt", "dss", "merge", "krylov", "trajlevel"}
 INTER_FIELDS = {
-    "zeeman", "coupling", "chem", "coordinates",
-    "relaxation", "rlx_keep", "equilibrium", "tau_c", "temperature", "damp_rate", "r1_rates", "r2_rates", "rlx_dfs",
-    "srfk_tau_c", "srfk_mdepth", "srsk_sources",
+    "zeeman",
+    "coupling",
+    "chem",
+    "coordinates",
+    "relaxation",
+    "rlx_keep",
+    "equilibrium",
+    "tau_c",
+    "temperature",
+    "damp_rate",
+    "r1_rates",
+    "r2_rates",
+    "rlx_dfs",
+    "srfk_tau_c",
+    "srfk_mdepth",
+    "srsk_sources",
 }
 RELAXATION_THEORIES = {"damp", "t1_t2", "redfield", "SRFK", "SRSK"}
 UNPORTED_THEORIES = {"lindblad", "nottingham", "weizmann", "naka-zwan"}
@@ -63,8 +76,8 @@ class Basis:
     formalism: str
     approximation: str
     basis: np.ndarray
-    tot_proj: np.ndarray | None = None   # (nstates,) total coherence order (sphten-liouv)
-    tot_cord: np.ndarray | None = None   # (nstates,) spin correlation order (sphten-liouv)
+    tot_proj: np.ndarray | None = None  # (nstates,) total coherence order (sphten-liouv)
+    tot_cord: np.ndarray | None = None  # (nstates,) spin correlation order (sphten-liouv)
     # Row hashing for superoperator assembly (sphten-liouv): hash_table[spin, index] holds a random
     # 64-bit key per (spin, tensor index); row_hash is their sum over the columns of a row, and
     # sort_order/sorted_hash let a row be found from its hash by bisection (operators.superop)
@@ -86,8 +99,8 @@ class Assumptions:
     """Interaction truncation levels (Spinach ``inter.*.strength``), set by :func:`respinach.assume`."""
 
     name: str
-    zeeman: tuple[str, ...]                 # per spin: 'full', 'secular', or 'ignore'
-    coupling: tuple[tuple[str, ...], ...]   # per spin pair: 'strong', 'secular', 'zz', 'ignore', ...
+    zeeman: tuple[str, ...]  # per spin: 'full', 'secular', or 'ignore'
+    coupling: tuple[tuple[str, ...], ...]  # per spin pair: 'strong', 'secular', 'zz', 'ignore', ...
 
 
 @dataclass(frozen=True, eq=False)
@@ -100,9 +113,9 @@ class Chemistry:
     is the flow from part ``j`` into part ``i`` and every column sums to zero.
     """
 
-    parts: tuple[tuple[int, ...], ...]   # 0-based spin indices of each part, ascending
-    concs: np.ndarray                    # (nparts,) initial concentrations
-    rates: np.ndarray | None             # (nparts, nparts) exchange rates, or None
+    parts: tuple[tuple[int, ...], ...]  # 0-based spin indices of each part, ascending
+    concs: np.ndarray  # (nparts,) initial concentrations
+    rates: np.ndarray | None  # (nparts, nparts) exchange rates, or None
 
     @property
     def nparts(self) -> int:
@@ -149,20 +162,20 @@ class Relaxation:
 class SpinSystem:
     isotopes: tuple[str, ...]
     labels: tuple[str | None, ...]
-    types: tuple[str, ...]            # 'S' for spins; 'C', 'V', 'T' for bosonic modes
-    mults: np.ndarray                 # (nspins,) int multiplicities
-    gammas: np.ndarray                # (nspins,) magnetogyric ratios, rad/(s*T)
-    magnet: float                     # Tesla
-    basefrqs: np.ndarray              # (nspins,) carrier frequencies -gamma*B0, rad/s
-    zeeman_matrix: tuple[np.ndarray, ...]                        # 3x3 lab-frame Zeeman tensors, rad/s
-    coupling_matrix: tuple[tuple[np.ndarray | None, ...], ...]   # 3x3 coupling tensors, rad/s; None if absent
-    coordinates: tuple[np.ndarray | None, ...]                   # (3,) positions in Angstrom, None if not given
-    proxmatrix: np.ndarray                                       # (nspins, nspins) bool: pairs closer than prox_cutoff
+    types: tuple[str, ...]  # 'S' for spins; 'C', 'V', 'T' for bosonic modes
+    mults: np.ndarray  # (nspins,) int multiplicities
+    gammas: np.ndarray  # (nspins,) magnetogyric ratios, rad/(s*T)
+    magnet: float  # Tesla
+    basefrqs: np.ndarray  # (nspins,) carrier frequencies -gamma*B0, rad/s
+    zeeman_matrix: tuple[np.ndarray, ...]  # 3x3 lab-frame Zeeman tensors, rad/s
+    coupling_matrix: tuple[tuple[np.ndarray | None, ...], ...]  # 3x3 coupling tensors, rad/s; None if absent
+    coordinates: tuple[np.ndarray | None, ...]  # (3,) positions in Angstrom, None if not given
+    proxmatrix: np.ndarray  # (nspins, nspins) bool: pairs closer than prox_cutoff
     tols: Tolerances
     chem: Chemistry
     rlx: Relaxation = Relaxation()
-    enable: frozenset[str] = frozenset()    # sys['enable'] tokens, e.g. 'krylov'
-    disable: frozenset[str] = frozenset()   # sys['disable'] tokens: 'zte', 'pt', 'dss', 'merge', 'krylov', 'trajlevel'
+    enable: frozenset[str] = frozenset()  # sys['enable'] tokens, e.g. 'krylov'
+    disable: frozenset[str] = frozenset()  # sys['disable'] tokens: 'zte', 'pt', 'dss', 'merge', 'krylov', 'trajlevel'
     basis: Basis | None = None
     assumptions: Assumptions | None = None
 
@@ -200,7 +213,9 @@ def create(sys: dict[str, Any], inter: dict[str, Any]) -> SpinSystem:
     enable = frozenset(sys.get("enable", []))
     disable = frozenset(sys.get("disable", []))
     if "gpu" in enable:
-        raise NotImplementedError("sys['enable'] 'gpu' is not available yet: the GPU backend is planned, see porting/gpu-notes.md")
+        raise NotImplementedError(
+            "sys['enable'] 'gpu' is not available yet: the GPU backend is planned, see porting/gpu-notes.md"
+        )
     if enable - ENABLE_TOKENS:
         raise NotImplementedError(f"sys['enable'] token(s) {sorted(enable - ENABLE_TOKENS)} not ported yet")
     if disable - DISABLE_TOKENS:
@@ -248,14 +263,26 @@ def _relaxation_settings(nspins: int, chem: Chemistry, inter: dict[str, Any]) ->
     if temperature < 0:
         raise ValueError("inter['temperature'] must be non-negative.")
     if not theories:
-        for name in ("rlx_keep", "equilibrium", "tau_c", "damp_rate", "r1_rates", "r2_rates", "rlx_dfs",
-                     "srfk_tau_c", "srfk_mdepth", "srsk_sources"):
+        for name in (
+            "rlx_keep",
+            "equilibrium",
+            "tau_c",
+            "damp_rate",
+            "r1_rates",
+            "r2_rates",
+            "rlx_dfs",
+            "srfk_tau_c",
+            "srfk_mdepth",
+            "srsk_sources",
+        ):
             if name in inter:
                 raise ValueError(f"inter['{name}'] requires a relaxation theory in inter['relaxation'].")
         return Relaxation(temperature=temperature)
     unported = set(theories) & UNPORTED_THEORIES
     if unported:
-        raise NotImplementedError(f"relaxation theor{'y' if len(unported) == 1 else 'ies'} {sorted(unported)} not ported yet")
+        raise NotImplementedError(
+            f"relaxation theor{'y' if len(unported) == 1 else 'ies'} {sorted(unported)} not ported yet"
+        )
     if set(theories) - RELAXATION_THEORIES:
         raise ValueError("unrecognised relaxation theory specification.")
     if "rlx_keep" not in inter:
@@ -286,7 +313,9 @@ def _relaxation_settings(nspins: int, chem: Chemistry, inter: dict[str, Any]) ->
     damp_rate = None
     if "damp" in theories:
         if "damp_rate" not in inter:
-            raise ValueError("damping rate or tensor must be specified in inter['damp_rate'] with non-selective damping.")
+            raise ValueError(
+                "damping rate or tensor must be specified in inter['damp_rate'] with non-selective damping."
+            )
         damp_rate = np.asarray(inter["damp_rate"], dtype=float)
         if damp_rate.shape not in ((), (3, 3)):
             raise ValueError("inter['damp_rate'] must be a scalar or a 3x3 matrix.")
@@ -295,7 +324,10 @@ def _relaxation_settings(nspins: int, chem: Chemistry, inter: dict[str, Any]) ->
     r2_rates: tuple[np.ndarray, ...] = ()
     if "t1_t2" in theories:
         if "r1_rates" not in inter or "r2_rates" not in inter:
-            raise ValueError("R1 and R2 rates must be specified in inter['r1_rates'] and inter['r2_rates'] with extended T1,T2 theory.")
+            raise ValueError(
+                "R1 and R2 rates must be specified in inter['r1_rates'] and inter['r2_rates'] "
+                "with extended T1,T2 theory."
+            )
         r1_rates = _rate_list(inter["r1_rates"], nspins, "r1_rates")
         r2_rates = _rate_list(inter["r2_rates"], nspins, "r2_rates")
 
@@ -303,7 +335,9 @@ def _relaxation_settings(nspins: int, chem: Chemistry, inter: dict[str, Any]) ->
     srfk_mdepth: tuple[tuple[float | None, ...], ...] = ()
     if "SRFK" in theories:
         if "srfk_tau_c" not in inter:
-            raise ValueError("SRFK requires modulation correlation time to be specified in inter['srfk_tau_c'] variable.")
+            raise ValueError(
+                "SRFK requires modulation correlation time to be specified in inter['srfk_tau_c'] variable."
+            )
         if "srfk_mdepth" not in inter:
             raise ValueError("SRFK requires modulation depths to be specified in inter['srfk_mdepth'] variable.")
         components = []
@@ -337,9 +371,18 @@ def _relaxation_settings(nspins: int, chem: Chemistry, inter: dict[str, Any]) ->
     elif "srsk_sources" in inter:
         raise ValueError("inter['srsk_sources'] requires SRSK relaxation theory.")
     return Relaxation(
-        theories=theories, keep=inter["rlx_keep"], equilibrium=inter["equilibrium"], dfs=dfs,
-        temperature=temperature, tau_c=tau_c, damp_rate=damp_rate, r1_rates=r1_rates, r2_rates=r2_rates,
-        srfk_tau_c=srfk_tau_c, srfk_mdepth=srfk_mdepth, srsk_sources=srsk_sources,
+        theories=theories,
+        keep=inter["rlx_keep"],
+        equilibrium=inter["equilibrium"],
+        dfs=dfs,
+        temperature=temperature,
+        tau_c=tau_c,
+        damp_rate=damp_rate,
+        r1_rates=r1_rates,
+        r2_rates=r2_rates,
+        srfk_tau_c=srfk_tau_c,
+        srfk_mdepth=srfk_mdepth,
+        srsk_sources=srsk_sources,
     )
 
 
@@ -372,7 +415,8 @@ def _chemistry(isotopes: tuple[str, ...], chem: dict[str, Any] | None) -> Chemis
         for part in parts:
             if not part or len(set(part)) != len(part) or min(part) < 0 or max(part) >= nspins:
                 raise ValueError(
-                    f"elements of inter['chem']['parts'] must be non-empty lists of unique spin indices between 0 and {nspins - 1}."
+                    "elements of inter['chem']['parts'] must be non-empty lists of unique spin indices "
+                    f"between 0 and {nspins - 1}."
                 )
         assigned = [n for part in parts for n in part]
         if len(set(assigned)) != len(assigned):
@@ -399,7 +443,9 @@ def _chemistry(isotopes: tuple[str, ...], chem: dict[str, Any] | None) -> Chemis
         if rates.ndim != 2 or rates.shape[0] != rates.shape[1]:
             raise ValueError("inter['chem']['rates'] must be a real square matrix.")
         if rates.shape[0] != len(parts):
-            raise ValueError("both dimensions of inter['chem']['rates'] must be equal to the number of chemical subsystems.")
+            raise ValueError(
+                "both dimensions of inter['chem']['rates'] must be equal to the number of chemical subsystems."
+            )
         if np.any(np.abs(rates.sum(axis=0)) > 10 * np.finfo(float).eps * np.linalg.norm(rates, 1)):
             raise ValueError("inter['chem']['rates'] violates conservation of matter: column sums must be negligible.")
         # First-order exchange moves spin states between parts, so the parts must match spin for spin
@@ -411,9 +457,7 @@ def _chemistry(isotopes: tuple[str, ...], chem: dict[str, Any] | None) -> Chemis
     return Chemistry(parts=parts, concs=concs, rates=rates)
 
 
-def _check_no_couplings_between_parts(
-    chem: Chemistry, coupling: tuple[tuple[np.ndarray | None, ...], ...]
-) -> None:
+def _check_no_couplings_between_parts(chem: Chemistry, coupling: tuple[tuple[np.ndarray | None, ...], ...]) -> None:
     for a, part_a in enumerate(chem.parts):
         for b, part_b in enumerate(chem.parts):
             if a != b and any(coupling[n][k] is not None for n in part_a for k in part_b):
@@ -423,9 +467,7 @@ def _check_no_couplings_between_parts(
 def _reject_unported(spec: dict[str, Any], supported: set[str], name: str) -> None:
     unported = set(spec) - supported
     if unported:
-        raise NotImplementedError(
-            f"{name} field(s) {sorted(unported)} not ported yet; supported: {sorted(supported)}"
-        )
+        raise NotImplementedError(f"{name} field(s) {sorted(unported)} not ported yet; supported: {sorted(supported)}")
 
 
 def _zeeman_tensors(
@@ -485,7 +527,9 @@ def _coupling_tensors(
                 for k in range(nspins):
                     value = eigs[n][k]
                     if value is not None and np.linalg.norm(np.asarray(value, dtype=float)) > tols.inter_cutoff:
-                        tensors[n][k] = tensors[n][k] + 2 * np.pi * _rotated_diagonal(value, euler[n][k], "inter['coupling']")
+                        tensors[n][k] = tensors[n][k] + 2 * np.pi * _rotated_diagonal(
+                            value, euler[n][k], "inter['coupling']"
+                        )
         if "matrix" in coupling:
             user = _check_square(coupling["matrix"], nspins, "inter['coupling']['matrix']")
             for n in range(nspins):
@@ -641,4 +685,6 @@ def dilute(spin_system: SpinSystem, isotope: str, tuples: int = 1) -> list[SpinS
     dilute_spins = [n for n, iso in enumerate(spin_system.isotopes) if iso == isotope]
     if len(dilute_spins) < tuples:
         raise ValueError(f"not enough {isotope} in the system to make the selection.")
-    return [kill_spin(spin_system, sorted(set(dilute_spins) - set(combo))) for combo in combinations(dilute_spins, tuples)]
+    return [
+        kill_spin(spin_system, sorted(set(dilute_spins) - set(combo))) for combo in combinations(dilute_spins, tuples)
+    ]

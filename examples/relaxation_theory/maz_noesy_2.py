@@ -61,14 +61,29 @@ SHIELDING = [
     [[33.2302, -4.7306, 1.2366], [-3.6419, 30.0443, -1.1180], [-0.3469, -0.7420, 26.5551]],
     [[31.4875, 0.1078, -2.9339], [0.1534, 27.9566, 0.6704], [-3.2188, 0.7748, 35.7251]],
 ]
-EXPT_SHIFT = [1.3, 1.7, 1.9, 0.0, 0.1, 1.2, 1.2, 1.2]      # isotropic components from the experiment, ppm
+EXPT_SHIFT = [1.3, 1.7, 1.9, 0.0, 0.1, 1.2, 1.2, 1.2]  # isotropic components from the experiment, ppm
 QUADRUPOLE_14N = [[-1.2932, 0.6251, 1.8700], [0.6251, 1.7170, -2.3127], [1.8700, -2.3127, -0.4238]]  # x 1e6 Hz
-SCALAR_COUPLINGS = {(0, 1): -11.6, (0, 2): 5.5, (0, 4): 7.5, (1, 4): 12.7, (2, 5): 4.5, (2, 6): 4.5, (2, 7): 4.5,
-                    (3, 0): 4.4, (3, 2): 5.2, (3, 4): 44.8}                                      # Hz, Spinach's (n,k)
+SCALAR_COUPLINGS = {
+    (0, 1): -11.6,
+    (0, 2): 5.5,
+    (0, 4): 7.5,
+    (1, 4): 12.7,
+    (2, 5): 4.5,
+    (2, 6): 4.5,
+    (2, 7): 4.5,
+    (3, 0): 4.4,
+    (3, 2): 5.2,
+    (3, 4): 44.8,
+}  # Hz, Spinach's (n,k)
 COORDINATES = [
-    [-1.812977, -1.098554, 0.444452], [-0.842255, -1.116468, -1.122812], [0.176983, -0.023347, 1.610045],
-    [-0.907675, 0.811819, -0.038237], [-0.590140, 1.188036, -0.936471], [2.093648, 0.832363, 0.088912],
-    [2.084298, -0.944150, 0.159225], [1.387021, -0.108214, -1.250363],
+    [-1.812977, -1.098554, 0.444452],
+    [-0.842255, -1.116468, -1.122812],
+    [0.176983, -0.023347, 1.610045],
+    [-0.907675, 0.811819, -0.038237],
+    [-0.590140, 1.188036, -0.936471],
+    [2.093648, 0.832363, 0.088912],
+    [2.084298, -0.944150, 0.159225],
+    [1.387021, -0.108214, -1.250363],
 ]
 
 
@@ -92,8 +107,12 @@ class Timer:
 def spin_system_inputs(gpu: bool = False) -> tuple[dict, dict, dict]:
     """The sys, inter and bas dictionaries of the Spinach script."""
     nspins = 8
-    sys_ = {"isotopes": ["1H", "1H", "1H", "14N", "1H", "1H", "1H", "1H"], "magnet": 11.75,
-            "tols": {"inter_cutoff": 2.0, "prox_cutoff": 4.0}, "disable": ["krylov"]}
+    sys_ = {
+        "isotopes": ["1H", "1H", "1H", "14N", "1H", "1H", "1H", "1H"],
+        "magnet": 11.75,
+        "tols": {"inter_cutoff": 2.0, "prox_cutoff": 4.0},
+        "disable": ["krylov"],
+    }
     if gpu:
         sys_["enable"] = ["gpu"]
 
@@ -181,13 +200,26 @@ def simulate(npoints: int = 256, zerofill: int = 1024, timer: Timer | None = Non
 
 
 def plot(spin_system, parameters, spectrum, timer: Timer | None = None):
-    """The figure of the Spinach script: plot_2d(spin_system,-real(spectrum),parameters,40,[0.025 0.50 0.025 0.50],2,256,6,'both')."""
+    """The figure of the Spinach script:
+
+    plot_2d(spin_system,-real(spectrum),parameters,40,[0.025 0.50 0.025 0.50],2,256,6,'both')
+    """
     from respinach.plotting import plot_2d
 
     timer = Timer() if timer is None else timer
     with timer("plot"):
-        return plot_2d(spin_system, -spectrum.real, parameters, 40, (0.025, 0.5, 0.025, 0.5), 2, 256, 6, "both",
-                       title="NOESY of methylaziridine with scalar relaxation, 2 s mixing")
+        return plot_2d(
+            spin_system,
+            -spectrum.real,
+            parameters,
+            40,
+            (0.025, 0.5, 0.025, 0.5),
+            2,
+            256,
+            6,
+            "both",
+            title="NOESY of methylaziridine with scalar relaxation, 2 s mixing",
+        )
 
 
 def relative_error(actual: np.ndarray, expected: np.ndarray) -> float:

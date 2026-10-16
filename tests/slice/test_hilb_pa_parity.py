@@ -119,7 +119,9 @@ def test_operators(fx, spin_system):
     for key, label in OPS.items():
         ref = fx[f"/ops/{key}"]
         for n in range(spin_system.nspins):
-            assert_matches(respinach.operator(spin_system, [label], [n]), ref[0, n], **OPERATOR_TOL, name=f"{label}({n})")
+            assert_matches(
+                respinach.operator(spin_system, [label], [n]), ref[0, n], **OPERATOR_TOL, name=f"{label}({n})"
+            )
     assert_matches(respinach.operator(spin_system, ["Lz", "L+"], [0, 1]), fx["/ops/LzLp_12"], **OPERATOR_TOL)
     assert_matches(respinach.operator(spin_system, "Lz", "1H"), fx["/ops/Lz_det"], **OPERATOR_TOL)
     assert_matches(respinach.operator(spin_system, "L+", "1H"), fx["/ops/Lp_det"], **OPERATOR_TOL)
@@ -149,8 +151,13 @@ def test_propagator(fx, case, spin_system):
 def test_evolution(fx, case, spin_system):
     pars = CASES[case]["pars"]
     fid = respinach.evolution(
-        spin_system, fx["/ham/H_off"], fx["/states/coil"], fx["/states/rho0"],
-        1 / pars["sweep"], pars["npoints"] - 1, "observable",
+        spin_system,
+        fx["/ham/H_off"],
+        fx["/states/coil"],
+        fx["/states/rho0"],
+        1 / pars["sweep"],
+        pars["npoints"] - 1,
+        "observable",
     )
     assert_matches(fid[:, None], fx["/fid/evolution"], **FID_TOL, name="fid evolution")
 

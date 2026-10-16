@@ -87,7 +87,9 @@ def _spins(spin_system: SpinSystem, spins: str | Sequence[int]) -> list[int]:
         if spins == "nuclei":
             return [n for n, iso in enumerate(isotopes) if not iso.startswith("E")]
         if spins not in isotopes:
-            raise ValueError("spins must be 'all', 'electrons', 'nuclei', an isotope present in the system, or spin numbers.")
+            raise ValueError(
+                "spins must be 'all', 'electrons', 'nuclei', an isotope present in the system, or spin numbers."
+            )
         return [n for n, iso in enumerate(isotopes) if iso == spins]
     numbers = [int(n) for n in np.atleast_1d(spins)]
     if any(n < 0 or n >= spin_system.nspins for n in numbers):
@@ -114,7 +116,9 @@ def homospoil(spin_system: SpinSystem, rho: np.ndarray, zqc_flag: str) -> np.nda
     return _apply(rho, mask)
 
 
-def decouple(spin_system: SpinSystem, L: Any, rho: np.ndarray | None, spins: Sequence[Any]) -> tuple[Any, np.ndarray | None]:
+def decouple(
+    spin_system: SpinSystem, L: Any, rho: np.ndarray | None, spins: Sequence[Any]
+) -> tuple[Any, np.ndarray | None]:
     """Analytical decoupling: freeze and depopulate ``spins`` (port of ``decouple.m``, ``sphten-liouv``).
 
     ``spins`` is a list of isotope names or 0-based spin numbers (empty:
@@ -146,7 +150,9 @@ def decouple(spin_system: SpinSystem, L: Any, rho: np.ndarray | None, spins: Seq
         keep = np.tile(~zero_mask, spc_dim).astype(float)
         projector = sps.diags_array(keep, format="csr")
         L = projector @ L @ projector
-        L = clean_up(spin_system.tols, sps.csr_array(L) if sps.issparse(L) else np.asarray(L), spin_system.tols.liouv_zero)
+        L = clean_up(
+            spin_system.tols, sps.csr_array(L) if sps.issparse(L) else np.asarray(L), spin_system.tols.liouv_zero
+        )
     if rho is not None:
         rho = np.array(rho, dtype=complex)
         spc_dim = rho.shape[0] // spn_dim

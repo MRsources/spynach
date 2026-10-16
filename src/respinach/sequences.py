@@ -53,7 +53,9 @@ def acquire(spin_system: SpinSystem, parameters: dict[str, Any], H: Matrix, R: M
         L = L + 2 * np.pi * parameters["homodec_pwr"] * oper
     if "dead_time" in parameters:
         rho0 = step(spin_system, L, rho0, parameters["dead_time"])
-    return evolution(spin_system, L, parameters["coil"], rho0, 1 / parameters["sweep"], parameters["npoints"] - 1, "observable")
+    return evolution(
+        spin_system, L, parameters["coil"], rho0, 1 / parameters["sweep"], parameters["npoints"] - 1, "observable"
+    )
 
 
 def cosy(spin_system: SpinSystem, parameters: dict[str, Any], H: Matrix, R: Matrix, K: Matrix) -> np.ndarray:
@@ -71,13 +73,19 @@ def cosy(spin_system: SpinSystem, parameters: dict[str, Any], H: Matrix, R: Matr
     coil = state(spin_system, "L+", isotope, "cheap")
     Lx = operator(spin_system, "Lx", isotope)
     rho = step(spin_system, Lx, rho, np.pi / 2)
-    rho_stack = evolution(spin_system, L, None, rho, 1 / parameters["sweep"], parameters["npoints"][0] - 1, "trajectory")
+    rho_stack = evolution(
+        spin_system, L, None, rho, 1 / parameters["sweep"], parameters["npoints"][0] - 1, "trajectory"
+    )
     rho_stack = coherence(spin_system, rho_stack.T, [(isotope, 1)]).T
     rho_stack = step(spin_system, Lx, rho_stack, parameters["angle"])
-    return evolution(spin_system, L, coil, rho_stack, 1 / parameters["sweep"], parameters["npoints"][1] - 1, "observable")
+    return evolution(
+        spin_system, L, coil, rho_stack, 1 / parameters["sweep"], parameters["npoints"][1] - 1, "observable"
+    )
 
 
-def noesy(spin_system: SpinSystem, parameters: dict[str, Any], H: Matrix, R: Matrix, K: Matrix) -> dict[str, np.ndarray]:
+def noesy(
+    spin_system: SpinSystem, parameters: dict[str, Any], H: Matrix, R: Matrix, K: Matrix
+) -> dict[str, np.ndarray]:
     """States-TPPI NOESY (port of ``noesy.m``).
 
     Parameters: ``'sweep'`` and ``'npoints'`` (two values each), ``'spins'``
@@ -135,7 +143,11 @@ def hsqc(spin_system: SpinSystem, parameters: dict[str, Any], H: Matrix, R: Matr
     f1, f2 = parameters["spins"]
     rho0 = parameters.get("rho0", state(spin_system, "Lz", f2, "cheap"))
     coil = parameters.get("coil", state(spin_system, "L+", f2, "cheap"))
-    Lx_F1, Lx_F2, Ly_F2 = operator(spin_system, "Lx", f1), operator(spin_system, "Lx", f2), operator(spin_system, "Ly", f2)
+    Lx_F1, Lx_F2, Ly_F2 = (
+        operator(spin_system, "Lx", f1),
+        operator(spin_system, "Lx", f2),
+        operator(spin_system, "Ly", f2),
+    )
 
     # INEPT: proton magnetisation to antiphase heteronuclear coherence
     rho = step(spin_system, Lx_F2, rho0, np.pi / 2)
@@ -165,7 +177,9 @@ def hsqc(spin_system: SpinSystem, parameters: dict[str, Any], H: Matrix, R: Matr
     return fids
 
 
-def _check_2d(spin_system: SpinSystem, parameters: dict[str, Any], nspins: int, sweeps: int, extra: tuple[str, ...]) -> None:
+def _check_2d(
+    spin_system: SpinSystem, parameters: dict[str, Any], nspins: int, sweeps: int, extra: tuple[str, ...]
+) -> None:
     if spin_system.basis is None or spin_system.basis.formalism != "sphten-liouv":
         raise NotImplementedError("this sequence is only available for the sphten-liouv formalism.")
     for key in ("sweep", "npoints", "spins") + extra:

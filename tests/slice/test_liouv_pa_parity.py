@@ -23,46 +23,70 @@ from respinach.oracle import assert_matches, find_case, load_fixture
 from .test_liouv_setup_parity import CHAIN_J, STYRENE
 
 NONE = {"formalism": "sphten-liouv", "approximation": "none"}
-EXCHANGE = dict(sys={"isotopes": ["1H", "1H"], "magnet": 14.1}, bas=NONE,
-                pars={"spins": ["1H"], "offset": 900, "sweep": 5000, "npoints": 512, "zerofill": 1024})
+EXCHANGE = dict(
+    sys={"isotopes": ["1H", "1H"], "magnet": 14.1},
+    bas=NONE,
+    pars={"spins": ["1H"], "offset": 900, "sweep": 5000, "npoints": 512, "zerofill": 1024},
+)
 STYRENE_PARS = {"spins": ["1H"], "offset": 1200, "sweep": 2000, "npoints": 512, "zerofill": 2048}
 
 CASES = {
     "ab": dict(
         sys={"isotopes": ["1H", "1H"], "magnet": 14.1},
         inter={"zeeman": {"scalar": [1.00, 1.20]}, "coupling": {"scalar": [[0, 12.0], [0, 0]]}},
-        bas=NONE, pars={"spins": ["1H"], "offset": 660, "sweep": 500, "npoints": 256, "zerofill": 1024},
+        bas=NONE,
+        pars={"spins": ["1H"], "offset": 660, "sweep": 500, "npoints": 256, "zerofill": 1024},
     ),
     "hd": dict(
         sys={"isotopes": ["1H", "2H"], "magnet": 14.1},
         inter={"zeeman": {"scalar": [4.50, 4.50]}, "coupling": {"scalar": [[0, 43.0], [0, 0]]}},
-        bas=NONE, pars={"spins": ["1H"], "offset": 2700, "sweep": 400, "npoints": 256, "zerofill": 1024},
+        bas=NONE,
+        pars={"spins": ["1H"], "offset": 2700, "sweep": 400, "npoints": 256, "zerofill": 1024},
     ),
     "inad_krylov": dict(
         sys={"isotopes": ["13C", "13C", "13C"], "magnet": 9.4, "tols": {"krylov_tol": 1}},
         inter={"zeeman": {"scalar": [10, 15, 20]}, "coupling": {"scalar": [[0, 55, 0], [0, 0, 0], [0, 0, 0]]}},
-        bas=NONE, pars={"spins": ["13C"], "offset": 1800, "sweep": 5000, "npoints": 256, "zerofill": 1024},
+        bas=NONE,
+        pars={"spins": ["13C"], "offset": 1800, "sweep": 5000, "npoints": 256, "zerofill": 1024},
     ),
     "hc_pt": dict(
         sys={"isotopes": ["1H", "13C"], "magnet": 14.1, "tols": {"merge_dim": 2}},
         inter={"zeeman": {"scalar": [2.00, 30.0]}, "coupling": {"scalar": [[0, 145.0], [0, 0]]}},
-        bas=NONE, pars={"spins": ["1H"], "offset": 1200, "sweep": 500, "npoints": 256, "zerofill": 1024},
+        bas=NONE,
+        pars={"spins": ["1H"], "offset": 1200, "sweep": 500, "npoints": 256, "zerofill": 1024},
     ),
-    "styrene_ik0_2": dict(sys=STYRENE["sys"], inter=STYRENE["inter"], pars=STYRENE_PARS,
-                          bas={**NONE, "approximation": "IK-0", "inter_level": 2}),
-    "styrene_ik1": dict(sys=STYRENE["sys"], inter=STYRENE["inter"], pars=STYRENE_PARS,
-                        bas={**NONE, "approximation": "IK-1", "connectivity": "scalar_couplings",
-                             "inter_level": 3, "prox_level": 1}),
+    "styrene_ik0_2": dict(
+        sys=STYRENE["sys"],
+        inter=STYRENE["inter"],
+        pars=STYRENE_PARS,
+        bas={**NONE, "approximation": "IK-0", "inter_level": 2},
+    ),
+    "styrene_ik1": dict(
+        sys=STYRENE["sys"],
+        inter=STYRENE["inter"],
+        pars=STYRENE_PARS,
+        bas={**NONE, "approximation": "IK-1", "connectivity": "scalar_couplings", "inter_level": 3, "prox_level": 1},
+    ),
     "chain12_ik2": dict(
         sys={"isotopes": ["1H"] * 12, "magnet": 14.1},
         inter={"zeeman": {"scalar": np.linspace(-4, 4, 12).tolist()}, "coupling": {"scalar": CHAIN_J.tolist()}},
         bas={**NONE, "approximation": "IK-2", "connectivity": "scalar_couplings", "prox_level": 1},
         pars={"spins": ["1H"], "offset": 0, "sweep": 8000, "npoints": 512, "zerofill": 2048},
     ),
-    "exch_sym": {**EXCHANGE, "inter": {"zeeman": {"scalar": [0.0, 3.0]}, "chem": {
-        "parts": [[0], [1]], "rates": [[-2e3, 2e3], [2e3, -2e3]], "concs": [1.0, 1.0]}}},
-    "exch_asym": {**EXCHANGE, "inter": {"zeeman": {"scalar": [0.0, 3.0]}, "chem": {
-        "parts": [[0], [1]], "rates": [[-5e2, 2e3], [5e2, -2e3]], "concs": [2e3, 5e2]}}},
+    "exch_sym": {
+        **EXCHANGE,
+        "inter": {
+            "zeeman": {"scalar": [0.0, 3.0]},
+            "chem": {"parts": [[0], [1]], "rates": [[-2e3, 2e3], [2e3, -2e3]], "concs": [1.0, 1.0]},
+        },
+    },
+    "exch_asym": {
+        **EXCHANGE,
+        "inter": {
+            "zeeman": {"scalar": [0.0, 3.0]},
+            "chem": {"parts": [[0], [1]], "rates": [[-5e2, 2e3], [5e2, -2e3]], "concs": [2e3, 5e2]},
+        },
+    },
 }
 NTRAJ = 32
 LIOUVILLIAN_TOL = dict(rtol=1e-12, atol=0)
@@ -138,7 +162,9 @@ def test_propagator_and_step(fx, case, spin_system):
     assert_matches(respinach.step(spin_system, L, rho0, 7.3 * dt), column(fx["/step/rho_long"]), **PROPAGATOR_TOL)
     stack = np.stack([rho0, 0.5 * coil], axis=1)
     ref = fx["/step/stack"]
-    assert_matches(respinach.step(spin_system, L, stack, dt), ref.toarray() if sps.issparse(ref) else ref, **PROPAGATOR_TOL)
+    assert_matches(
+        respinach.step(spin_system, L, stack, dt), ref.toarray() if sps.issparse(ref) else ref, **PROPAGATOR_TOL
+    )
 
 
 def test_reductions_keep_the_same_states(fx, spin_system):

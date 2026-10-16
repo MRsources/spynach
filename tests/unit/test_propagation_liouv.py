@@ -17,7 +17,9 @@ PARS = {"spins": ["1H"], "offset": [660.0], "sweep": 500.0, "npoints": 64}
 
 
 def system(isotopes, inter=None, sys=None, **kwargs):
-    return respinach.create({"isotopes": isotopes, "magnet": 14.1, **(sys or {})}, inter if inter is not None else kwargs)
+    return respinach.create(
+        {"isotopes": isotopes, "magnet": 14.1, **(sys or {})}, inter if inter is not None else kwargs
+    )
 
 
 def liouvillian(ss, pars=PARS):
@@ -29,7 +31,7 @@ def test_step_matches_the_exponential_propagator():
     ls = respinach.basis(system(*CASES["hd_2spin"]), LIOUV)
     L = liouvillian(ls)
     rho = respinach.state(ls, "L+", "1H") + 0.3 * respinach.state(ls, ["Lz", "T2,1"], [0, 1])
-    for dt in (1e-3, 2e-2):     # the second needs several Taylor substeps
+    for dt in (1e-3, 2e-2):  # the second needs several Taylor substeps
         P = sla.expm(-1j * dense(L) * dt)
         assert_matches(respinach.step(ls, L, rho, dt), P @ rho, rtol=1e-12, atol=0, name=f"step dt={dt}")
         stack = np.stack([rho, 2j * rho, np.roll(rho, 3)], axis=1)
@@ -47,7 +49,9 @@ def test_step_in_hilbert_space():
     rho = respinach.state(hs, "L+", "1H")
     P = sla.expm(-1j * dense(H) * 1e-3)
     assert_matches(respinach.step(hs, H, rho, 1e-3), P @ dense(rho) @ P.conj().T, rtol=1e-12, atol=0)
-    big = respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1, "tols": {"small_matrix": 2}}, CASES["ab_2spin"][1])
+    big = respinach.create(
+        {"isotopes": ["1H", "1H"], "magnet": 14.1, "tols": {"small_matrix": 2}}, CASES["ab_2spin"][1]
+    )
     hs_big = respinach.basis(big, HILB)
     assert_matches(respinach.step(hs_big, H, rho, 1e-3), P @ dense(rho) @ P.conj().T, rtol=1e-12, atol=0)
 
@@ -58,8 +62,15 @@ def test_liouville_fid_equals_hilbert_fid(case):
     ss = system(*CASES[case])
     hs, ls = respinach.basis(ss, HILB), respinach.basis(ss, LIOUV)
     dim = int(np.prod(ss.mults))
-    fid_h = respinach.evolution(hs, liouvillian(hs), respinach.state(hs, "L+", "1H"), respinach.state(hs, "L+", "1H"),
-                             1 / PARS["sweep"], PARS["npoints"] - 1, "observable")
+    fid_h = respinach.evolution(
+        hs,
+        liouvillian(hs),
+        respinach.state(hs, "L+", "1H"),
+        respinach.state(hs, "L+", "1H"),
+        1 / PARS["sweep"],
+        PARS["npoints"] - 1,
+        "observable",
+    )
     coil, rho0 = respinach.state(ls, "L+", "1H"), respinach.state(ls, "L+", "1H")
     fid_l = respinach.evolution(ls, liouvillian(ls), coil, rho0, 1 / PARS["sweep"], PARS["npoints"] - 1, "observable")
     assert fid_l.shape == (PARS["npoints"],)
@@ -86,7 +97,7 @@ def test_outputs_and_stacks_are_consistent():
     fid_stack = respinach.evolution(ls, L, coil, stack, dt, nsteps, "observable")
     assert fid_stack.shape == (nsteps + 1, 2)
     assert_matches(fid_stack[:, 0], fid, rtol=1e-11, atol=1e-14)
-    assert np.allclose(fid_stack[:, 1], 0)        # Lz never reaches L+ under a secular Hamiltonian
+    assert np.allclose(fid_stack[:, 1], 0)  # Lz never reaches L+ under a secular Hamiltonian
     final_stack = respinach.evolution(ls, L, None, stack, dt, nsteps, "final")
     assert_matches(final_stack[:, 0], final, rtol=1e-10, atol=1e-14)
     with pytest.raises(ValueError, match="stacks"):
@@ -96,9 +107,14 @@ def test_outputs_and_stacks_are_consistent():
 def test_reductions_do_not_change_the_answer():
     ss_inter = CASES["hc_2spin"][1]
     results = {}
-    for label, sys in (("default", {}), ("no zte", {"disable": ["zte"]}), ("no dss", {"disable": ["dss"]}),
-                       ("nothing", {"disable": ["trajlevel"]}), ("krylov", {"enable": ["krylov"]}),
-                       ("path tracing", {"tols": {"merge_dim": 2}})):
+    for label, sys in (
+        ("default", {}),
+        ("no zte", {"disable": ["zte"]}),
+        ("no dss", {"disable": ["dss"]}),
+        ("nothing", {"disable": ["trajlevel"]}),
+        ("krylov", {"enable": ["krylov"]}),
+        ("path tracing", {"tols": {"merge_dim": 2}}),
+    ):
         ls = respinach.basis(system(["1H", "13C"], ss_inter, sys=sys), LIOUV)
         coil = respinach.state(ls, "L+", "1H")
         results[label] = respinach.evolution(ls, liouvillian(ls), coil, coil, 1 / PARS["sweep"], 32, "observable")
@@ -136,8 +152,11 @@ def test_binpack():
 def test_two_site_exchange_matches_mcconnell():
     """Symmetric exchange of two uncoupled spins: the FID follows the 2x2 McConnell equations."""
     k, shifts = 2e3, [0.0, 3.0]
-    ss = system(["1H", "1H"], zeeman={"scalar": shifts},
-                chem={"parts": [[0], [1]], "rates": [[-k, k], [k, -k]], "concs": [1.0, 1.0]})
+    ss = system(
+        ["1H", "1H"],
+        zeeman={"scalar": shifts},
+        chem={"parts": [[0], [1]], "rates": [[-k, k], [k, -k]], "concs": [1.0, 1.0]},
+    )
     ls = respinach.basis(ss, LIOUV)
     pars = {"spins": ["1H"], "offset": [900.0], "sweep": 5000.0, "npoints": 128}
     pars["rho0"] = respinach.state(ls, "L+", "1H", "chem")

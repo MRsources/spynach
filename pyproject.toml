@@ -17,6 +17,7 @@ test = ["pytest>=8"]
 plot = ["plotly>=6"]
 compare = ["respinach[plot]", "matplotlib>=3.8"]
 docs = ["respinach[plot]", "jupyterlab>=4", "ipykernel>=6", "nbclient>=0.10", "nbformat>=5.9"]
+dev = ["respinach[test]", "ruff>=0.14"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -26,3 +27,17 @@ respinach = ["grids/*.npz"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = ["docs/notebooks"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B"]
+# E741: Spinach's own matrix names (I, Q, l) are kept where the code mirrors a Spinach function.
+# B905: zip() without strict= is the norm in this code; lengths are checked where they matter.
+ignore = ["E741", "B905"]
+
+[tool.ruff.lint.per-file-ignores]
+"comparison/report.py" = ["E501"]  # embedded CSS and HTML strings

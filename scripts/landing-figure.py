@@ -51,8 +51,8 @@ from examples.nmr_liquids.noesy_strychnine import strychnine  # noqa: E402
 from respinach.assume import assume  # noqa: E402
 from respinach.hamiltonian import hamiltonian  # noqa: E402
 
-PIXELS = 1200     # image side; rendered at about 500 CSS pixels, so this is sharp on high-density displays
-THICKEN = 1      # grow each occupied pixel by this many pixels so single-element lines stay visible
+PIXELS = 1200  # image side; rendered at about 500 CSS pixels, so this is sharp on high-density displays
+THICKEN = 1  # grow each occupied pixel by this many pixels so single-element lines stay visible
 
 
 def liouvillian() -> sps.csr_array:
@@ -95,9 +95,10 @@ def render(matrix: sps.csr_array, pixels: int = PIXELS, thicken: int = THICKEN) 
     return Image.fromarray((255 * np.clip(alpha, 0, 1)).astype(np.uint8), "L")
 
 
-def render_density(matrix: sps.csr_array, cmap: str, background: str, pixels: int = PIXELS,
-                   thicken: int = THICKEN) -> Image.Image:
-    """Opaque colour-mapped density: log of the bin count through a Matplotlib colormap, empty bins in ``background``."""
+def render_density(
+    matrix: sps.csr_array, cmap: str, background: str, pixels: int = PIXELS, thicken: int = THICKEN
+) -> Image.Image:
+    """Opaque colour-mapped density: log of the bin count through a Matplotlib colormap, ``background`` where empty."""
     counts = bin_counts(matrix, pixels)
     for shift in range(1, thicken + 1):
         for axis in (0, 1):
@@ -105,7 +106,7 @@ def render_density(matrix: sps.csr_array, cmap: str, background: str, pixels: in
                 counts = np.maximum(counts, 0.6 * np.roll(counts, direction, axis=axis))
     weight = np.log1p(counts) / np.log1p(counts.max())
     rgb = (255 * colormaps[cmap](0.12 + 0.88 * weight)[..., :3]).astype(np.uint8)
-    bg = np.array([int(background.lstrip("#")[i:i + 2], 16) for i in (0, 2, 4)], np.uint8)
+    bg = np.array([int(background.lstrip("#")[i : i + 2], 16) for i in (0, 2, 4)], np.uint8)
     rgb[counts == 0] = bg
     return Image.fromarray(rgb, "RGB")
 
@@ -124,7 +125,7 @@ def first(matrix: sps.csr_array, count: int) -> sps.csr_array:
 def tenth(matrix: sps.csr_array, start: int) -> sps.csr_array:
     """A diagonal block covering a tenth of the states, beginning at ``start``."""
     k = matrix.shape[0] // 10
-    return sps.csr_array(matrix[start:start + k, start:start + k])
+    return sps.csr_array(matrix[start : start + k, start : start + k])
 
 
 def embed(image: Image.Image, page: Path) -> int:
@@ -135,7 +136,7 @@ def embed(image: Image.Image, page: Path) -> int:
     html = page.read_text()
     pattern = re.compile(r'(<image id="hero-mask-image" [^>]*href=")[^"]*(")')
     if not pattern.search(html):
-        return 0   # the page does not currently use the mask as its hero figure
+        return 0  # the page does not currently use the mask as its hero figure
     page.write_text(pattern.sub(lambda m: m.group(1) + uri + m.group(2), html, count=1))
     return len(uri)
 
@@ -144,10 +145,20 @@ def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--cmap", default="viridis", help="Matplotlib colormap of the density images (default viridis)")
     parser.add_argument("--background", default="#15191c", help="colour of empty bins in the density images")
-    parser.add_argument("--tenth-start", type=int, nargs="*", default=[0],
-                        help="first state of each tenth-of-the-states diagonal window (default 0, the first tenth)")
-    parser.add_argument("--first", type=int, nargs="*", default=[1000],
-                        help="sizes of top-left blocks to render, in states (default 1000)")
+    parser.add_argument(
+        "--tenth-start",
+        type=int,
+        nargs="*",
+        default=[0],
+        help="first state of each tenth-of-the-states diagonal window (default 0, the first tenth)",
+    )
+    parser.add_argument(
+        "--first",
+        type=int,
+        nargs="*",
+        default=[1000],
+        help="sizes of top-left blocks to render, in states (default 1000)",
+    )
     parser.add_argument("--no-embed", action="store_true", help="do not rewrite the data URI in index.html")
     args = parser.parse_args(argv)
     assets = ROOT / "assets"
@@ -169,12 +180,16 @@ def main(argv=None) -> None:
     for start in args.tenth_start:
         blocks[f"tenth-{start}"] = tenth(L, start)
         render(blocks[f"tenth-{start}"]).save(assets / f"liouvillian-strychnine-tenth-{start}.png", optimize=True)
-        print(f"liouvillian-strychnine-tenth-{start}.png: states {start} to {start + L.shape[0] // 10 - 1}, "
-              f"{blocks[f'tenth-{start}'].nnz} nonzeros")
+        print(
+            f"liouvillian-strychnine-tenth-{start}.png: states {start} to {start + L.shape[0] // 10 - 1}, "
+            f"{blocks[f'tenth-{start}'].nnz} nonzeros"
+        )
     for count in args.first:
         blocks[f"first-{count}"] = first(L, count)
         render(blocks[f"first-{count}"]).save(assets / f"liouvillian-strychnine-first-{count}.png", optimize=True)
-        print(f"liouvillian-strychnine-first-{count}.png: first {count} states, {blocks[f'first-{count}'].nnz} nonzeros")
+        print(
+            f"liouvillian-strychnine-first-{count}.png: first {count} states, {blocks[f'first-{count}'].nnz} nonzeros"
+        )
     for suffix, matrix in [("", L)] + [(f"-{k}", m) for k, m in blocks.items()]:
         name = f"liouvillian-strychnine{suffix}-density.png"
         render_density(matrix, args.cmap, args.background).save(assets / name, optimize=True)

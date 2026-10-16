@@ -14,12 +14,19 @@ from comparison import report, run_respinach  # noqa: E402
 
 
 def test_parse_options_and_cases():
-    assert run_respinach.parse_options(["npoints=64", "name=abc", "flag=true"]) == {"npoints": 64, "name": "abc", "flag": True}
+    assert run_respinach.parse_options(["npoints=64", "name=abc", "flag=true"]) == {
+        "npoints": 64,
+        "name": "abc",
+        "flag": True,
+    }
     with pytest.raises(SystemExit):
         run_respinach.parse_options(["npoints"])
     assert "noesy_strychnine" in run_respinach.all_cases()
     assert run_respinach.run_name("c", False, None) == "c" and run_respinach.run_name("c", True, None) == "c-gpu"
-    assert run_respinach.run_name("c", True, "quick") == "c-gpu-quick" and run_respinach.run_name("c", False, "quick") == "c-quick"
+    assert (
+        run_respinach.run_name("c", True, "quick") == "c-gpu-quick"
+        and run_respinach.run_name("c", False, "quick") == "c-quick"
+    )
     assert (ROOT / "comparison/cases/noesy_strychnine/noesy_strychnine_spinach.m").exists()
 
 
@@ -79,11 +86,25 @@ def _write_side(side_dir: Path, side: str, factor: float):
         savemat(str(side_dir / "data.mat"), data, format="5")
     else:
         np.savez(side_dir / "data.npz", **data)
-    (side_dir / "timings.json").write_text(json.dumps({"stages": [{"label": "basis", "seconds": 1.0 * factor},
-                                                                    {"label": "liquid", "seconds": 2.0 * factor}], "total_s": 3.5 * factor}))
-    (side_dir / "meta.json").write_text(json.dumps({"side": side, "case": "demo", "created_utc": "2026-10-12T00:00:00Z", "options": {"n": 4}}))
-    (side_dir / "profile.json").write_text(json.dumps({"by_total": [{"function": "f", "file": "f.m", "calls": 1, "total_s": 1.0, "self_s": 0.5}],
-                                                        "by_self": [{"function": "g", "file": "g.m", "calls": 2, "total_s": 0.5, "self_s": 0.5}]}))
+    (side_dir / "timings.json").write_text(
+        json.dumps(
+            {
+                "stages": [{"label": "basis", "seconds": 1.0 * factor}, {"label": "liquid", "seconds": 2.0 * factor}],
+                "total_s": 3.5 * factor,
+            }
+        )
+    )
+    (side_dir / "meta.json").write_text(
+        json.dumps({"side": side, "case": "demo", "created_utc": "2026-10-12T00:00:00Z", "options": {"n": 4}})
+    )
+    (side_dir / "profile.json").write_text(
+        json.dumps(
+            {
+                "by_total": [{"function": "f", "file": "f.m", "calls": 1, "total_s": 1.0, "self_s": 0.5}],
+                "by_self": [{"function": "g", "file": "g.m", "calls": 2, "total_s": 0.5, "self_s": 0.5}],
+            }
+        )
+    )
     (side_dir / "console.log").write_text("ran\n")
 
 
@@ -94,7 +115,7 @@ def test_build_report_both_sides(tmp_path):
     out = report.build_report(run_dir)
     page = out.read_text()
     assert out.name == "report.html" and "both sides present" in page and "demo (CPU)" in page
-    assert "Spinach vs respinach: demo" in page and "e-10<" in page and "no figure" in page   # fid relative error 1e-10
+    assert "Spinach vs respinach: demo" in page and "e-10<" in page and "no figure" in page  # fid relative error 1e-10
     rows = report.timing_rows({s: report.load_side(run_dir, s) for s in report.SIDES})
     assert [r["label"] for r in rows] == ["basis", "liquid", "total (wall clock)"]
     assert rows[0]["respinach"] == pytest.approx(1.0 + 1e-10)
@@ -108,7 +129,9 @@ def test_build_report_one_side(tmp_path):
     assert "only in respinach" in page
     gpu_dir = tmp_path / "demo-gpu"
     _write_side(gpu_dir / "respinach", "respinach", 1.0)
-    (gpu_dir / "respinach" / "meta.json").write_text(json.dumps({"side": "respinach", "case": "demo", "gpu": True, "error": "gpu not ported"}))
+    (gpu_dir / "respinach" / "meta.json").write_text(
+        json.dumps({"side": "respinach", "case": "demo", "gpu": True, "error": "gpu not ported"})
+    )
     page = report.build_report(gpu_dir).read_text()
     assert "demo (GPU)" in page and "respinach did not run (gpu not ported)" in page
 
@@ -135,4 +158,4 @@ def test_zulf_case_and_matlab_csv_loader(tmp_path):
     assert rho.shape == (4,) and rho.dtype == complex
     np.testing.assert_allclose(rho, [1, 0, 3.0231e-06 + 1.3835e-20j, -2.6325e-08 - 1.2e-21j])
     full = example.load_matlab_csv(example.RHO_PATH)
-    assert full.shape == (4**7,) and full[0] == 1   # unit-state component of the adiabatic-drop state
+    assert full.shape == (4**7,) and full[0] == 1  # unit-state component of the adiabatic-drop state

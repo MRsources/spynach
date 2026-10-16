@@ -63,7 +63,7 @@ as `null`.
 from respinach.oracle import find_case, load_fixture, assert_matches
 
 fx = load_fixture(find_case("hilb_pa_ab_2spin"))
-H_ref = fx["/ham/H_off"]          # scipy sparse
+H_ref = fx["/ham/H_off"]  # scipy sparse
 assert_matches(my_H, H_ref, rtol=1e-12, atol=0, name="H_off")
 ```
 

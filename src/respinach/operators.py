@@ -224,18 +224,28 @@ def ist_product_table(mult: int) -> tuple[np.ndarray, np.ndarray]:
 
 
 # ist_product_table.m, spin-1/2: [n, m, k] with pages k; index order E, T(1,+1), T(1,0), T(1,-1)
-_SPIN_HALF_LEFT = np.transpose(np.array([
-    [[1.0, 0, 0, 0], [0, 0, 0, -0.5], [0, 0, 0.5, 0], [0, -0.5, 0, 0]],
-    [[0, 1.0, 0, 0], [0.5, 0, -0.5, 0], [0, 0.5, 0, 0], [0, 0, 0, 0]],
-    [[0, 0, 1.0, 0], [0, 0, 0, -0.5], [0.5, 0, 0, 0], [0, 0.5, 0, 0]],
-    [[0, 0, 0, 1.0], [0, 0, 0, 0], [0, 0, 0, -0.5], [0.5, 0, 0.5, 0]],
-]), (1, 2, 0))
-_SPIN_HALF_RIGHT = np.transpose(np.array([
-    [[1.0, 0, 0, 0], [0, 0, 0, -0.5], [0, 0, 0.5, 0], [0, -0.5, 0, 0]],
-    [[0, 1.0, 0, 0], [0.5, 0, 0.5, 0], [0, -0.5, 0, 0], [0, 0, 0, 0]],
-    [[0, 0, 1.0, 0], [0, 0, 0, 0.5], [0.5, 0, 0, 0], [0, -0.5, 0, 0]],
-    [[0, 0, 0, 1.0], [0, 0, 0, 0], [0, 0, 0, 0.5], [0.5, 0, -0.5, 0]],
-]), (1, 2, 0))
+_SPIN_HALF_LEFT = np.transpose(
+    np.array(
+        [
+            [[1.0, 0, 0, 0], [0, 0, 0, -0.5], [0, 0, 0.5, 0], [0, -0.5, 0, 0]],
+            [[0, 1.0, 0, 0], [0.5, 0, -0.5, 0], [0, 0.5, 0, 0], [0, 0, 0, 0]],
+            [[0, 0, 1.0, 0], [0, 0, 0, -0.5], [0.5, 0, 0, 0], [0, 0.5, 0, 0]],
+            [[0, 0, 0, 1.0], [0, 0, 0, 0], [0, 0, 0, -0.5], [0.5, 0, 0.5, 0]],
+        ]
+    ),
+    (1, 2, 0),
+)
+_SPIN_HALF_RIGHT = np.transpose(
+    np.array(
+        [
+            [[1.0, 0, 0, 0], [0, 0, 0, -0.5], [0, 0, 0.5, 0], [0, -0.5, 0, 0]],
+            [[0, 1.0, 0, 0], [0.5, 0, 0.5, 0], [0, -0.5, 0, 0], [0, 0, 0, 0]],
+            [[0, 0, 1.0, 0], [0, 0, 0, 0.5], [0.5, 0, 0, 0], [0, -0.5, 0, 0]],
+            [[0, 0, 0, 1.0], [0, 0, 0, 0], [0, 0, 0, 0.5], [0.5, 0, -0.5, 0]],
+        ]
+    ),
+    (1, 2, 0),
+)
 _SPIN_HALF_LEFT.flags.writeable = _SPIN_HALF_RIGHT.flags.writeable = False
 
 
@@ -259,7 +269,7 @@ def superop(spin_system: SpinSystem, opspec: np.ndarray, side: str) -> tuple[np.
     return _superop_side(spin_system, opspec, side)
 
 
-OP_CACHE_LIMIT = 1024   # entries per basis, first in first out (an entry is a few MB at 10^4 states)
+OP_CACHE_LIMIT = 1024  # entries per basis, first in first out (an entry is a few MB at 10^4 states)
 
 
 def _superop_side(
@@ -294,7 +304,7 @@ def _superop_side_build(
     ins, outs, coeffs = [], [], []
     for n in active:
         table = ist_product_table(int(spin_system.mults[n]))[0 if side == "left" else 1]
-        page = table[opspec[n]]                       # page[m, k]: input state m goes to output state k
+        page = table[opspec[n]]  # page[m, k]: input state m goes to output state k
         m, k = np.nonzero(page)
         ins.append(m)
         outs.append(k)
@@ -329,7 +339,7 @@ def _superop_side_build(
         pos[pos == sorted_hash.size] = 0
         found = sorted_hash[pos] == target
         if not found.any():
-            continue     # the output pattern is not in the restricted basis for any of these rows
+            continue  # the output pattern is not in the restricted basis for any of these rows
         rows.append(order[pos[found]])
         cols.append(src[found])
         vals.append(np.full(int(found.sum()), coeff, dtype=complex))

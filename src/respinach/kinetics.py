@@ -38,7 +38,9 @@ def kinetics(spin_system: SpinSystem) -> sps.csr_array:
         states_i = np.flatnonzero(basis[:, part_i].any(axis=1))
         states_j = np.flatnonzero(basis[:, part_j].any(axis=1))
         if not np.array_equal(basis[np.ix_(states_i, part_i)], basis[np.ix_(states_j, part_j)]):
-            raise ValueError("spin systems on either side of the reaction arrow have different topologies or basis sets.")
+            raise ValueError(
+                "spin systems on either side of the reaction arrow have different topologies or basis sets."
+            )
         rows.append(states_i)
         cols.append(states_j)
         vals.append(np.full(len(states_i), rates[i, j], dtype=complex))

@@ -135,13 +135,26 @@ def simulate(npoints: int = 512, zerofill: int = 2048, timer: Timer | None = Non
 
 
 def plot(spin_system, parameters, spectrum, timer: Timer | None = None):
-    """The figure of the Spinach script: plot_2d(spin_system,-real(spectrum),parameters,20,[0.01 0.1 0.01 0.1],2,256,6,'both')."""
+    """The figure of the Spinach script:
+
+    plot_2d(spin_system,-real(spectrum),parameters,20,[0.01 0.1 0.01 0.1],2,256,6,'both')
+    """
     from respinach.plotting import plot_2d
 
     timer = Timer() if timer is None else timer
     with timer("plot"):
-        return plot_2d(spin_system, -spectrum.real, parameters, 20, (0.01, 0.1, 0.01, 0.1), 2, 256, 6, "both",
-                       title="NOESY of strychnine, 500 ms mixing")
+        return plot_2d(
+            spin_system,
+            -spectrum.real,
+            parameters,
+            20,
+            (0.01, 0.1, 0.01, 0.1),
+            2,
+            256,
+            6,
+            "both",
+            title="NOESY of strychnine, 500 ms mixing",
+        )
 
 
 def relative_error(actual: np.ndarray, expected: np.ndarray) -> float:

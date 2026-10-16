@@ -35,3 +35,11 @@ OPENBLAS_NUM_THREADS=4 PYTHONPATH=src python -m pytest -q
 
 The `OPENBLAS_NUM_THREADS` setting matters in this container (4-CPU quota,
 12 visible cores).
+
+## Code style
+
+Run `ruff format && ruff check` (configured in `pyproject.toml`, `dev`
+extra) before every commit. Prefer Python idioms (keyword arguments,
+small functions) over one-to-one Spinach call signatures, and record each
+such deviation in `docs/coming-from-spinach.md`. Spinach's own short
+matrix names may stay in code that mirrors a Spinach function.

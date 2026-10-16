@@ -13,10 +13,10 @@ from typing import Any
 
 @dataclass(frozen=True)
 class Tolerances:
-    inter_cutoff: float = 1e-10   # interaction norm below which it is dropped (Hz)
-    liouv_zero: float = 1e-10     # rounding grid for Hamiltonian/Liouvillian elements
-    rlx_zero: float = 1e-10       # rounding grid for relaxation superoperators
-    prop_chop: float = 1e-10      # rounding grid for propagators and Taylor terms
+    inter_cutoff: float = 1e-10  # interaction norm below which it is dropped (Hz)
+    liouv_zero: float = 1e-10  # rounding grid for Hamiltonian/Liouvillian elements
+    rlx_zero: float = 1e-10  # rounding grid for relaxation superoperators
+    prop_chop: float = 1e-10  # rounding grid for propagators and Taylor terms
     subs_drop: float = 1e-10
     irrep_drop: float = 1e-10
     stst_tol: float = 1e-8
@@ -24,11 +24,11 @@ class Tolerances:
     zte_tol: float = 1e-24
     zte_maxden: float = 0.5
     prox_cutoff: float = 100
-    krylov_tol: int = 10000       # matrix dimension above which evolution() uses Krylov
+    krylov_tol: int = 10000  # matrix dimension above which evolution() uses Krylov
     basis_hush: int = 256
     merge_dim: int = 1000
-    dense_matrix: float = 0.15    # density above which sparse matrices are made full
-    small_matrix: int = 200       # dimension below which matrices are kept full
+    dense_matrix: float = 0.15  # density above which sparse matrices are made full
+    small_matrix: int = 200  # dimension below which matrices are kept full
     rlx_integration: float = 1e-4
     dP_method: str = "auxmat"
     dd_ncells: int = 2

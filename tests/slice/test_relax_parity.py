@@ -24,41 +24,75 @@ ANGLES = [0.3, 0.9, 1.2]
 CASES = {
     "noe_het": dict(
         sys={"isotopes": ["1H", "13C"], "magnet": 14.1},
-        inter={"zeeman": {"scalar": [0.0, 0.0]}, "coordinates": [[0, 0, 0], [0, 0, 1.03]],
-               "relaxation": ["redfield"], "equilibrium": "dibari", "rlx_keep": "kite", "temperature": 298,
-               "tau_c": [[100e-12]]},
+        inter={
+            "zeeman": {"scalar": [0.0, 0.0]},
+            "coordinates": [[0, 0, 0], [0, 0, 1.03]],
+            "relaxation": ["redfield"],
+            "equilibrium": "dibari",
+            "rlx_keep": "kite",
+            "temperature": 298,
+            "tau_c": [[100e-12]],
+        },
         noe={"dt": 1e-2, "nsteps": 400},
     ),
     "noe_hom": dict(
         sys={"isotopes": ["1H", "1H"], "magnet": 14.1},
-        inter={"zeeman": {"scalar": [0.0, 0.0]}, "coordinates": [[0, 0, 0], [0, 0, 2.00]],
-               "relaxation": ["redfield"], "equilibrium": "dibari", "rlx_keep": "kite", "temperature": 298,
-               "tau_c": [[1e-9]]},
+        inter={
+            "zeeman": {"scalar": [0.0, 0.0]},
+            "coordinates": [[0, 0, 0], [0, 0, 2.00]],
+            "relaxation": ["redfield"],
+            "equilibrium": "dibari",
+            "rlx_keep": "kite",
+            "temperature": 298,
+            "tau_c": [[1e-9]],
+        },
         noe={"dt": 1e-2, "nsteps": 1000},
     ),
     "csa_dd_secular": dict(
         sys={"isotopes": ["1H", "1H", "13C"], "magnet": 14.1},
-        inter={"zeeman": {"scalar": [1.0, 2.5, 50.0], "eigs": [[-3, -3, 6], [-2, 1, 1], [-60, -60, 120]],
-                          "euler": [[0, 0, 0], [0.3, 0.6, 0.9], [1.0, 0.5, 0.2]]},
-               "coordinates": [[0, 0, 0], [1.8, 0, 0], [0, 0, 1.09]],
-               "coupling": {"scalar": [[0, 0, 140], [0, 0, 0], [0, 0, 0]]},
-               "relaxation": ["redfield"], "equilibrium": "IME", "rlx_keep": "secular", "temperature": 298,
-               "tau_c": [[2e-10]]},
+        inter={
+            "zeeman": {
+                "scalar": [1.0, 2.5, 50.0],
+                "eigs": [[-3, -3, 6], [-2, 1, 1], [-60, -60, 120]],
+                "euler": [[0, 0, 0], [0.3, 0.6, 0.9], [1.0, 0.5, 0.2]],
+            },
+            "coordinates": [[0, 0, 0], [1.8, 0, 0], [0, 0, 1.09]],
+            "coupling": {"scalar": [[0, 0, 140], [0, 0, 0], [0, 0, 0]]},
+            "relaxation": ["redfield"],
+            "equilibrium": "IME",
+            "rlx_keep": "secular",
+            "temperature": 298,
+            "tau_c": [[2e-10]],
+        },
         noe={"dt": 5e-3, "nsteps": 200},
     ),
     "axial_dfs": dict(
         sys={"isotopes": ["1H", "13C"], "magnet": 14.1},
-        inter={"zeeman": {"scalar": [1.0, 50.0], "eigs": [None, [-40, -40, 80]], "euler": [None, [0.2, 0.4, 0.6]]},
-               "coordinates": [[0, 0, 0], [0, 0, 1.09]],
-               "relaxation": ["redfield"], "equilibrium": "zero", "rlx_keep": "labframe", "rlx_dfs": "keep",
-               "temperature": 298, "tau_c": [[5e-10, 1e-10]]},
+        inter={
+            "zeeman": {"scalar": [1.0, 50.0], "eigs": [None, [-40, -40, 80]], "euler": [None, [0.2, 0.4, 0.6]]},
+            "coordinates": [[0, 0, 0], [0, 0, 1.09]],
+            "relaxation": ["redfield"],
+            "equilibrium": "zero",
+            "rlx_keep": "labframe",
+            "rlx_dfs": "keep",
+            "temperature": 298,
+            "tau_c": [[5e-10, 1e-10]],
+        },
         noe={"dt": 2e-3, "nsteps": 100},
     ),
     "t1t2_damp": dict(
         sys={"isotopes": ["1H", "13C"], "magnet": 14.1},
-        inter={"zeeman": {"scalar": [1.0, 50.0]}, "coupling": {"scalar": [[0, 140], [0, 0]]},
-               "relaxation": ["t1_t2", "damp"], "equilibrium": "dibari", "rlx_keep": "diagonal", "temperature": 298,
-               "r1_rates": [1.0, 2.0], "r2_rates": [5.0, 6.0], "damp_rate": np.diag([0.3, 0.5, 0.7]).tolist()},
+        inter={
+            "zeeman": {"scalar": [1.0, 50.0]},
+            "coupling": {"scalar": [[0, 140], [0, 0]]},
+            "relaxation": ["t1_t2", "damp"],
+            "equilibrium": "dibari",
+            "rlx_keep": "diagonal",
+            "temperature": 298,
+            "r1_rates": [1.0, 2.0],
+            "r2_rates": [5.0, 6.0],
+            "damp_rate": np.diag([0.3, 0.5, 0.7]).tolist(),
+        },
         noe={"dt": 1e-2, "nsteps": 100},
     ),
 }
@@ -112,12 +146,17 @@ def test_equilibrium_and_thermalisation(fx, case, spin_system):
     assert_matches(HL, fx["/ham/HL"], rtol=1e-12, atol=0, name="HL")
     rho_eq = respinach.equilibrium(spin_system, HL)
     assert_matches(rho_eq, column(fx["/states/rho_eq"]), **STATE_TOL, name="rho_eq")
-    assert_matches(respinach.equilibrium(spin_system, HL, QL, ANGLES), column(fx["/states/rho_eq_oriented"]), **STATE_TOL)
+    assert_matches(
+        respinach.equilibrium(spin_system, HL, QL, ANGLES), column(fx["/states/rho_eq_oriented"]), **STATE_TOL
+    )
     from dataclasses import replace
+
     zero = replace(spin_system, rlx=replace(spin_system.rlx, equilibrium="zero"))
     R0 = respinach.relaxation(zero)
     assert_matches(R0, fx["/rlx/R_zero"], **R_TOL, name="R zero")
-    assert_matches(respinach.thermalize(spin_system, R0, None, None, rho_eq, "IME"), fx["/rlx/R_ime"], **R_TOL, name="IME")
+    assert_matches(
+        respinach.thermalize(spin_system, R0, None, None, rho_eq, "IME"), fx["/rlx/R_ime"], **R_TOL, name="IME"
+    )
     temperature = CASES[case]["inter"]["temperature"]
     assert_matches(respinach.thermalize(spin_system, R0, HL, temperature, None, "dibari"), fx["/rlx/R_dibari"], **R_TOL)
 

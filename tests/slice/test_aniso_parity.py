@@ -27,35 +27,56 @@ CASES = {
     "csa_pair": dict(
         sys={"isotopes": ["1H", "1H"], "magnet": 14.1},
         inter={"zeeman": {"eigs": [[-7, -7, -1], [4, 2, 9]], "euler": [[0, 0, 0], [0.3, 0.9, 1.2]]}},
-        bas={**NONE_L, "projections": [[1]]}, assumptions="nmr",
+        bas={**NONE_L, "projections": [[1]]},
+        assumptions="nmr",
         pars={"spins": ["1H"], "offset": 0, "sweep": 15000, "npoints": 128, "zerofill": 512},
     ),
     "dip_pair": dict(
         sys={"isotopes": ["1H", "1H"], "magnet": 14.1},
         inter={"zeeman": {"scalar": [5.0, -2.0]}, "coordinates": [[0, 0, 0], [0, 3.9, 0.1]]},
-        bas={**NONE_L, "projections": [[1]]}, assumptions="nmr",
+        bas={**NONE_L, "projections": [[1]]},
+        assumptions="nmr",
         pars={"spins": ["1H"], "offset": 1000, "sweep": 12000, "npoints": 128, "zerofill": 512},
     ),
     "nqi_14n": dict(
         sys={"isotopes": ["14N", "14N"], "magnet": 21.1},
-        inter={"coupling": {"matrix": [[eeqq2nqi(1.24e6, 0.22, 1, [0, 0, 0]).tolist(), None],
-                                       [None, eeqq2nqi(3.06e6, 0.40, 1, [0.2, 0.4, 0.6]).tolist()]]}},
-        bas=NONE_H, assumptions="nmr",
+        inter={
+            "coupling": {
+                "matrix": [
+                    [eeqq2nqi(1.24e6, 0.22, 1, [0, 0, 0]).tolist(), None],
+                    [None, eeqq2nqi(3.06e6, 0.40, 1, [0.2, 0.4, 0.6]).tolist()],
+                ]
+            }
+        },
+        bas=NONE_H,
+        assumptions="nmr",
         pars={"spins": ["14N"], "offset": 0, "sweep": 6e6, "npoints": 128, "zerofill": 512},
     ),
     "hc_tensors": dict(
         sys={"isotopes": ["1H", "13C"], "magnet": 14.1},
-        inter={"zeeman": {"eigs": [[1, 1, 7], [20, 60, 100]], "euler": [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]},
-               "coupling": {"eigs": [[None, [100, 120, 200]], [None, None]], "euler": [[None, [0.7, 0.8, 0.9]], [None, None]]},
-               "coordinates": [[0, 0, 0], [0, 0, 1.09]]},
-        bas=NONE_H, assumptions="nmr",
+        inter={
+            "zeeman": {"eigs": [[1, 1, 7], [20, 60, 100]], "euler": [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]},
+            "coupling": {
+                "eigs": [[None, [100, 120, 200]], [None, None]],
+                "euler": [[None, [0.7, 0.8, 0.9]], [None, None]],
+            },
+            "coordinates": [[0, 0, 0], [0, 0, 1.09]],
+        },
+        bas=NONE_H,
+        assumptions="nmr",
         pars={"spins": ["13C"], "offset": 9000, "sweep": 1e5, "npoints": 128, "zerofill": 512},
     ),
     "esr_nitroxide": dict(
         sys={"isotopes": ["E", "14N"], "magnet": 0.33},
-        inter={"zeeman": {"eigs": [[2.0089, 2.0061, 2.0027], None], "euler": [[0, 0, 0], None]},
-               "coupling": {"eigs": [[None, [16e6, 16e6, 86e6]], [None, None]], "euler": [[None, [0, 0, 0]], [None, None]]}},
-        bas=NONE_L, assumptions="esr",
+        inter={
+            "zeeman": {"eigs": [[2.0089, 2.0061, 2.0027], None], "euler": [[0, 0, 0], None]},
+            "coupling": {
+                "eigs": [[None, [16e6, 16e6, 86e6]], [None, None]],
+                "euler": [[None, [0, 0, 0]], [None, None]],
+            },
+        },
+        bas=NONE_L,
+        assumptions="esr",
         pars={"spins": ["E"], "offset": 0, "sweep": 1e9, "npoints": 128, "zerofill": 512},
     ),
 }
@@ -110,7 +131,9 @@ def test_interaction_tensors(fx, spin_system):
             else:
                 assert_matches(actual, expected, **TENSOR_TOL, name=f"coupling {n},{k}")
     prox = dense(fx["/inter/proxmatrix"]).astype(bool)
-    np.testing.assert_array_equal(spin_system.proxmatrix | np.eye(spin_system.nspins, dtype=bool), prox | np.eye(spin_system.nspins, dtype=bool))
+    np.testing.assert_array_equal(
+        spin_system.proxmatrix | np.eye(spin_system.nspins, dtype=bool), prox | np.eye(spin_system.nspins, dtype=bool)
+    )
 
 
 def test_hamiltonian_components(fx, case, spin_system):
@@ -129,14 +152,18 @@ def test_hamiltonian_components(fx, case, spin_system):
         H = (H + H.conj().T) / 2
         assert_matches(H, fx[f"/ham/H_orient_{k}"], **HAMILTONIAN_TOL, name=f"H orientation {k}")
     for rank in (1, 2, 3):
-        assert_matches(wigner(rank, 0.3, 0.9, 1.2), fx[f"/conv/wigner_{rank}"], rtol=1e-14, atol=1e-15, name=f"wigner {rank}")
+        assert_matches(
+            wigner(rank, 0.3, 0.9, 1.2), fx[f"/conv/wigner_{rank}"], rtol=1e-14, atol=1e-15, name=f"wigner {rank}"
+        )
 
 
 def test_grids_match_spinach(fx):
     for name in GRIDS:
         grid = respinach.load_grid(name)
         ref = fx[f"/grids/{name}"]
-        np.testing.assert_array_equal(np.column_stack([grid["alphas"], grid["betas"], grid["gammas"], grid["weights"]]), ref)
+        np.testing.assert_array_equal(
+            np.column_stack([grid["alphas"], grid["betas"], grid["gammas"], grid["weights"]]), ref
+        )
 
 
 def test_crystal_and_powder_fids(fx, case, spin_system):
@@ -145,9 +172,15 @@ def test_crystal_and_powder_fids(fx, case, spin_system):
     det = pars["spins"][0]
     pars["rho0"] = respinach.state(spin_system, "L+", det)
     pars["coil"] = respinach.state(spin_system, "L+", det)
-    assert_matches(column(pars["rho0"]) if pars["rho0"].ndim == 1 else pars["rho0"], fx["/states/rho0"]
-                   if pars["rho0"].ndim == 2 else column(fx["/states/rho0"]), rtol=1e-14, atol=0)
-    fid = respinach.crystal(spin_system, respinach.acquire, {**pars, "orientation": ORIENTATIONS[1]}, spec["assumptions"])
+    assert_matches(
+        column(pars["rho0"]) if pars["rho0"].ndim == 1 else pars["rho0"],
+        fx["/states/rho0"] if pars["rho0"].ndim == 2 else column(fx["/states/rho0"]),
+        rtol=1e-14,
+        atol=0,
+    )
+    fid = respinach.crystal(
+        spin_system, respinach.acquire, {**pars, "orientation": ORIENTATIONS[1]}, spec["assumptions"]
+    )
     assert_matches(fid, column(fx["/fid/crystal"]), **FID_TOL, name="crystal")
     fid = respinach.powder(spin_system, respinach.acquire, {**pars, "grid": "leb_2ang_rank_11"}, spec["assumptions"])
     assert_matches(fid, column(fx["/fid/powder_leb11"]), **FID_TOL, name="powder leb11")

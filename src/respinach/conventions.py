@@ -30,18 +30,22 @@ def mat2sphten(M: np.ndarray | None) -> tuple[float, np.ndarray, np.ndarray]:
     if M.shape != (3, 3):
         raise ValueError("the argument must be a real 3x3 matrix.")
     rank0 = np.trace(M) / 3
-    rank1 = np.array([
-        -0.5 * (M[2, 0] - M[0, 2] - 1j * (M[2, 1] - M[1, 2])),
-        (1j / np.sqrt(2)) * (M[0, 1] - M[1, 0]),
-        -0.5 * (M[2, 0] - M[0, 2] + 1j * (M[2, 1] - M[1, 2])),
-    ])
-    rank2 = np.array([
-        0.5 * (M[0, 0] - M[1, 1] - 1j * (M[0, 1] + M[1, 0])),
-        -0.5 * (M[0, 2] + M[2, 0] - 1j * (M[1, 2] + M[2, 1])),
-        (1 / np.sqrt(6)) * (2 * M[2, 2] - M[0, 0] - M[1, 1]),
-        0.5 * (M[0, 2] + M[2, 0] + 1j * (M[1, 2] + M[2, 1])),
-        0.5 * (M[0, 0] - M[1, 1] + 1j * (M[0, 1] + M[1, 0])),
-    ])
+    rank1 = np.array(
+        [
+            -0.5 * (M[2, 0] - M[0, 2] - 1j * (M[2, 1] - M[1, 2])),
+            (1j / np.sqrt(2)) * (M[0, 1] - M[1, 0]),
+            -0.5 * (M[2, 0] - M[0, 2] + 1j * (M[2, 1] - M[1, 2])),
+        ]
+    )
+    rank2 = np.array(
+        [
+            0.5 * (M[0, 0] - M[1, 1] - 1j * (M[0, 1] + M[1, 0])),
+            -0.5 * (M[0, 2] + M[2, 0] - 1j * (M[1, 2] + M[2, 1])),
+            (1 / np.sqrt(6)) * (2 * M[2, 2] - M[0, 0] - M[1, 1]),
+            0.5 * (M[0, 2] + M[2, 0] + 1j * (M[1, 2] + M[2, 1])),
+            0.5 * (M[0, 0] - M[1, 1] + 1j * (M[0, 1] + M[1, 0])),
+        ]
+    )
     return float(rank0), rank1, rank2
 
 
@@ -57,28 +61,58 @@ def wigner(rank: int, alpha: float, beta: float, gamma: float) -> np.ndarray:
         egp1, egm1 = np.exp(-1j * gamma), np.exp(1j * gamma)
         eap1, eam1 = np.exp(-1j * alpha), np.exp(1j * alpha)
         sb, cb = np.sin(beta), np.cos(beta)
-        return np.array([
-            [eap1 * egp1 * (0.5 + cb / 2), -eap1 * sb / np.sqrt(2), eap1 * egm1 * (0.5 - cb / 2)],
-            [egp1 * sb / np.sqrt(2), cb, -egm1 * sb / np.sqrt(2)],
-            [eam1 * egp1 * (0.5 - cb / 2), eam1 * sb / np.sqrt(2), eam1 * egm1 * (0.5 + cb / 2)],
-        ])
+        return np.array(
+            [
+                [eap1 * egp1 * (0.5 + cb / 2), -eap1 * sb / np.sqrt(2), eap1 * egm1 * (0.5 - cb / 2)],
+                [egp1 * sb / np.sqrt(2), cb, -egm1 * sb / np.sqrt(2)],
+                [eam1 * egp1 * (0.5 - cb / 2), eam1 * sb / np.sqrt(2), eam1 * egm1 * (0.5 + cb / 2)],
+            ]
+        )
     if rank == 2:
         egp2, egp1, egm1, egm2 = np.exp(-2j * gamma), np.exp(-1j * gamma), np.exp(1j * gamma), np.exp(2j * gamma)
         eap2, eap1, eam1, eam2 = np.exp(-2j * alpha), np.exp(-1j * alpha), np.exp(1j * alpha), np.exp(2j * alpha)
         sb, cb = np.sin(beta), np.cos(beta)
         cbh4, sbh4 = np.cos(beta / 2) ** 4, np.sin(beta / 2) ** 4
         s38, s32 = np.sqrt(3 / 8), np.sqrt(3 / 2)
-        return np.array([
-            [eap2 * cbh4 * egp2, eap2 * (-sb * (1 + cb) / 2) * egp1, eap2 * s38 * sb**2,
-             eap2 * (-sb * (1 - cb) / 2) * egm1, eap2 * sbh4 * egm2],
-            [eap1 * (sb * (cb + 1) / 2) * egp2, eap1 * (2 * cb - 1) * (1 + cb) / 2 * egp1, eap1 * (-s32 * sb * cb),
-             eap1 * (2 * cb + 1) * (1 - cb) / 2 * egm1, eap1 * (sb * (cb - 1) / 2) * egm2],
-            [s38 * sb**2 * egp2, s32 * sb * cb * egp1, (3 * cb**2 - 1) / 2, -s32 * sb * cb * egm1, s38 * sb**2 * egm2],
-            [-eam1 * (sb * (cb - 1) / 2) * egp2, eam1 * (2 * cb + 1) * (1 - cb) / 2 * egp1, eam1 * (s32 * sb * cb),
-             eam1 * (2 * cb - 1) * (1 + cb) / 2 * egm1, eam1 * (-sb * (cb + 1) / 2) * egm2],
-            [eam2 * sbh4 * egp2, eam2 * sb * (1 - cb) / 2 * egp1, eam2 * s38 * sb**2,
-             eam2 * sb * (1 + cb) / 2 * egm1, eam2 * cbh4 * egm2],
-        ])
+        return np.array(
+            [
+                [
+                    eap2 * cbh4 * egp2,
+                    eap2 * (-sb * (1 + cb) / 2) * egp1,
+                    eap2 * s38 * sb**2,
+                    eap2 * (-sb * (1 - cb) / 2) * egm1,
+                    eap2 * sbh4 * egm2,
+                ],
+                [
+                    eap1 * (sb * (cb + 1) / 2) * egp2,
+                    eap1 * (2 * cb - 1) * (1 + cb) / 2 * egp1,
+                    eap1 * (-s32 * sb * cb),
+                    eap1 * (2 * cb + 1) * (1 - cb) / 2 * egm1,
+                    eap1 * (sb * (cb - 1) / 2) * egm2,
+                ],
+                [
+                    s38 * sb**2 * egp2,
+                    s32 * sb * cb * egp1,
+                    (3 * cb**2 - 1) / 2,
+                    -s32 * sb * cb * egm1,
+                    s38 * sb**2 * egm2,
+                ],
+                [
+                    -eam1 * (sb * (cb - 1) / 2) * egp2,
+                    eam1 * (2 * cb + 1) * (1 - cb) / 2 * egp1,
+                    eam1 * (s32 * sb * cb),
+                    eam1 * (2 * cb - 1) * (1 + cb) / 2 * egm1,
+                    eam1 * (-sb * (cb + 1) / 2) * egm2,
+                ],
+                [
+                    eam2 * sbh4 * egp2,
+                    eam2 * sb * (1 - cb) / 2 * egp1,
+                    eam2 * s38 * sb**2,
+                    eam2 * sb * (1 + cb) / 2 * egm1,
+                    eam2 * cbh4 * egm2,
+                ],
+            ]
+        )
     from respinach.operators import pauli  # noqa: PLC0415  (operators imports system, which imports this module)
 
     ops = pauli(2 * rank + 1)
