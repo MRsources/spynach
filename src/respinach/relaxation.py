@@ -43,7 +43,7 @@ from respinach.operators import lin2lm
 from respinach.propagation import propagator, step
 from respinach.states import state
 from respinach.system import SpinSystem
-from respinach.utilities import Matrix, clean_up
+from respinach.utilities import Matrix, clean_up, nnz
 
 log = logging.getLogger("respinach")
 
@@ -204,7 +204,7 @@ def expmint(spin_system: SpinSystem, A: Matrix, B: Matrix, C: Matrix, T: float) 
     upper-left and ``Q`` the upper-right block.
     """
     dim = B.shape[0]
-    if T == 0 or _nnz(B) == 0:
+    if T == 0 or nnz(B) == 0:
         return sps.csr_array((dim, dim), dtype=complex)
     aux = sps.block_array([[-sps.csr_array(A), 1j * sps.csr_array(B)], [None, -sps.csr_array(C)]], format="csr")
     aux = propagator(spin_system, aux, T)
@@ -227,11 +227,11 @@ def _redfield(spin_system: SpinSystem) -> Matrix:
         size = 2 * rank + 1
         for k in range(size):
             for m in range(size):
-                if _nnz(Q_rank[k][m]) == 0:
+                if nnz(Q_rank[k][m]) == 0:
                     continue
                 for p in range(size):
                     for q in range(size):
-                        if _nnz(Q_rank[p][q]) == 0:
+                        if nnz(Q_rank[p][q]) == 0:
                             continue
                         for s, (weights, rates) in enumerate(_corrfun(spin_system, rank, k, m, p, q)):
                             mask = species_states[s]
@@ -462,10 +462,6 @@ def _diag(R: Matrix) -> np.ndarray:
 def _find(R: Matrix) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     coo = sps.coo_array(R)
     return coo.row, coo.col, coo.data
-
-
-def _nnz(X: Matrix) -> int:
-    return int(X.count_nonzero()) if sps.issparse(X) else int(np.count_nonzero(X))
 
 
 def _trace(rho: Matrix) -> complex:

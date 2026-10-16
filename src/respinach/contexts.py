@@ -24,7 +24,7 @@ from respinach.hamiltonian import frqoffset, hamiltonian, orientation
 from respinach.kinetics import kinetics
 from respinach.relaxation import equilibrium, relaxation
 from respinach.system import SpinSystem
-from respinach.utilities import Matrix, clean_up
+from respinach.utilities import Matrix, clean_up, nnz
 
 PulseSequence = Callable[[SpinSystem, dict[str, Any], Matrix, Matrix, Matrix], Any]
 
@@ -181,7 +181,7 @@ def singlerot(
                 for k in range(2 * r + 3):
                     for m in range(2 * r + 3):
                         block = Q_rank[k][m]
-                        if _nnz(block) > 0:
+                        if nnz(block) > 0:
                             H = H + D[k, m] * block
             blocks.append(sps.csr_array(H))
         G = clean_up(spin_system.tols, sps.block_diag(blocks, format="csr") + 1j * M, spin_system.tols.liouv_zero)
@@ -242,10 +242,6 @@ def fourdif(npoints: int, order: int) -> tuple[np.ndarray, np.ndarray]:
     from scipy.linalg import toeplitz
 
     return x, toeplitz(col1, row1)
-
-
-def _nnz(x: Any) -> int:
-    return int(x.count_nonzero()) if sps.issparse(x) else int(np.count_nonzero(x))
 
 
 def load_grid(name: str) -> dict[str, np.ndarray]:

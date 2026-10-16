@@ -17,7 +17,7 @@ import numpy as np
 
 from respinach.backend import get_backend
 from respinach.system import SpinSystem
-from respinach.utilities import Matrix, clean_up, dagger, hdot, matlab_round, nnz
+from respinach.utilities import Matrix, as_matrix, chop, clean_up, dagger, hdot, nnz
 
 log = logging.getLogger("respinach")
 
@@ -160,12 +160,12 @@ def _commutator_series(H: Matrix, rho: Matrix, t: float, nsteps: int) -> Matrix:
         next_term, k = rho, 1
         while nnz(next_term) > 0:
             next_term = (-1j * dt / k) * (H @ next_term - next_term @ H)
-            next_term = _chop(next_term, eps)
+            next_term = chop(next_term, eps)
             rho = _add(rho, next_term)
             k += 1
         if k > 32:
             log.warning("loss of accuracy in the commutator series, iter=%d, use evolution() here instead of step()", k)
-        rho = _chop(rho, eps)
+        rho = chop(rho, eps)
     return scaling * rho
 
 
@@ -300,14 +300,14 @@ def evolution(
         answer = np.zeros((rho.shape[0], nsteps + 1), dtype=complex)
     for P in projectors:
         P_dag = P.conj().T
-        L_loc = clean_up(tols, _as_matrix(P_dag @ L @ P), tols.liouv_zero)
-        rho_loc = _chop(P_dag @ rho, tols.zte_tol)
+        L_loc = clean_up(tols, as_matrix(P_dag @ L @ P), tols.liouv_zero)
+        rho_loc = chop(P_dag @ rho, tols.zte_tol)
         dim = L_loc.shape[0]
         krylov_path = use_krylov or (dim >= tols.krylov_tol and "krylov" not in spin_system.disable)
         # GPU: evolution.m moves P, rho_loc and coil_loc to the device for the loops below
         # and gathers the observables; the propagator itself is built as above
         if output == "observable":
-            coil_loc = _chop(P_dag @ coil, tols.zte_tol)
+            coil_loc = chop(P_dag @ coil, tols.zte_tol)
             if krylov_path:
                 answer += krylov(spin_system, L_loc, coil_loc, rho_loc, timestep, nsteps, "observable")
             else:
@@ -316,7 +316,7 @@ def evolution(
                     answer[n] += _detect(coil_loc, rho_loc)
                     rho_loc = prop @ rho_loc
         elif output == "multichannel":
-            coil_loc = _chop(P_dag @ coil, tols.zte_tol)
+            coil_loc = chop(P_dag @ coil, tols.zte_tol)
             if krylov_path:
                 answer += krylov(spin_system, L_loc, coil_loc, rho_loc, timestep, nsteps, "multichannel")
             else:
@@ -332,7 +332,7 @@ def evolution(
                 rho_loc = rho_loc.copy()
                 for n in range(1, rho_loc.shape[1]):
                     rho_loc[:, n:] = prop @ rho_loc[:, n:]
-            answer += P @ _chop(rho_loc, tols.zte_tol)
+            answer += P @ chop(rho_loc, tols.zte_tol)
         elif output == "final":
             if krylov_path:
                 rho_loc = krylov(spin_system, L_loc, None, rho_loc, timestep, nsteps, "final")
@@ -342,7 +342,7 @@ def evolution(
                 prop = propagator(spin_system, L_loc, timestep * nsteps / nsteps_opt)
                 for _ in range(nsteps_opt):
                     rho_loc = prop @ rho_loc
-            answer += P @ _chop(rho_loc, tols.zte_tol)
+            answer += P @ chop(rho_loc, tols.zte_tol)
         else:
             if krylov_path:
                 traj = krylov(spin_system, L_loc, None, rho_loc, timestep, nsteps, "trajectory")
@@ -352,9 +352,9 @@ def evolution(
                 for n in range(nsteps + 1):
                     traj[:, n] = rho_loc[:, 0]
                     rho_loc = prop @ rho_loc
-            answer += P @ _chop(traj, tols.zte_tol)
+            answer += P @ chop(traj, tols.zte_tol)
     if output in ("final", "refocus"):
-        answer = _chop(answer, tols.zte_tol)
+        answer = chop(answer, tols.zte_tol)
     if single and output in ("observable", "final", "refocus"):
         answer = answer[:, 0]
     elif single and output == "multichannel":
@@ -365,27 +365,6 @@ def evolution(
 def _detect(coil: np.ndarray, rho: np.ndarray) -> np.ndarray:
     """``coil' * rho`` for a coil column and a state stack ``(nstates, k)``, giving ``(k,)``."""
     return (coil.conj().T @ rho).reshape(-1)
-
-
-def _chop(x: Matrix, tol: float) -> Matrix:
-    """Round the elements of a vector, stack, or matrix to a grid of ``tol`` (clean_up without storage choice)."""
-    be = get_backend()
-    if be.issparse(x):
-        x = be.csr(x, copy=True)
-        x.data = tol * matlab_round(x.data / tol)
-        x.eliminate_zeros()
-        return x
-    return tol * matlab_round(be.dense(x) / tol)
-
-
-def _as_matrix(x: Matrix) -> Matrix:
-    be = get_backend()
-    return be.csr(x) if be.issparse(x) else be.dense(x)
-
-
-def _norm1(matrix: Matrix) -> float:
-    """Maximum absolute column sum (Spinach cheap_norm for non-polyadic input)."""
-    return get_backend().norm1(matrix)
 
 
 def _add(a: Matrix, b: Matrix) -> Matrix:

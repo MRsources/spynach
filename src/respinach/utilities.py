@@ -1,10 +1,16 @@
-"""Small numerical helpers shared across the kernel (ports of ``clean_up.m``, ``hdot.m``)."""
+"""Small numerical helpers shared across the kernel (ports of ``clean_up.m``, ``hdot.m``).
+
+Everything here is storage-agnostic: a ``Matrix`` is a dense ``np.ndarray`` or a
+sparse ``csr_array``, and :func:`chop`, :func:`as_matrix` and :func:`nnz` go through
+:mod:`respinach.backend` so that they work on device arrays as well.
+"""
 
 from __future__ import annotations
 
 import numpy as np
 import scipy.sparse as sps
 
+from respinach.backend import get_backend
 from respinach.tolerances import Tolerances
 
 Matrix = np.ndarray | sps.csr_array
@@ -51,6 +57,28 @@ def clean_up(tols: Tolerances, matrix: Matrix, nonzero_tol: float) -> Matrix:
     if density < tols.dense_matrix and min(matrix.shape) > tols.small_matrix:
         return sps.csr_array(matrix)
     return matrix
+
+
+def chop(x: Matrix, tol: float) -> Matrix:
+    """Round the elements of a vector, stack, or matrix to a grid of ``tol``.
+
+    :func:`clean_up` without the storage decision: sparse stays sparse (zeros
+    dropped), dense stays dense. Used on state vectors and reduced generators
+    in :mod:`respinach.propagation`.
+    """
+    be = get_backend()
+    if be.issparse(x):
+        x = be.csr(x, copy=True)
+        x.data = tol * matlab_round(x.data / tol)
+        x.eliminate_zeros()
+        return x
+    return tol * matlab_round(be.dense(x) / tol)
+
+
+def as_matrix(x: Matrix) -> Matrix:
+    """Normalise the result of mixed dense/sparse arithmetic to ``ndarray`` or ``csr_array``."""
+    be = get_backend()
+    return be.csr(x) if be.issparse(x) else be.dense(x)
 
 
 def hdot(a: Matrix, b: Matrix) -> complex:

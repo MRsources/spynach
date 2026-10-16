@@ -19,7 +19,8 @@ import numpy as np
 import scipy.sparse as sps
 from scipy.sparse.csgraph import connected_components
 
-from respinach.propagation import _norm1, step
+from respinach.backend import get_backend
+from respinach.propagation import step
 from respinach.system import SpinSystem
 from respinach.utilities import Matrix
 
@@ -79,7 +80,7 @@ def zte(spin_system: SpinSystem, L: Matrix, rho: np.ndarray) -> sps.csc_array:
     if np.sum(np.abs(rho)) < tols.zte_tol:
         log.info("state vector norm below drop tolerance, basis left unchanged.")
         return identity
-    norm = _norm1(L)
+    norm = get_backend().norm1(L)
     timestep = 1 / norm if norm > 0 else 1.0
     # GPU: the trial propagation is a handful of step() calls; L stays wherever step() puts it
     trajectory = np.zeros((dim, tols.zte_nsteps), dtype=complex)

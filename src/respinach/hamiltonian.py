@@ -24,7 +24,7 @@ import scipy.sparse as sps
 from respinach.conventions import mat2sphten, wigner
 from respinach.operators import human2opspec, operator, superop
 from respinach.system import SpinSystem
-from respinach.utilities import Matrix, clean_up
+from respinach.utilities import Matrix, as_matrix, clean_up, nnz
 
 SQRT23 = np.sqrt(2 / 3)
 SQRT18 = np.sqrt(1 / 8)
@@ -231,12 +231,12 @@ def orientation(Q: list, euler_angles: Sequence[float]) -> Matrix:
         for k in range(2 * rank + 1):
             for m in range(2 * rank + 1):
                 block = Q_rank[k][m]
-                if block is not None and _nnz(block) > 0:
+                if block is not None and nnz(block) > 0:
                     H = H + D[k, m] * block
     if isinstance(H, int):
         dim = next(b.shape[0] for Q_rank in Q for row in Q_rank for b in row if b is not None)
         return sps.csr_array((dim, dim), dtype=complex)
-    return _as_array_type((H + H.conj().T) / 2)
+    return as_matrix((H + H.conj().T) / 2)
 
 
 def frqoffset(spin_system: SpinSystem, H: Matrix, parameters: dict[str, Any]) -> Matrix:
@@ -256,7 +256,7 @@ def frqoffset(spin_system: SpinSystem, H: Matrix, parameters: dict[str, Any]) ->
     for isotope, offset in unique.items():
         if offset != 0:
             H = H + 2 * np.pi * offset * operator(spin_system, "Lz", isotope)
-    return _as_array_type(H)
+    return as_matrix(H)
 
 
 def _coupled_pairs(spin_system: SpinSystem) -> list[tuple[int, int]]:
@@ -270,14 +270,3 @@ def _coupled_pairs(spin_system: SpinSystem) -> list[tuple[int, int]]:
         and spin_system.coupling_matrix[n][k] is not None
         and np.linalg.norm(spin_system.coupling_matrix[n][k], 2) > cutoff
     ]
-
-
-def _nnz(matrix: Matrix) -> int:
-    return int(matrix.count_nonzero()) if sps.issparse(matrix) else int(np.count_nonzero(matrix))
-
-
-def _as_array_type(matrix: Any) -> Matrix:
-    """Normalise mixed dense/sparse arithmetic results to ndarray or csr_array."""
-    if sps.issparse(matrix):
-        return sps.csr_array(matrix)
-    return np.asarray(matrix)
