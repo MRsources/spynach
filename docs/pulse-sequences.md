@@ -51,10 +51,12 @@ def my_cosy(ss, parameters, H, R, K):
     coil = respinach.state(ss, "L+", "1H", "cheap")
     Lx = respinach.operator(ss, "Lx", "1H")
     rho = respinach.step(ss, Lx, rho, np.pi / 2)
-    stack = respinach.evolution(ss, L, None, rho, 1 / parameters["sweep"], parameters["npoints"][0] - 1, "trajectory")
+    stack = respinach.evolution(ss, L, rho, 1 / parameters["sweep"], parameters["npoints"][0] - 1, "trajectory")
     stack = respinach.coherence(ss, stack.T, [("1H", 1)]).T          # select the +1 pathway in t1
     stack = respinach.step(ss, Lx, stack, parameters["angle"])
-    return respinach.evolution(ss, L, coil, stack, 1 / parameters["sweep"], parameters["npoints"][1] - 1, "observable")
+    return respinach.evolution(
+        ss, L, stack, 1 / parameters["sweep"], parameters["npoints"][1] - 1, "observable", coil=coil,
+    )
 
 
 pars = {"angle": np.pi / 2, "offset": 2800.0, "sweep": 700.0, "npoints": [64, 64], "zerofill": [256, 256],
@@ -88,7 +90,10 @@ from respinach.plotting import plot_2d
 
 fid_apod = respinach.apodisation(fid, [("sqcos",), ("sqcos",)])
 cosy_spectrum = np.fft.fftshift(np.fft.fft2(fid_apod, pars["zerofill"]))
-plot_2d(derome, cosy_spectrum.real, pars, 20, (0.1, 0.5, 0.1, 0.5), 2, 256, 6, "both", title="COSY-90, Derome's three-spin system")
+plot_2d(
+    derome, cosy_spectrum.real, pars, ncont=20, delta=(0.1, 0.5, 0.1, 0.5), k=2, ncol=256, m=6, signs="both",
+    title="COSY-90, Derome's three-spin system",
+)
 ```
 
 The diagonal carries the three multiplets; the cross peaks connect the
@@ -152,7 +157,10 @@ sin = respinach.apodisation(fid_noesy["sin"], [("sqcos",), ("sqcos",)])
 f1_cos = np.real(np.fft.fftshift(np.fft.fft(cos, 256, axis=0), axes=0))
 f1_sin = np.real(np.fft.fftshift(np.fft.fft(sin, 256, axis=0), axes=0))
 noesy_spectrum = np.fft.fftshift(np.fft.fft(f1_cos - 1j * f1_sin, 256, axis=1), axes=1)
-plot_2d(pair, -noesy_spectrum.real, noesy_pars, 20, (0.05, 0.5, 0.05, 0.5), 2, 256, 6, "both", title="NOESY, 300 ms mixing")
+plot_2d(
+    pair, -noesy_spectrum.real, noesy_pars, ncont=20, delta=(0.05, 0.5, 0.05, 0.5), k=2, ncol=256, m=6, signs="both",
+    title="NOESY, 300 ms mixing",
+)
 ```
 
 The protons 2.5 Angstrom apart tumble slowly (`omega tau_c` about 7), so
@@ -183,7 +191,10 @@ for sub in respinach.dilute(sugar, "13C"):
     pos = np.fft.fftshift(np.fft.fft(respinach.apodisation(fid_hsqc["pos"], [("sqcos",), ("sqcos",)]), 256, axis=0), axes=0)
     neg = np.fft.fftshift(np.fft.fft(respinach.apodisation(fid_hsqc["neg"], [("sqcos",), ("sqcos",)]), 256, axis=0), axes=0)
     hsqc_spectrum += np.fft.fftshift(np.fft.fft(pos + np.conj(neg), 256, axis=1), axes=1)
-plot_2d(sugar, hsqc_spectrum.real, hsqc_pars, 20, (0.05, 1.0, 0.05, 1.0), 2, 256, 6, "positive", title="HSQC, two isotopomers")
+plot_2d(
+    sugar, hsqc_spectrum.real, hsqc_pars, ncont=20, delta=(0.05, 1.0, 0.05, 1.0), k=2, ncol=256, m=6,
+    signs="positive", title="HSQC, two isotopomers",
+)
 ```
 
 Two cross peaks, one per CH pair, at the carbon shift in F1 and the

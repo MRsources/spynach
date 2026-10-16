@@ -123,15 +123,15 @@ def simulate(nsteps_ex: int = 1_000_000, nsteps_eq: int = 200_000, timer: Timer 
     with timer("equilibrium"):
         rho_eq = respinach.equilibrium(spin_system, H0)
         rho_eq_ex = respinach.evolution(
-            spin_system, H + 1j * K, None, rho_eq, 1e-5, nsteps_ex, "final"
+            spin_system, H + 1j * K, rho_eq, 1e-5, nsteps_ex, "final"
         )  # 10 s of chemical equilibration
     with timer("relaxation"):
-        R = respinach.thermalize(spin_system, respinach.relaxation(spin_system), None, None, rho_eq_ex, "IME")
+        R = respinach.thermalize(spin_system, respinach.relaxation(spin_system), "IME", rho_eq=rho_eq_ex)
         L0 = H + 1j * R + 1j * K
     with timer("trajectory"):
         rho_pert = respinach.step(spin_system, Lx, rho_eq_ex, 0)  # apply perturbation
         traj_eq = respinach.evolution(
-            spin_system, L0, None, rho_pert, 1e-5, nsteps_eq, "trajectory"
+            spin_system, L0, rho_pert, 1e-5, nsteps_eq, "trajectory"
         )  # 2 s for full equilibration
 
     # Analyse the trajectory during equilibration

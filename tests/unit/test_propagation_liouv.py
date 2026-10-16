@@ -66,13 +66,21 @@ def test_liouville_fid_equals_hilbert_fid(case):
         hs,
         liouvillian(hs),
         respinach.state(hs, "L+", "1H"),
-        respinach.state(hs, "L+", "1H"),
         1 / PARS["sweep"],
         PARS["npoints"] - 1,
         "observable",
+        coil=respinach.state(hs, "L+", "1H"),
     )
     coil, rho0 = respinach.state(ls, "L+", "1H"), respinach.state(ls, "L+", "1H")
-    fid_l = respinach.evolution(ls, liouvillian(ls), coil, rho0, 1 / PARS["sweep"], PARS["npoints"] - 1, "observable")
+    fid_l = respinach.evolution(
+        ls,
+        liouvillian(ls),
+        rho0,
+        1 / PARS["sweep"],
+        PARS["npoints"] - 1,
+        "observable",
+        coil=coil,
+    )
     assert fid_l.shape == (PARS["npoints"],)
     assert_matches(dim * fid_l, fid_h, rtol=1e-9, atol=0, name="fid")
     # Same through the context, with kinetics zero
@@ -85,23 +93,23 @@ def test_outputs_and_stacks_are_consistent():
     L = liouvillian(ls)
     coil, rho0 = respinach.state(ls, "L+", "1H"), respinach.state(ls, "L+", "1H")
     dt, nsteps = 1 / PARS["sweep"], 20
-    traj = respinach.evolution(ls, L, None, rho0, dt, nsteps, "trajectory")
-    final = respinach.evolution(ls, L, None, rho0, dt, nsteps, "final")
-    fid = respinach.evolution(ls, L, coil, rho0, dt, nsteps, "observable")
+    traj = respinach.evolution(ls, L, rho0, dt, nsteps, "trajectory")
+    final = respinach.evolution(ls, L, rho0, dt, nsteps, "final")
+    fid = respinach.evolution(ls, L, rho0, dt, nsteps, "observable", coil=coil)
     assert traj.shape == (16, nsteps + 1) and final.shape == (16,)
     assert_matches(final, traj[:, -1], rtol=1e-11, atol=1e-14)
     assert_matches(fid, coil.conj() @ traj, rtol=1e-11, atol=1e-14)
     P = sla.expm(-1j * dense(L) * dt)
     assert_matches(final, np.linalg.matrix_power(P, nsteps) @ rho0, rtol=1e-10, atol=1e-14)
     stack = np.stack([rho0, respinach.state(ls, "Lz", "1H")], axis=1)
-    fid_stack = respinach.evolution(ls, L, coil, stack, dt, nsteps, "observable")
+    fid_stack = respinach.evolution(ls, L, stack, dt, nsteps, "observable", coil=coil)
     assert fid_stack.shape == (nsteps + 1, 2)
     assert_matches(fid_stack[:, 0], fid, rtol=1e-11, atol=1e-14)
     assert np.allclose(fid_stack[:, 1], 0)  # Lz never reaches L+ under a secular Hamiltonian
-    final_stack = respinach.evolution(ls, L, None, stack, dt, nsteps, "final")
+    final_stack = respinach.evolution(ls, L, stack, dt, nsteps, "final")
     assert_matches(final_stack[:, 0], final, rtol=1e-10, atol=1e-14)
     with pytest.raises(ValueError, match="stacks"):
-        respinach.evolution(ls, L, None, stack, dt, nsteps, "trajectory")
+        respinach.evolution(ls, L, stack, dt, nsteps, "trajectory")
 
 
 def test_reductions_do_not_change_the_answer():
@@ -117,7 +125,7 @@ def test_reductions_do_not_change_the_answer():
     ):
         ls = respinach.basis(system(["1H", "13C"], ss_inter, sys=sys), LIOUV)
         coil = respinach.state(ls, "L+", "1H")
-        results[label] = respinach.evolution(ls, liouvillian(ls), coil, coil, 1 / PARS["sweep"], 32, "observable")
+        results[label] = respinach.evolution(ls, liouvillian(ls), coil, 1 / PARS["sweep"], 32, "observable", coil=coil)
     for label, fid in results.items():
         assert_matches(fid, results["default"], rtol=1e-9, atol=0, name=label)
 
@@ -176,6 +184,6 @@ def test_unported_evolution_options_are_refused():
     L = liouvillian(ls)
     rho = respinach.state(ls, "L+", "1H")
     with pytest.raises(NotImplementedError, match="total"):
-        respinach.evolution(ls, L, rho, rho, 1e-3, 2, "total")
+        respinach.evolution(ls, L, rho, 1e-3, 2, "total", coil=rho)
     with pytest.raises(NotImplementedError, match="not ported"):
         respinach.create({"isotopes": ["1H"], "magnet": 14.1, "disable": ["symmetry"]}, {})

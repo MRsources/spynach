@@ -130,14 +130,23 @@ def test_plot_2d_levels_and_binning():
     z = np.zeros((2000, 1500))
     z[500, 300] = 1.0
     z[1200, 900] = -0.5
-    fig = plot_2d(ss, z, pars, 20, (0.05, 0.5, 0.05, 0.5), 2, 256, 6, "both")
+    fig = plot_2d(ss, z, pars, ncont=20, delta=(0.05, 0.5, 0.05, 0.5), k=2, ncol=256, m=6, signs="both")
     assert len(fig.data) == 2  # one trace per sign
     assert (
         fig.data[0].z.shape == (500, 500) and fig.data[0].x.size == 500 and fig.data[0].y.size == 500
     )  # 2000/4, 1500/3
     assert fig.data[0].contours.end == 19 and fig.data[1].contours.end == 19
     fig_full = plot_2d(
-        ss, z[450:550, 250:350], pars, 20, (0.05, 0.5, 0.05, 0.5), 2, 256, 6, "positive", max_points=None
+        ss,
+        z[450:550, 250:350],
+        pars,
+        ncont=20,
+        delta=(0.05, 0.5, 0.05, 0.5),
+        k=2,
+        ncol=256,
+        m=6,
+        signs="positive",
+        max_points=None,
     )
     assert len(fig_full.data) == 1 and fig_full.data[0].z.shape == (100, 100)
 

@@ -277,13 +277,13 @@ def plot_2d(
     spin_system: SpinSystem,
     spectrum: np.ndarray,
     parameters: dict[str, Any],
+    *,
     ncont: int = 20,
     delta: Sequence[float] = (0.02, 0.2, 0.02, 0.2),
     k: int = 2,
     ncol: int = 256,
     m: int = 6,
     signs: str = "both",
-    *,
     title: str | None = None,
     theme: str = "light",
     height: int = 560,
@@ -297,7 +297,8 @@ def plot_2d(
     ``ncont``, ``delta``, ``k`` and ``signs`` set the contour levels as in
     :func:`contspacing`; ``ncol`` and ``m`` (Spinach's colour map
     parameters) are accepted for compatibility and ``m`` steepens the
-    colour gradient. Both axes decrease to the right/top as in Spinach.
+    colour gradient. Spinach passes these six positionally; here they are
+    keyword-only, with Spinach's names. Both axes decrease to the right/top as in Spinach.
     Returns a ``plotly.graph_objects.Figure``.
 
     The figure embeds the matrix it draws, so a dimension longer than

@@ -182,11 +182,11 @@ def test_evolution_outputs(fx, case, spin_system):
     pars = CASES[case]["pars"]
     dt = 1 / pars["sweep"]
     L, rho0, coil = fx["/ham/L"], column(fx["/states/rho0"]), column(fx["/states/coil"])
-    fid = respinach.evolution(spin_system, L, coil, rho0, dt, pars["npoints"] - 1, "observable")
+    fid = respinach.evolution(spin_system, L, rho0, dt, pars["npoints"] - 1, "observable", coil=coil)
     assert_matches(fid, column(fx["/fid/evolution"]), **FID_TOL, name="observable")
-    final = respinach.evolution(spin_system, L, None, rho0, dt, pars["npoints"] - 1, "final")
+    final = respinach.evolution(spin_system, L, rho0, dt, pars["npoints"] - 1, "final")
     assert_matches(final, column(fx["/fid/final"]), **FID_TOL, name="final")
-    traj = respinach.evolution(spin_system, L, None, rho0, dt, NTRAJ - 1, "trajectory")
+    traj = respinach.evolution(spin_system, L, rho0, dt, NTRAJ - 1, "trajectory")
     ref = fx["/fid/trajectory"]
     assert_matches(traj, ref.toarray() if sps.issparse(ref) else ref, **FID_TOL, name="trajectory")
 

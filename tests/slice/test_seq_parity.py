@@ -68,10 +68,10 @@ def test_cosy_derome_and_processing():
     nmr = respinach.assume(ss, "nmr")
     H = respinach.frqoffset(ss, respinach.hamiltonian(nmr), pars)
     rho = respinach.state(ss, "L+", "1H")
-    stack = respinach.evolution(ss, H, None, rho, 1e-3, 7, "trajectory")
+    stack = respinach.evolution(ss, H, rho, 1e-3, 7, "trajectory")
     assert_matches(stack, dense(fx["/evo/trajectory"]), **FID_TOL, name="trajectory")
     assert_matches(
-        respinach.evolution(ss, H, None, stack, 1e-3, 0, "refocus"),
+        respinach.evolution(ss, H, stack, 1e-3, 0, "refocus"),
         dense(fx["/evo/refocus"]),
         **FID_TOL,
         name="refocus",

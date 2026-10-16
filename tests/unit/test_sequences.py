@@ -94,8 +94,8 @@ def test_refocus_and_dead_time():
     ss = system(["1H", "13C"], coupling={"scalar": [[0, 140.0], [0, 0]]})
     L = respinach.hamiltonian(respinach.assume(ss, "nmr"))
     dt = 1e-3
-    stack = respinach.evolution(ss, L, None, respinach.state(ss, "L+", "1H"), dt, 5, "trajectory")
-    refocused = respinach.evolution(ss, L, None, stack, dt, 0, "refocus")
+    stack = respinach.evolution(ss, L, respinach.state(ss, "L+", "1H"), dt, 5, "trajectory")
+    refocused = respinach.evolution(ss, L, stack, dt, 0, "refocus")
     P = respinach.propagator(ss, L, dt)
     for k in range(6):
         expected = np.linalg.matrix_power(np.asarray(P), k) @ stack[:, k]

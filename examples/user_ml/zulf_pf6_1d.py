@@ -147,10 +147,16 @@ def simulate(
         )
 
     with timer("pulse"):
-        rho_pulse = respinach.evolution(spin_system, H + spin("19F")[0] * 30e-6 * Sy, None, rho, 1e-6, 150, "final")
+        rho_pulse = respinach.evolution(spin_system, H + spin("19F")[0] * 30e-6 * Sy, rho, 1e-6, 150, "final")
     with timer("acquisition"):
         fid = respinach.evolution(
-            spin_system, H, coilPF6Z, rho_pulse, 1 / parameters["sweep"], parameters["npoints"] - 1, "observable"
+            spin_system,
+            H,
+            rho_pulse,
+            1 / parameters["sweep"],
+            parameters["npoints"] - 1,
+            "observable",
+            coil=coilPF6Z,
         )
 
     with timer("processing"):

@@ -102,7 +102,7 @@ def test_single_spin_fid_is_analytic():
     w, dt, nsteps = 2 * np.pi * 125.0, 1e-3, 64
     H = w * respinach.operator(ss, "Lz", "1H")
     rho = respinach.state(ss, "L+", "1H")
-    fid = respinach.evolution(ss, H, rho, rho, dt, nsteps, "observable")
+    fid = respinach.evolution(ss, H, rho, dt, nsteps, "observable", coil=rho)
     assert_matches(fid, np.exp(-1j * w * dt * np.arange(nsteps + 1)), rtol=1e-12, atol=0)
 
 
@@ -141,12 +141,12 @@ def test_unported_inputs_are_refused():
         respinach.basis(ss, {"formalism": "zeeman-liouv", "approximation": "none"})
     liouv = respinach.basis(ss, {"formalism": "sphten-liouv", "approximation": "none"})
     with pytest.raises(NotImplementedError, match="total"):
-        respinach.evolution(liouv, np.zeros((4, 4)), np.ones(4), np.ones(4), 1.0, 1, "total")
+        respinach.evolution(liouv, np.zeros((4, 4)), np.ones(4), 1.0, 1, "total", coil=np.ones(4))
     with pytest.raises(NotImplementedError, match="qnmr"):
         respinach.assume(ss, "qnmr")
     hs = respinach.basis(ss, HILB)
     with pytest.raises(NotImplementedError, match="final"):
-        respinach.evolution(hs, np.zeros((2, 2)), np.eye(2), np.eye(2), 1.0, 1, "final")
+        respinach.evolution(hs, np.zeros((2, 2)), np.eye(2), 1.0, 1, "final", coil=np.eye(2))
 
 
 def test_chemistry_defaults_and_exchange():

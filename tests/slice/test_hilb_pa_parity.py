@@ -153,11 +153,11 @@ def test_evolution(fx, case, spin_system):
     fid = respinach.evolution(
         spin_system,
         fx["/ham/H_off"],
-        fx["/states/coil"],
         fx["/states/rho0"],
         1 / pars["sweep"],
         pars["npoints"] - 1,
         "observable",
+        coil=fx["/states/coil"],
     )
     assert_matches(fid[:, None], fx["/fid/evolution"], **FID_TOL, name="fid evolution")
 

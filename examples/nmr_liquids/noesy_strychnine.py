@@ -147,12 +147,12 @@ def plot(spin_system, parameters, spectrum, timer: Timer | None = None):
             spin_system,
             -spectrum.real,
             parameters,
-            20,
-            (0.01, 0.1, 0.01, 0.1),
-            2,
-            256,
-            6,
-            "both",
+            ncont=20,
+            delta=(0.01, 0.1, 0.01, 0.1),
+            k=2,
+            ncol=256,
+            m=6,
+            signs="both",
             title="NOESY of strychnine, 500 ms mixing",
         )
 

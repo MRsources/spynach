@@ -172,13 +172,17 @@ def _commutator_series(H: Matrix, rho: Matrix, t: float, nsteps: int) -> Matrix:
 def krylov(
     spin_system: SpinSystem,
     L: Matrix,
-    coil: np.ndarray | None,
     rho: np.ndarray,
     timestep: float,
     nsteps: int,
     output: str,
+    *,
+    coil: np.ndarray | None = None,
 ) -> np.ndarray:
-    """Propagation by repeated :func:`step` calls, for generators too large to exponentiate (port of ``krylov.m``)."""
+    """Propagation by repeated :func:`step` calls, for generators too large to exponentiate (port of ``krylov.m``).
+
+    Same outputs as :func:`evolution`; ``coil`` is needed for ``'observable'`` and ``'multichannel'``.
+    """
     if spin_system.basis is None or spin_system.basis.formalism != "sphten-liouv":
         raise NotImplementedError("krylov() is only ported for the sphten-liouv formalism.")
     rho = get_backend().dense(rho, dtype=complex)  # GPU: krylov.m keeps L, rho and coil on the device across steps
@@ -216,14 +220,19 @@ def krylov(
 def evolution(
     spin_system: SpinSystem,
     L: Matrix,
-    coil: Matrix | None,
     rho: Matrix,
     timestep: float,
     nsteps: int,
     output: str,
+    *,
+    coil: Matrix | None = None,
     destination: np.ndarray | None = None,
 ) -> np.ndarray:
     """Time evolution under a constant generator (port of ``evolution.m``).
+
+    Spinach's ``evolution(spin_system, L, coil, rho, dt, nsteps, output, destination)``
+    with the detection state ``coil`` and the ``destination`` state as keyword
+    arguments, since most calls have neither (see ``docs/coming-from-spinach.md``).
 
     ``zeeman-hilb``: ``output='observable'`` only; returns ``hdot(coil, rho(t))``
     at ``nsteps + 1`` equally spaced time points starting at t = 0, as a 1-D
@@ -251,6 +260,8 @@ def evolution(
     if spin_system.basis.formalism == "zeeman-hilb":
         if output != "observable":
             raise NotImplementedError(f"evolution output {output!r} not ported yet in zeeman-hilb; only 'observable'.")
+        if coil is None:
+            raise ValueError("coil state must be given for the observable output.")
         if coil.shape != rho.shape:
             raise ValueError("coil and rho must have identical dimensions.")
         P = propagator(spin_system, L, timestep)
@@ -309,7 +320,7 @@ def evolution(
         if output == "observable":
             coil_loc = chop(P_dag @ coil, tols.zte_tol)
             if krylov_path:
-                answer += krylov(spin_system, L_loc, coil_loc, rho_loc, timestep, nsteps, "observable")
+                answer += krylov(spin_system, L_loc, rho_loc, timestep, nsteps, "observable", coil=coil_loc)
             else:
                 prop = propagator(spin_system, L_loc, timestep)
                 for n in range(nsteps + 1):
@@ -318,7 +329,7 @@ def evolution(
         elif output == "multichannel":
             coil_loc = chop(P_dag @ coil, tols.zte_tol)
             if krylov_path:
-                answer += krylov(spin_system, L_loc, coil_loc, rho_loc, timestep, nsteps, "multichannel")
+                answer += krylov(spin_system, L_loc, rho_loc, timestep, nsteps, "multichannel", coil=coil_loc)
             else:
                 prop = propagator(spin_system, L_loc, timestep)
                 for n in range(nsteps + 1):
@@ -326,7 +337,7 @@ def evolution(
                     rho_loc = prop @ rho_loc
         elif output == "refocus":
             if krylov_path:
-                rho_loc = krylov(spin_system, L_loc, None, rho_loc, timestep, nsteps, "refocus")
+                rho_loc = krylov(spin_system, L_loc, rho_loc, timestep, nsteps, "refocus")
             else:
                 prop = propagator(spin_system, L_loc, timestep)
                 rho_loc = rho_loc.copy()
@@ -335,7 +346,7 @@ def evolution(
             answer += P @ chop(rho_loc, tols.zte_tol)
         elif output == "final":
             if krylov_path:
-                rho_loc = krylov(spin_system, L_loc, None, rho_loc, timestep, nsteps, "final")
+                rho_loc = krylov(spin_system, L_loc, rho_loc, timestep, nsteps, "final")
             else:
                 # Optimal stepping: fewer, longer steps when the propagator is cheap relative to the stack
                 nsteps_opt = max(1, math.ceil(math.log2(dim / (rho_loc.shape[1] * math.log(2)))))
@@ -345,7 +356,7 @@ def evolution(
             answer += P @ chop(rho_loc, tols.zte_tol)
         else:
             if krylov_path:
-                traj = krylov(spin_system, L_loc, None, rho_loc, timestep, nsteps, "trajectory")
+                traj = krylov(spin_system, L_loc, rho_loc, timestep, nsteps, "trajectory")
             else:
                 prop = propagator(spin_system, L_loc, timestep)
                 traj = np.zeros((dim, nsteps + 1), dtype=complex)

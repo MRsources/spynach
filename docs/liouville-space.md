@@ -385,8 +385,9 @@ rho_dt = respinach.step(hc_nmr, L, rho, dt)
 assert np.allclose(rho_dt, sla.expm(-1j * np.asarray(L) * dt) @ rho, rtol=1e-12)
 ```
 
-`evolution(ss, L, coil, rho, dt, nsteps, output)` runs a whole free
-evolution period. Before propagating, it reduces the problem exactly for
+`evolution(ss, L, rho, dt, nsteps, output, coil=...)` runs a whole free
+evolution period (the detection state `coil` is a keyword argument, needed
+only by the `'observable'` and `'multichannel'` outputs). Before propagating, it reduces the problem exactly for
 the trajectory at hand (`respinach.reduce`):
 
 - **destination state screening** (Krzystyniak et al. 2011): for the
@@ -409,11 +410,11 @@ none of them changes the answer:
 
 ```python
 coil = respinach.state(hc_nmr, "L+", "1H")
-fid = respinach.evolution(hc_nmr, L, coil, rho, 1 / 500, 63, "observable")
+fid = respinach.evolution(hc_nmr, L, rho, 1 / 500, 63, "observable", coil=coil)
 hc_plain = respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1, "disable": ["trajlevel"]},
                          {"zeeman": {"scalar": [2.0, 30.0]}, "coupling": {"scalar": [[0, 145.0], [0, 0]]}})
 hc_plain = respinach.assume(respinach.basis(hc_plain, {"formalism": "sphten-liouv", "approximation": "none"}), "nmr")
-fid_plain = respinach.evolution(hc_plain, L, coil, rho, 1 / 500, 63, "observable")
+fid_plain = respinach.evolution(hc_plain, L, rho, 1 / 500, 63, "observable", coil=coil)
 assert np.allclose(fid, fid_plain, rtol=1e-9)
 projectors = respinach.reduce(hc_nmr, L.conj().T, coil)
 assert sum(p.shape[1] for p in projectors) == 2     # L+(H) and L+(H)Lz(C) are all that reaches the coil
@@ -430,7 +431,7 @@ each, a Liouville-space observable is the Hilbert-space one divided by
 hc_hilb_nmr = respinach.assume(respinach.basis(hc, {"formalism": "zeeman-hilb", "approximation": "none"}), "nmr")
 L_hilb = respinach.frqoffset(hc_hilb_nmr, respinach.hamiltonian(hc_hilb_nmr), {"spins": ["1H"], "offset": [1200.0]})
 rho_hilb = respinach.state(hc_hilb_nmr, "L+", "1H")
-fid_hilb = respinach.evolution(hc_hilb_nmr, L_hilb, rho_hilb, rho_hilb, 1 / 500, 63, "observable")
+fid_hilb = respinach.evolution(hc_hilb_nmr, L_hilb, rho_hilb, 1 / 500, 63, "observable", coil=rho_hilb)
 assert np.allclose(4 * fid, fid_hilb, rtol=1e-9)
 ```
 
@@ -444,7 +445,7 @@ time axis. `stateinfo(ss, rho, n)` lists the `n` largest coefficients of
 a state with the `(l, m)` of every spin, as Spinach reports them:
 
 ```python
-traj = respinach.evolution(hc_nmr, L, None, rho, 1 / 500, 63, "trajectory")
+traj = respinach.evolution(hc_nmr, L, rho, 1 / 500, 63, "trajectory")
 amplitudes, labels = respinach.trajan(hc_nmr, traj, "coherence_order")
 assert labels == ["-2", "-1", "0", "+1", "+2"] and amplitudes.shape == (5, 64)
 assert np.allclose(amplitudes[3, 0], np.linalg.norm(rho[1:]))          # L+(H) starts as pure +1 coherence

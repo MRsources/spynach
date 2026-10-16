@@ -54,7 +54,13 @@ def acquire(spin_system: SpinSystem, parameters: dict[str, Any], H: Matrix, R: M
     if "dead_time" in parameters:
         rho0 = step(spin_system, L, rho0, parameters["dead_time"])
     return evolution(
-        spin_system, L, parameters["coil"], rho0, 1 / parameters["sweep"], parameters["npoints"] - 1, "observable"
+        spin_system,
+        L,
+        rho0,
+        1 / parameters["sweep"],
+        parameters["npoints"] - 1,
+        "observable",
+        coil=parameters["coil"],
     )
 
 
@@ -73,13 +79,17 @@ def cosy(spin_system: SpinSystem, parameters: dict[str, Any], H: Matrix, R: Matr
     coil = state(spin_system, "L+", isotope, "cheap")
     Lx = operator(spin_system, "Lx", isotope)
     rho = step(spin_system, Lx, rho, np.pi / 2)
-    rho_stack = evolution(
-        spin_system, L, None, rho, 1 / parameters["sweep"], parameters["npoints"][0] - 1, "trajectory"
-    )
+    rho_stack = evolution(spin_system, L, rho, 1 / parameters["sweep"], parameters["npoints"][0] - 1, "trajectory")
     rho_stack = coherence(spin_system, rho_stack.T, [(isotope, 1)]).T
     rho_stack = step(spin_system, Lx, rho_stack, parameters["angle"])
     return evolution(
-        spin_system, L, coil, rho_stack, 1 / parameters["sweep"], parameters["npoints"][1] - 1, "observable"
+        spin_system,
+        L,
+        rho_stack,
+        1 / parameters["sweep"],
+        parameters["npoints"][1] - 1,
+        "observable",
+        coil=coil,
     )
 
 
@@ -109,15 +119,25 @@ def noesy(
     second = ((Lx, np.pi / 2), (Ly, np.pi / 2), (Lx, -np.pi / 2), (Ly, -np.pi / 2))
     fids = []
     for op2, angle2 in second:
-        rho_stack = evolution(spin_system, L, None, rho, timestep[0], parameters["npoints"][0] - 1, "trajectory")
+        rho_stack = evolution(spin_system, L, rho, timestep[0], parameters["npoints"][0] - 1, "trajectory")
         rho_stack = step(spin_system, op2, rho_stack, angle2)
         if oldschool:
-            rho_stack = evolution(spin_system, L, None, rho_stack, parameters["tmix"], 1, "final")
+            rho_stack = evolution(spin_system, L, rho_stack, parameters["tmix"], 1, "final")
         else:
             rho_stack = homospoil(spin_system, rho_stack.T, "destroy").T
-            rho_stack = evolution(spin_system, 1j * R + 1j * K, None, rho_stack, parameters["tmix"], 1, "final")
+            rho_stack = evolution(spin_system, 1j * R + 1j * K, rho_stack, parameters["tmix"], 1, "final")
         rho_stack = step(spin_system, Ly, rho_stack, np.pi / 2)
-        fids.append(evolution(spin_system, L, coil, rho_stack, timestep[1], parameters["npoints"][1] - 1, "observable"))
+        fids.append(
+            evolution(
+                spin_system,
+                L,
+                rho_stack,
+                timestep[1],
+                parameters["npoints"][1] - 1,
+                "observable",
+                coil=coil,
+            )
+        )
     return {"cos": fids[0] - fids[2], "sin": fids[1] - fids[3]}
 
 
@@ -151,29 +171,37 @@ def hsqc(spin_system: SpinSystem, parameters: dict[str, Any], H: Matrix, R: Matr
 
     # INEPT: proton magnetisation to antiphase heteronuclear coherence
     rho = step(spin_system, Lx_F2, rho0, np.pi / 2)
-    rho = evolution(spin_system, L, None, rho, delta / 2, 1, "final")
+    rho = evolution(spin_system, L, rho, delta / 2, 1, "final")
     rho = step(spin_system, Lx_F2 + Lx_F1, rho, np.pi)
-    rho = evolution(spin_system, L, None, rho, delta / 2, 1, "final")
+    rho = evolution(spin_system, L, rho, delta / 2, 1, "final")
     rho = step(spin_system, Ly_F2, rho, np.pi / 2)
     rho = step(spin_system, Lx_F1, rho, np.pi / 2) - step(spin_system, Lx_F1, rho, -np.pi / 2)
 
     # Indirect dimension with a refocusing pulse on the decoupled channels in the middle
-    rho_stack = evolution(spin_system, L, None, rho, timestep[0] / 2, parameters["npoints"][0] - 1, "trajectory")
+    rho_stack = evolution(spin_system, L, rho, timestep[0] / 2, parameters["npoints"][0] - 1, "trajectory")
     for isotope in parameters["decouple_f1"]:
         Lp = operator(spin_system, "L+", isotope)
         rho_stack = step(spin_system, (Lp + Lp.conj().T) / 2, rho_stack, np.pi)
-    rho_stack = evolution(spin_system, L, None, rho_stack, timestep[0] / 2, parameters["npoints"][0] - 1, "refocus")
+    rho_stack = evolution(spin_system, L, rho_stack, timestep[0] / 2, parameters["npoints"][0] - 1, "refocus")
 
     # Echo and antiecho coherence pathways, back transfer, decoupled acquisition
     fids = {}
     for key, order in (("pos", 1), ("neg", -1)):
         stack = coherence(spin_system, rho_stack.T, [(f2, 0), (f1, order)]).T
         stack = step(spin_system, Lx_F1 + Lx_F2, stack, np.pi / 2)
-        stack = evolution(spin_system, L, None, stack, delta / 2, 1, "final")
+        stack = evolution(spin_system, L, stack, delta / 2, 1, "final")
         stack = step(spin_system, Lx_F1 + Lx_F2, stack, np.pi)
-        stack = evolution(spin_system, L, None, stack, delta / 2, 1, "final")
+        stack = evolution(spin_system, L, stack, delta / 2, 1, "final")
         L_dec, stack = decouple(spin_system, L, stack, parameters["decouple_f2"])
-        fids[key] = evolution(spin_system, L_dec, coil, stack, timestep[1], parameters["npoints"][1] - 1, "observable")
+        fids[key] = evolution(
+            spin_system,
+            L_dec,
+            stack,
+            timestep[1],
+            parameters["npoints"][1] - 1,
+            "observable",
+            coil=coil,
+        )
     return fids
 
 

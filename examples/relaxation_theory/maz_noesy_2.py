@@ -212,12 +212,12 @@ def plot(spin_system, parameters, spectrum, timer: Timer | None = None):
             spin_system,
             -spectrum.real,
             parameters,
-            40,
-            (0.025, 0.5, 0.025, 0.5),
-            2,
-            256,
-            6,
-            "both",
+            ncont=40,
+            delta=(0.025, 0.5, 0.025, 0.5),
+            k=2,
+            ncol=256,
+            m=6,
+            signs="both",
             title="NOESY of methylaziridine with scalar relaxation, 2 s mixing",
         )
 

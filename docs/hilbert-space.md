@@ -291,7 +291,7 @@ assert np.allclose(P @ P.conj().T, np.eye(4))
 
 rho0 = respinach.state(ss, "L+", "1H")
 coil = respinach.state(ss, "L+", "1H")
-fid_hc = respinach.evolution(ss, H_off, coil, rho0, dt, 1023, "observable")
+fid_hc = respinach.evolution(ss, H_off, rho0, dt, 1023, "observable", coil=coil)
 assert fid_hc.shape == (1024,)                 # nsteps + 1 points, from t = 0
 assert np.isclose(fid_hc[0], respinach.hdot(coil, rho0))
 ```
@@ -337,8 +337,8 @@ def pulse_acquire(spin_system, parameters, H, R, K):
     pulse = respinach.propagator(spin_system, Ly, np.pi / 2)   # rotation angle as "time"
     rho = pulse @ parameters["rho0"] @ pulse.conj().T
     return respinach.evolution(
-        spin_system, L, parameters["coil"], rho,
-        1 / parameters["sweep"], parameters["npoints"] - 1, "observable",
+        spin_system, L, rho, 1 / parameters["sweep"], parameters["npoints"] - 1, "observable",
+        coil=parameters["coil"],
     )
 
 pars = {"spins": ["1H"], "offset": 1200, "sweep": 500, "npoints": 1024,

@@ -105,11 +105,17 @@ def relaxation(spin_system: SpinSystem, euler_angles: Sequence[float] | None = N
         if formalism != "sphten-liouv":
             raise NotImplementedError("IME thermalisation is only available in Liouville space.")
         H_left = _lab_frame_left(spin_system, euler_angles)
-        R = thermalize(spin_system, R, None, None, equilibrium(spin_system, H_left), "IME")
+        R = thermalize(spin_system, R, "IME", rho_eq=equilibrium(spin_system, H_left))
     elif rlx.equilibrium == "dibari":
         if rlx.temperature == 0:
             raise ValueError("DiBari-Levitt thermalization cannot be used with the high-temperature approximation.")
-        R = thermalize(spin_system, R, _lab_frame_left(spin_system, euler_angles), rlx.temperature, None, "dibari")
+        R = thermalize(
+            spin_system,
+            R,
+            "dibari",
+            H_left=_lab_frame_left(spin_system, euler_angles),
+            temperature=rlx.temperature,
+        )
     return _complex(clean_up(spin_system.tols, R, spin_system.tols.rlx_zero))
 
 
@@ -161,15 +167,23 @@ def equilibrium(
 
 
 def thermalize(
-    spin_system: SpinSystem, R: Matrix, HLSPS: Matrix | None, T: float | None, rho_eq: np.ndarray | None, method: str
+    spin_system: SpinSystem,
+    R: Matrix,
+    method: str,
+    *,
+    rho_eq: np.ndarray | None = None,
+    H_left: Matrix | None = None,
+    temperature: float | None = None,
 ) -> Matrix:
-    """Make ``rho_eq`` the stationary state of ``R`` (port of ``thermalize.m``).
+    """Make the thermal equilibrium the stationary state of ``R`` (port of ``thermalize.m``).
 
-    ``'IME'`` (inhomogeneous master equation): ``R -> R - (R rho_eq) u^T``
-    with ``u`` the unit state, so that ``R rho_eq = 0``. ``'dibari'``
-    (DiBari-Levitt): ``R -> R expm(-H beta)`` with ``H`` the left-side
-    product superoperator of the lab-frame Hamiltonian ``HLSPS`` and
-    ``beta = hbar / (k T)``.
+    ``method='IME'`` (inhomogeneous master equation) needs ``rho_eq``:
+    ``R -> R - (R rho_eq) u^T`` with ``u`` the unit state, so that
+    ``R rho_eq = 0``. ``method='dibari'`` (DiBari-Levitt) needs ``H_left``,
+    the left-side product superoperator of the lab-frame Hamiltonian
+    (Spinach's ``HLSPS``), and the ``temperature`` in K:
+    ``R -> R expm(-H_left beta)`` with ``beta = hbar / (k T)``. Spinach's
+    signature is ``thermalize(spin_system, R, HLSPS, T, rho_eq, method)``.
     """
     if spin_system.basis is None or spin_system.basis.formalism != "sphten-liouv":
         raise NotImplementedError("thermalize() is only ported for the sphten-liouv formalism.")
@@ -182,17 +196,17 @@ def thermalize(
         raise ValueError("R appears to be thermalized already.")
     if method == "IME":
         if rho_eq is None:
-            raise ValueError("rho_eq cannot be empty for IME formalism.")
+            raise ValueError("rho_eq must be given for the IME method.")
         drive = np.asarray(R @ np.asarray(rho_eq, dtype=complex)).reshape(-1)
         correction = sps.csr_array((drive, (np.arange(dim), np.zeros(dim, dtype=int))), shape=(dim, dim))
         return R - correction
     if method == "dibari":
-        if HLSPS is None or T is None:
-            raise ValueError("HLSPS and T cannot be empty for DiBari-Levitt formalism.")
-        if np.abs(HLSPS @ unit).sum() < 1e-8:
-            raise ValueError("HLSPS appears to be a commutation superoperator.")
-        beta = spin_system.tols.hbar / (spin_system.tols.kbol * T)
-        return R @ propagator(spin_system, HLSPS, 1j * beta)
+        if H_left is None or temperature is None:
+            raise ValueError("H_left and temperature must be given for the DiBari-Levitt method.")
+        if np.abs(H_left @ unit).sum() < 1e-8:
+            raise ValueError("H_left appears to be a commutation superoperator.")
+        beta = spin_system.tols.hbar / (spin_system.tols.kbol * temperature)
+        return R @ propagator(spin_system, H_left, 1j * beta)
     raise ValueError("method must be 'IME' or 'dibari'.")
 
 

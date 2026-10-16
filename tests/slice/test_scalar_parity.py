@@ -150,6 +150,6 @@ def test_equilibrium_and_transient_noe(fx, case, spin_system):
     rho = rho_eq - 2 * Lz1 * np.vdot(Lz1, rho_eq) / np.vdot(Lz1, Lz1).real
     assert_matches(rho, column(fx["/states/rho_inverted"]), **STATE_TOL, name="rho inverted")
     coil = np.stack([respinach.state(spin_system, ["Lz"], [k]) for k in range(spin_system.nspins)], axis=1)
-    answer = respinach.evolution(spin_system, 1j * R, coil, rho, noe["dt"], noe["nsteps"], "multichannel")
+    answer = respinach.evolution(spin_system, 1j * R, rho, noe["dt"], noe["nsteps"], "multichannel", coil=coil)
     ref = dense(fx["/noe/multichannel"])
     assert_matches(answer, ref.reshape(answer.shape), **STATE_TOL, name="NOE")

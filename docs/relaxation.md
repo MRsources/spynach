@@ -250,7 +250,9 @@ assert rho_eq[0] == 1
 zero = pair("kite")
 R0 = respinach.relaxation(zero)
 HL = respinach.hamiltonian(respinach.assume(zero, "labframe"), "left")
-for R_th in (respinach.thermalize(zero, R0, None, None, rho_eq, "IME"), respinach.thermalize(zero, R0, HL, 298.0, None, "dibari")):
+R_ime = respinach.thermalize(zero, R0, "IME", rho_eq=rho_eq)
+R_dibari = respinach.thermalize(zero, R0, "dibari", H_left=HL, temperature=298.0)
+for R_th in (R_ime, R_dibari):
     assert np.linalg.norm(dense(R_th) @ rho_eq) < 1e-9       # rho_eq is stationary
 ```
 
@@ -266,7 +268,7 @@ Lz1, Lz2 = respinach.state(hc, ["Lz"], [0]), respinach.state(hc, ["Lz"], [1])
 rho = rho_eq - 2 * Lz1 * np.vdot(Lz1, rho_eq) / np.vdot(Lz1, Lz1).real   # proton inverted
 coils = np.stack([Lz1, Lz2], axis=1)
 dt, nsteps = 1e-2, 400
-noe = respinach.evolution(hc, 1j * R, coils, rho, dt, nsteps, "multichannel").real
+noe = respinach.evolution(hc, 1j * R, rho, dt, nsteps, "multichannel", coil=coils).real
 assert noe.shape == (2, nsteps + 1)
 ```
 

@@ -154,12 +154,12 @@ def test_equilibrium_and_thermalisation():
     np.testing.assert_allclose(rho_h, sla.expm(-beta * H_lab) / np.trace(sla.expm(-beta * H_lab)), rtol=0, atol=1e-10)
     # Both thermalisation methods make rho_eq stationary (fundamentals/state_tests/thermal_equilibrium_4.m)
     R = respinach.relaxation(ls)
-    HLSPS = respinach.hamiltonian(respinach.assume(ls, "labframe"), "left")
-    for method, args in (("dibari", (HLSPS, 40.0, None)), ("IME", (None, None, rho_eq))):
-        Rt = respinach.thermalize(ls, R, *args, method)
+    H_left = respinach.hamiltonian(respinach.assume(ls, "labframe"), "left")
+    for method, kwargs in (("dibari", {"H_left": H_left, "temperature": 40.0}), ("IME", {"rho_eq": rho_eq})):
+        Rt = respinach.thermalize(ls, R, method, **kwargs)
         assert np.linalg.norm(dense(Rt) @ rho_eq) < 1e-9, method
     with pytest.raises(ValueError, match="thermalized already"):
-        respinach.thermalize(ls, respinach.thermalize(ls, R, None, None, rho_eq, "IME"), None, None, rho_eq, "IME")
+        respinach.thermalize(ls, respinach.thermalize(ls, R, "IME", rho_eq=rho_eq), "IME", rho_eq=rho_eq)
 
 
 def test_transient_noe_follows_the_solomon_equations():
@@ -172,7 +172,7 @@ def test_transient_noe_follows_the_solomon_equations():
     rho = rho_eq - 2 * Lz1 * np.vdot(Lz1, rho_eq) / np.vdot(Lz1, Lz1).real
     coil = np.stack([Lz1, Lz2], axis=1)
     dt, nsteps = 1e-2, 400
-    answer = respinach.evolution(ls, 1j * R, coil, rho, dt, nsteps, "multichannel")
+    answer = respinach.evolution(ls, 1j * R, rho, dt, nsteps, "multichannel", coil=coil)
     assert answer.shape == (2, nsteps + 1)
     # Solomon equations for the deviations from equilibrium
     ref = solomon(ls, r, tau_c)

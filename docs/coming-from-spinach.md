@@ -158,6 +158,29 @@ elementwise = Lp * Lm                    # MATLAB Lp.*Lm, a different matrix
 assert (matrix_product != elementwise).nnz > 0
 ```
 
+### Keyword arguments
+
+Spinach functions take every input positionally, so a call that does not
+need an input passes `[]` in its place. respinach keeps Spinach's argument
+order for the inputs that every call needs and makes the optional ones
+keyword arguments, so that `None` placeholders disappear and the call says
+what each input is:
+
+| Spinach | respinach |
+|---|---|
+| `evolution(spin_system,L,coil,rho,dt,nsteps,'observable')` | `evolution(spin_system, L, rho, dt, nsteps, "observable", coil=coil)` |
+| `evolution(spin_system,L,[],rho,dt,nsteps,'final')` | `evolution(spin_system, L, rho, dt, nsteps, "final")` |
+| `evolution(...,destination)` | `evolution(..., destination=rho_dest)` |
+| `krylov(spin_system,L,coil,rho,dt,nsteps,output)` | `krylov(spin_system, L, rho, dt, nsteps, output, coil=coil)` |
+| `thermalize(spin_system,R,[],[],rho_eq,'IME')` | `thermalize(spin_system, R, "IME", rho_eq=rho_eq)` |
+| `thermalize(spin_system,R,HLSPS,T,[],'dibari')` | `thermalize(spin_system, R, "dibari", H_left=HLSPS, temperature=T)` |
+| `plot_2d(spin_system,spectrum,parameters,ncont,delta,k,ncol,m,signs)` | `plot_2d(spin_system, spectrum, parameters, ncont=20, delta=(...), k=2, signs="both")`, all six keyword-only, Spinach's names and defaults |
+
+Everything else keeps Spinach's positional form: `step(spin_system, L,
+rho, dt)`, `operator`, `state`, `propagator`, and the pulse-sequence
+signature `sequence(spin_system, parameters, H, R, K)`, which the contexts
+call positionally so that a sequence may name its arguments as it likes.
+
 ## Spin system: `sys` and `inter`
 
 `create(sys, inter)` reads the same fields as in Spinach, with the same
@@ -427,11 +450,12 @@ ignored by the simulation, as in Spinach.
 | contexts: `liquid`, `powder`, `crystal`, `singlerot`, `doublerot`, `floquet`, `gridfree`, `imaging`, ... | `liquid`, `crystal`, `powder`, `singlerot` (serial over the grid, same weighted sum; grids by their Spinach names; `singlerot` in Liouville space with the same `rate`, `axis`, `max_rank` parameters and the same Fokker-Planck layout) |
 | pulse sequences in `experiments/`: `acquire`, `hsqc`, `cosy`, `noesy`, ... | `acquire` (with `decouple`, `dead_time`, `homodec_*`), `cosy`, `noesy`, `hsqc`; others: write them the same way (see the [pulse sequence guide](pulse-sequences.md)) |
 | `evolution` outputs `'observable'`, `'final'`, `'total'`, `'trajectory'`, `'refocus'`, `'multichannel'` | `'observable'` in Hilbert space; all but `'total'` in Liouville space |
+| `evolution(spin_system,L,coil,rho,dt,nsteps,output)` | `evolution(spin_system, L, rho, dt, nsteps, output, coil=coil)`: the detection state is a keyword, see [Keyword arguments](#keyword-arguments) |
 | `evolution(...,destination)` destination state screening | the same, Liouville space (`destination=` keyword) |
 | `reduce`, `zte`, `path_trace` (trajectory-level reduction), `sys.disable={'zte','pt','dss','merge','krylov','trajlevel'}`, `sys.enable={'krylov'}` | the same, Liouville space; permutation symmetry not ported |
 | `step` (single generator and 2/3-point Lie quadratures), `krylov` | the same in Liouville space; Hilbert-space `step` for one generator |
 | `pulse`, `shaped_pulse_*` | not ported; use `propagator` or `step` |
-| `apodisation`, `plot_2d`, `dilute`/`kill_spin`, `decouple`, `homospoil` | the same; `apodisation(fid, [("exp", 6)])` takes tuples instead of nested cells, `plot_2d` draws a Plotly contour figure with the same `ncont, delta, k, ncol, m, signs` arguments, binning spectra longer than `max_points=512` per axis (largest magnitude per bin) so that the HTML stays small |
+| `apodisation`, `plot_2d`, `dilute`/`kill_spin`, `decouple`, `homospoil` | the same; `apodisation(fid, [("exp", 6)])` takes tuples instead of nested cells, `plot_2d` draws a Plotly contour figure with the same `ncont, delta, k, ncol, m, signs` arguments as keywords, binning spectra longer than `max_points=512` per axis (largest magnitude per bin) so that the HTML stays small |
 | `propagator`: Pade `expm` below `small_matrix`, scaled and squared Taylor series above | the same |
 | relaxation (`relaxation`, `equilibrium`, `thermalize`) | Redfield, `t1_t2`, `damp`, `SRFK`, `SRSK` with the same `inter` fields and policies (`srsk_sources` and the `srfk_mdepth` indices are 0-based); see the [relaxation guide](relaxation.md); Lindblad, DNP theories, Nakajima-Zwanzig not ported |
 | chemical kinetics (`kinetics`) | first-order exchange; `liquid` passes it as `K` and `acquire` propagates under `H + 1i*K` |
