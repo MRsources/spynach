@@ -35,20 +35,19 @@ repository root:
 
 ```
 python -m pip install -e ".[test,docs]"
-OPENBLAS_NUM_THREADS=4 python -m pytest -q
+python -m pytest -q
 ```
 
 The `docs` extra adds Plotly, JupyterLab, and what is needed to run the
 notebooks; only plots and notebooks need it (`.[plot]` installs Plotly
-alone). Start JupyterLab with the same environment variable:
+alone). Start JupyterLab with `jupyter lab docs/notebooks/`.
 
-```
-OPENBLAS_NUM_THREADS=4 jupyter lab docs/notebooks/
-```
-
-Set `OPENBLAS_NUM_THREADS` to the number of CPUs you actually have. In
-containers with a CPU quota below the visible core count, OpenBLAS otherwise
-oversubscribes and dense linear algebra can run a thousand times slower.
+A caveat for containers: when a container has a CPU quota below the number
+of cores it can see (a 4-CPU quota on a 12-core host, say), OpenBLAS starts
+one thread per visible core, oversubscribes the quota, and dense linear
+algebra can run a thousand times slower. Set `OPENBLAS_NUM_THREADS` to the
+quota in that case, for example `OPENBLAS_NUM_THREADS=4 jupyter lab`. On
+an ordinary laptop or workstation nothing needs to be set.
 
 ## Quick start
 
@@ -84,9 +83,6 @@ fid = spynach.liquid(spin_system, spynach.acquire, parameters, "nmr")
 zerofill = 4096
 fid = spynach.apodisation(fid, [("exp", 6)])
 spectrum = np.fft.fftshift(np.fft.fft(fid, zerofill))
-
-assert fid.shape == (1024,)
-assert spectrum.shape == (4096,)
 ```
 
 The frequency axis comes from `axis_1d`, a port of Spinach's function of
@@ -98,12 +94,10 @@ frequency of the channel isotope:
 from spynach.plotting import axis_1d
 
 ppm_axis, label = axis_1d(spin_system, {**parameters, "zerofill": zerofill, "axis_units": "ppm"})
-assert label == "1H chemical shift / ppm"
 
 # Two doublets, split by J = 12 Hz, centred near the two chemical shifts
 peaks = ppm_axis[spectrum.real > 0.5 * spectrum.real.max()]
-assert 0.98 < peaks.min() < 1.02 and 1.08 < peaks.max() < 1.12
-assert spectrum.real.min() > -0.01 * spectrum.real.max()   # no truncation wiggles
+print(f"{label}: lines between {peaks.min():.2f} and {peaks.max():.2f}")
 ```
 
 `plot_1d` draws the spectrum on that axis, decreasing from left to right as
@@ -175,8 +169,8 @@ spin_system_exchange = spynach.create(
     {"zeeman": {"scalar": [0.0, 3.0]},
      "chem": {"parts": [[0], [1]], "rates": [[-2e3, 2e3], [2e3, -2e3]], "concs": [1.0, 1.0]}},
 )
-assert spin_system_exchange.chem.parts == ((0,), (1,))
-assert spin_system_exchange.chem.rates.sum(axis=0).tolist() == [0.0, 0.0]
+print(spin_system_exchange.chem.parts)
+print(spin_system_exchange.chem.rates.sum(axis=0))     # conservation of matter: columns sum to zero
 ```
 
 The result is a frozen `SpinSystem`. Internally everything is in angular
@@ -187,11 +181,10 @@ spin_system = spynach.create(
     {"isotopes": ["1H", "13C"], "magnet": 14.1},
     {"zeeman": {"scalar": [2.00, 30.0]}, "coupling": {"scalar": [[0, 145.0], [0, 0]]}},
 )
-assert spin_system.nspins == 2
-assert list(spin_system.mults) == [2, 2]              # multiplicities, 2S+1
+print(spin_system.nspins, spin_system.mults.tolist())  # number of spins, multiplicities 2S+1
 carrier_mhz = spin_system.basefrqs / (2 * np.pi) / 1e6  # -gamma*B0, rad/s -> MHz
-assert round(abs(carrier_mhz[0])) == 600
-assert spin_system.coupling_matrix[1][0] is None        # absent couplings are None
+print(carrier_mhz.round(1))
+print(spin_system.coupling_matrix[1][0])                # absent couplings are None
 ```
 
 Isotope data (multiplicity and magnetogyric ratio) come from Spinach's
@@ -201,7 +194,7 @@ Isotope data (multiplicity and magnetogyric ratio) come from Spinach's
 
 ```python
 spin_system = spynach.basis(spin_system, {"formalism": "zeeman-hilb", "approximation": "none"})
-assert spin_system.basis.basis.shape == (4, 2)    # dim x nspins Zeeman level table
+print(spin_system.basis.basis)    # dim x nspins Zeeman level table
 ```
 
 `zeeman-hilb` works with the full Hilbert space of dimension
@@ -218,8 +211,6 @@ Operators are built from a label and a spin selection. **Spin indices are
 Lz_H = spynach.operator(spin_system, "Lz", "1H")          # sum over all 1H spins
 Lz_01 = spynach.operator(spin_system, "Lz", [0, 1])       # sum over spins 0 and 1
 LzSp = spynach.operator(spin_system, ["Lz", "L+"], [0, 1]) # product Lz(0) L+(1)
-
-assert Lz_H.shape == (4, 4)
 ```
 
 A string as the first argument means a sum of single-spin operators; a list
@@ -239,7 +230,6 @@ matrix, used as an (unnormalised) density matrix:
 
 ```python
 rho = spynach.state(spin_system, "L+", "1H")
-assert (rho != spynach.operator(spin_system, "L+", "1H")).nnz == 0
 ```
 
 ### 4. `assume` and `hamiltonian`: the Hamiltonian
@@ -258,9 +248,6 @@ assumption set is the usual high-field liquid-state approximation:
 H = spynach.hamiltonian(spynach.assume(spin_system, "nmr"))
 H_zeeman = spynach.hamiltonian(spynach.assume(spin_system, "nmr", "zeeman"))      # drop couplings
 H_coupling = spynach.hamiltonian(spynach.assume(spin_system, "nmr", "couplings")) # drop Zeeman terms
-
-assert np.allclose(H, H_zeeman + H_coupling)
-assert np.allclose(H, H.conj().T)
 ```
 
 Small Hamiltonians come back as dense NumPy arrays, large sparse ones as
@@ -286,13 +273,11 @@ H_off = spynach.frqoffset(spin_system, H, {"spins": ["1H"], "offset": 1200})
 ```python
 dt = 1 / 500
 P = spynach.propagator(spin_system, H_off, dt)       # expm(-1j * H_off * dt)
-assert np.allclose(P @ P.conj().T, np.eye(4))
 
 rho0 = spynach.state(spin_system, "L+", "1H")
 coil = spynach.state(spin_system, "L+", "1H")
+# nsteps + 1 = 1024 points, from t = 0
 fid_hc = spynach.evolution(spin_system, H_off, rho0, dt, 1023, "observable", coil=coil)
-assert fid_hc.shape == (1024,)                 # nsteps + 1 points, from t = 0
-assert np.isclose(fid_hc[0], spynach.hdot(coil, rho0))
 ```
 
 `evolution(..., "observable")` returns `hdot(coil, rho(t))` (the
@@ -319,7 +304,6 @@ fid_liquid = spynach.liquid(
     {"spins": ["1H"], "offset": 1200, "sweep": 500, "npoints": 1024, "rho0": rho0, "coil": coil},
     "nmr",
 )
-assert np.allclose(fid_liquid, fid_hc)
 ```
 
 ## Writing your own pulse sequence
@@ -345,7 +329,7 @@ pars = {"spins": ["1H"], "offset": 1200, "sweep": 500, "npoints": 1024,
 fid_pulse = spynach.liquid(spin_system, pulse_acquire, pars, "nmr")
 
 # The pulse turns Lz into Lx = (L+ + L-)/2; only the L+ half is detected
-assert np.allclose(fid_pulse, 0.5 * fid_liquid)
+print(np.allclose(fid_pulse, 0.5 * fid_liquid))
 ```
 
 `propagator(spin_system, A, angle)` with a Hermitian operator `A` returns
@@ -387,8 +371,7 @@ pars_hc = {"spins": ["1H"], "offset": 1200, "sweep": 500, "axis_units": "Hz"}
 
 hz, _ = axis_1d(spin_system, {**pars_hc, "zerofill": 4096})
 low, high = hz[hz < 1200][np.argmax(spectra[0][hz < 1200])], hz[hz > 1200][np.argmax(spectra[0][hz > 1200])]
-assert abs(high - low - 145) < 0.5                          # 1J(CH) doublet
-assert np.isclose(spectra[1].max(), 0.5 * spectra[0].max())
+print(f"doublet splitting {high - low:.1f} Hz, peak height ratio {spectra[1].max() / spectra[0].max():.2f}")
 ```
 
 ```python
@@ -405,8 +388,7 @@ values. Override any of them at creation:
 
 ```python
 spin_system_fine = spynach.create({"isotopes": ["1H"], "magnet": 14.1, "tols": {"prop_chop": 1e-14}}, {})
-assert spin_system_fine.tols.prop_chop == 1e-14
-assert spin_system_fine.tols.small_matrix == 200
+print(spin_system_fine.tols.prop_chop, spin_system_fine.tols.small_matrix)
 ```
 
 The ones that matter for the ported code:

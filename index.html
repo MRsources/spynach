@@ -215,7 +215,7 @@ pars = {"spins": ["1H"], "offset": 630, "sweep": 200, "npoints": 1024,
 fid = spynach.liquid(spin_system, spynach.acquire, pars, "nmr")
 fid = spynach.apodisation(fid, [("exp", 6)])
 spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))</code></pre>
-    <p>On machines whose NumPy uses OpenBLAS, set <code>OPENBLAS_NUM_THREADS</code> to the number of cores you actually have; dense LAPACK calls slow down badly when the library sees more cores than the process may use.</p>
+    <p>A caveat for containers: when the CPU quota is below the number of cores the container can see, OpenBLAS oversubscribes the quota and dense LAPACK calls slow down badly. Set <code>OPENBLAS_NUM_THREADS</code> to the quota there; on an ordinary machine nothing needs to be set.</p>
     <p>To try the example without installing anything, open it as a notebook that installs Spynach and plots the spectrum:</p>
     <div class="actions">
       <a class="btn" href="https://colab.research.google.com/github/ajerschow/spynach/blob/main/docs/colab/quick-start.ipynb">Open in Google Colab</a>

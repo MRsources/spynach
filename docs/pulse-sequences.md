@@ -64,8 +64,7 @@ def my_cosy(spin_system, parameters, H, R, K):
 pars = {"angle": np.pi / 2, "offset": 2800.0, "sweep": 700.0, "npoints": [64, 64], "zerofill": [256, 256],
         "spins": ["1H"], "axis_units": "ppm"}
 fid = spynach.liquid(spin_system_derome, my_cosy, pars, "nmr")
-assert fid.shape == (64, 64)
-assert np.allclose(fid, spynach.liquid(spin_system_derome, spynach.cosy, pars, "nmr"))
+print(np.allclose(fid, spynach.liquid(spin_system_derome, spynach.cosy, pars, "nmr")))
 ```
 
 The filters take the spin state space on the *last* axis, hence the
@@ -131,8 +130,7 @@ coupled = spynach.liquid(spin_system_hc, spynach.acquire, acq, "nmr")
 decoupled = spynach.liquid(spin_system_hc, spynach.acquire, {**acq, "decouple": ["13C"]}, "nmr")
 t = np.arange(128) / 2000.0
 omega = spin_system_hc.basefrqs[0] * 2.0e-6 + 2 * np.pi * 1200.0  # 2 ppm shift in the frame of the 1200 Hz offset
-assert np.allclose(decoupled, decoupled[0] * np.exp(-1j * omega * t), rtol=1e-6)   # a pure singlet
-assert not np.allclose(coupled, decoupled)
+print(np.abs(decoupled - decoupled[0] * np.exp(-1j * omega * t)).max())   # a pure singlet
 ```
 
 ## COSY

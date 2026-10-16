@@ -103,8 +103,6 @@ fid = spynach.liquid(spin_system, spynach.acquire, parameters, "nmr")
 fid[0] = fid[0] / 2
 fid = fid * np.exp(-6 * np.linspace(0, 1, fid.size) ** 2)
 spectrum = np.fft.fftshift(np.fft.fft(fid, parameters["zerofill"]))
-
-assert spectrum.shape == (8192,)
 ```
 
 The run uses 2048 points instead of 16384 to keep this page quick: with
@@ -155,7 +153,6 @@ Lp = spynach.operator(spin_system, "L+", "1H")
 Lm = spynach.operator(spin_system, "L-", "1H")
 matrix_product = Lp @ Lm                 # MATLAB Lp*Lm
 elementwise = Lp * Lm                    # MATLAB Lp.*Lm, a different matrix
-assert (matrix_product != elementwise).nnz > 0
 ```
 
 ### Keyword arguments
@@ -223,7 +220,7 @@ spin_system_hc = spynach.create(sys, inter)
 ```python
 for J in (140.0, 145.0, 150.0):
     spin_system_scanned = spynach.create(sys, {**inter, "coupling": {"scalar": [[0, J], [0, 0]]}})
-    assert np.isclose(spin_system_scanned.coupling_matrix[0][1][0, 0], 2 * np.pi * J)
+    print(J, spin_system_scanned.coupling_matrix[0][1][0, 0] / (2 * np.pi))
 ```
 
 - **Tensors and coordinates:** `inter.zeeman.eigs`/`euler` and
@@ -254,7 +251,7 @@ inter.chem.concs=[1.0 1.0];
 inter_exch = {"zeeman": {"scalar": [0.0, 3.0]},
               "chem": {"parts": [[0], [1]], "rates": [[-2e3, 2e3], [2e3, -2e3]], "concs": [1.0, 1.0]}}
 spin_system_exchange = spynach.create({"isotopes": ["1H", "1H"], "magnet": 14.1}, inter_exch)
-assert spin_system_exchange.chem.parts == ((0,), (1,))
+print(spin_system_exchange.chem.parts)
 ```
 
 **Not ported yet** (each raises `NotImplementedError` naming the field):
@@ -307,8 +304,7 @@ bas.projections={+1};
 bas_ik2 = {"formalism": "sphten-liouv", "approximation": "IK-2",
            "connectivity": "scalar_couplings", "prox_level": 1, "projections": [[1]]}
 spin_system_hc_liouv = spynach.basis(spin_system_hc, bas_ik2)
-assert spin_system_hc_liouv.basis.basis[0].tolist() == [0, 0]     # unit state first
-assert set(spin_system_hc_liouv.basis.tot_proj[1:]) == {1}        # coherence order +1 only
+print(spin_system_hc_liouv.basis.basis.T)     # unit state first, then coherence order +1 only
 ```
 
 - **Not ported yet:** `zeeman-liouv`, the `IK-DNP` and `IK-SBS`
@@ -337,7 +333,6 @@ list gives a product.
 ```python
 Lz_sum = spynach.operator(spin_system_hc, "Lz", [0, 1])         # Lz(H) + Lz(C)
 LzSz = spynach.operator(spin_system_hc, ["Lz", "Lz"], [0, 1])   # Lz(H) Lz(C)
-assert np.allclose((LzSz @ LzSz).toarray(), np.eye(4) / 16)
 ```
 
 - **Same:** operator labels `E`, `Lx`, `Ly`, `Lz`, `L+`, `L-`, `Tl,m`;
@@ -368,8 +363,8 @@ rho=state(spin_system,'L+','1H','cheap');
 spin_system_hc_none = spynach.basis(spin_system_hc, {"formalism": "sphten-liouv", "approximation": "none"})
 Lz_L = spynach.operator(spin_system_hc_none, "Lz", "1H", "left")
 rho_cheap = spynach.state(spin_system_hc_none, "L+", "1H", "cheap")
-assert Lz_L.shape == (16, 16) and rho_cheap.shape == (16,)
-assert np.isclose(rho_cheap[np.flatnonzero(rho_cheap)[0]], -np.sqrt(2))
+print(Lz_L.shape, rho_cheap.shape)
+print(np.flatnonzero(rho_cheap), rho_cheap[rho_cheap != 0])
 ```
 
 - **Not ported yet:** labels `CT*` (central transition) and `ZL*`
@@ -381,7 +376,6 @@ assert np.isclose(rho_cheap[np.flatnonzero(rho_cheap)[0]], -np.sqrt(2))
 ```python
 H = spynach.hamiltonian(spynach.assume(spin_system_hc, "nmr"))
 H_zeeman = spynach.hamiltonian(spynach.assume(spin_system_hc, "nmr", "zeeman"))
-assert np.allclose(H - H_zeeman, 2 * np.pi * 145.0 * LzSz.toarray())  # weak 1H-13C coupling
 ```
 
 - **Same:** `assume(spin_system, 'nmr')` and the retention options
@@ -414,7 +408,6 @@ spin_system_hc_liouv = spynach.assume(spin_system_hc_none, "nmr")
 H_comm = spynach.hamiltonian(spin_system_hc_liouv)                  # [H, .] in Liouville space
 H_left = spynach.hamiltonian(spin_system_hc_liouv, "left")
 H_right = spynach.hamiltonian(spin_system_hc_liouv, "right")
-assert abs(H_comm - (H_left - H_right)).max() < 1e-9   # each is rounded to liouv_zero separately
 ```
 
 - **Not ported yet:** the `'qnmr'` and DNP assumption sets (`'nmr'`,

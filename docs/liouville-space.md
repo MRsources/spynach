@@ -68,10 +68,8 @@ lexicographically with the all-zero unit state first:
 
 ```python
 spin_system_ab = spynach.basis(make_spin_system(["1H", "1H"]), {"formalism": "sphten-liouv", "approximation": "none"})
-assert spin_system_ab.basis.nstates == 16                    # (2*2)^2: the complete Liouville space
-assert spin_system_ab.basis.basis[0].tolist() == [0, 0]      # the unit state
-assert spin_system_ab.basis.basis[6].tolist() == [1, 2]      # T(1,+1) on spin 0 times T(1,0) on spin 1
-print(spin_system_ab.basis.basis.T)
+print(spin_system_ab.basis.nstates)      # (2*2)^2: the complete Liouville space
+print(spin_system_ab.basis.basis.T)      # column 6 is T(1,+1) on spin 0 times T(1,0) on spin 1
 ```
 
 Two labels are derived from the descriptor and used by the filters below:
@@ -80,10 +78,10 @@ Two labels are derived from the descriptor and used by the filters below:
 non-unit tensor):
 
 ```python
-assert spin_system_ab.basis.tot_proj[6] == 1 and spin_system_ab.basis.tot_cord[6] == 2
-assert sorted(set(spin_system_ab.basis.tot_cord)) == [0, 1, 2]
+print(spin_system_ab.basis.tot_proj)
+print(spin_system_ab.basis.tot_cord)
 spin_system_hd = spynach.basis(make_spin_system(["1H", "2H"]), {"formalism": "sphten-liouv", "approximation": "none"})
-assert spin_system_hd.basis.nstates == 4 * 9                 # spin-1 has nine tensors, ranks 0 to 2
+print(spin_system_hd.basis.nstates)      # 4 * 9: spin-1 has nine tensors, ranks 0 to 2
 ```
 
 ## State-space restriction
@@ -114,14 +112,11 @@ depends on the coupling topology. A chain with nearest-neighbour couplings
 shows the difference:
 
 ```python
-from math import comb
-
 spin_system_five = make_spin_system(["1H"] * 5)
 for level in (1, 2, 3, 5):
     spin_system_ik0 = spynach.basis(
         spin_system_five, {"formalism": "sphten-liouv", "approximation": "IK-0", "inter_level": level}
     )
-    assert spin_system_ik0.basis.nstates == sum(comb(5, j) * 3**j for j in range(level + 1))
     print(f"IK-0 level {level}: {spin_system_ik0.basis.nstates} states")
 
 J = np.zeros((8, 8))
@@ -133,8 +128,8 @@ spin_system_ik2 = spynach.basis(spin_system_chain, {"formalism": "sphten-liouv",
 spin_system_ik1 = spynach.basis(spin_system_chain, {"formalism": "sphten-liouv", "approximation": "IK-1",
                            "connectivity": "scalar_couplings", "inter_level": 4, "prox_level": 1})
 print(f"8-spin chain: complete {4**8}, IK-2 {spin_system_ik2.basis.nstates}, IK-1(4) {spin_system_ik1.basis.nstates}")
-assert spin_system_ik2.basis.tot_cord.max() == 3         # a chain spin has at most two neighbours
-assert spin_system_ik1.basis.tot_cord.max() == 4
+print(f"highest correlation order: IK-2 {spin_system_ik2.basis.tot_cord.max()}, "
+      f"IK-1(4) {spin_system_ik1.basis.tot_cord.max()}")   # a chain spin has at most two neighbours
 ```
 
 The states kept by `IK-2` on the chain are products on up to three
@@ -179,10 +174,9 @@ spin_system_carbon_z = spynach.basis(
 spin_system_carbon_zq = spynach.basis(
     spin_system_hc, {"formalism": "sphten-liouv", "approximation": "none", "zero_quantum": [[1]]}
 )
-assert spin_system_full.basis.nstates == 16
-assert spin_system_plus_one.basis.nstates == 5 and set(spin_system_plus_one.basis.tot_proj[1:]) == {1}
-assert spin_system_carbon_z.basis.nstates == 8 and set(spin_system_carbon_z.basis.basis[:, 1]) == {0, 2}
-assert spin_system_carbon_zq.basis.nstates == 8
+for name, s in [("complete", spin_system_full), ("projections +1", spin_system_plus_one),
+                ("longitudinal 13C", spin_system_carbon_z), ("zero-quantum 13C", spin_system_carbon_zq)]:
+    print(f"{name}: {s.basis.nstates} states, coherence orders {sorted(set(s.basis.tot_proj.tolist()))}")
 ```
 
 `bas["manual"]` adds subgraphs of your own: a boolean matrix with one row
@@ -199,7 +193,7 @@ spin_system_manual = spynach.basis(
         "manual": [[True, False, False, False, False, False, False, True]],
     },
 )
-assert spin_system_manual.basis.nstates == 1 + 8 * 3 + 9     # singles, plus the two-spin states on spins 0 and 7
+print(spin_system_manual.basis.nstates)      # 1 + 8 * 3 + 9: singles, plus the two-spin states on spins 0 and 7
 ```
 
 ## Chemical subsystems
@@ -217,8 +211,7 @@ the same state of the other.
 spin_system_exchange = make_spin_system(["1H", "1H"], zeeman={"scalar": [0.0, 3.0]},
                          chem={"parts": [[0], [1]], "rates": [[-2e3, 2e3], [2e3, -2e3]], "concs": [1.0, 1.0]})
 spin_system_two_sites = spynach.basis(spin_system_exchange, {"formalism": "sphten-liouv", "approximation": "none"})
-assert spin_system_two_sites.basis.nstates == 7              # 1 + 3 + 3, not 16
-print(spin_system_two_sites.basis.basis.T)
+print(spin_system_two_sites.basis.basis.T)      # 7 states, 1 + 3 + 3, not 16
 ```
 
 Filters are specified per molecule: `projections=[[1], [1]]` keeps the
@@ -241,8 +234,6 @@ spin_system_ab_hilb = spynach.basis(
 Lz_comm = spynach.operator(spin_system_ab, "Lz", "1H")                   # [Lz, .] on both protons
 Lz_left = spynach.operator(spin_system_ab, "Lz", "1H", "left")
 Lz_right = spynach.operator(spin_system_ab, "Lz", "1H", "right")
-assert Lz_comm.shape == (16, 16)
-assert abs(Lz_comm - (Lz_left - Lz_right)).max() == 0
 ```
 
 Nothing is ever expanded into the full `dim^2 x dim^2` space: the product
@@ -269,7 +260,7 @@ def basis_operator(spin_system, row):
 B = [basis_operator(spin_system_ab, row) for row in spin_system_ab.basis.basis]
 Q = spynach.operator(spin_system_ab_hilb, "Lz", "1H").toarray()
 reference = np.array([[np.vdot(bk, Q @ bj) for bj in B] for bk in B])
-assert abs(Lz_left.toarray() - reference).max() < 1e-15
+print(abs(Lz_left.toarray() - reference).max())
 ```
 
 ## States
@@ -290,13 +281,11 @@ coefficient of the unit state. Spinach's three methods are available:
 ```python
 rho_exact = spynach.state(spin_system_ab, "Lz", "1H")
 rho_cheap = spynach.state(spin_system_ab, "Lz", "1H", "cheap")
-assert rho_exact.shape == (16,)
-assert np.count_nonzero(rho_exact) == 2 and set(rho_exact[rho_exact != 0]) == {0.5}
-assert set(rho_cheap[rho_cheap != 0]) == {1.0}
+print(np.flatnonzero(rho_exact), rho_exact[rho_exact != 0])
+print(np.flatnonzero(rho_cheap), rho_cheap[rho_cheap != 0])
 coil = spynach.state(spin_system_ab, "L+", "1H")
-assert np.isclose(np.vdot(coil, rho_exact), 0)      # Lz and L+ are orthogonal
 weighted = spynach.state(spin_system_two_sites, "L+", "1H", "chem")
-assert np.count_nonzero(weighted) == 2             # one T(1,+1) state per site
+print(np.flatnonzero(weighted), weighted[weighted != 0])     # one T(1,+1) state per site
 ```
 
 Expectation values are Frobenius products, `spynach.hdot(coil, rho)`, so
@@ -316,10 +305,8 @@ spin_system_hc_nmr = spynach.assume(
     spynach.basis(spin_system_hc, {"formalism": "sphten-liouv", "approximation": "none"}), "nmr"
 )
 H = spynach.hamiltonian(spin_system_hc_nmr)
-assert H.shape == (16, 16)
 H_off = spynach.frqoffset(spin_system_hc_nmr, H, {"spins": ["1H"], "offset": [1200.0]})
 Lz_comm_H = spynach.operator(spin_system_hc_nmr, "Lz", "1H")
-assert abs(H_off - H - 2 * np.pi * 1200.0 * Lz_comm_H).max() < 1e-9
 ```
 
 A commutation superoperator is traceless and its eigenvalues are
@@ -333,7 +320,7 @@ spin_system_hc_hilb = spynach.assume(
 )
 E = np.linalg.eigvalsh(np.asarray(spynach.hamiltonian(spin_system_hc_hilb)))
 differences = np.sort((E[:, None] - E[None, :]).ravel())
-assert np.allclose(np.sort(np.linalg.eigvals(np.asarray(H)).real), differences, atol=1e-6)
+print(np.allclose(np.sort(np.linalg.eigvals(np.asarray(H)).real), differences, atol=1e-6))
 ```
 
 In a restricted basis the Liouvillian is the projection of the complete
@@ -350,9 +337,6 @@ dissipative superoperators:
 ```python
 spin_system_two_sites_nmr = spynach.assume(spin_system_two_sites, "nmr")
 K = spynach.kinetics(spin_system_two_sites_nmr)
-assert K.shape == (7, 7)
-assert np.allclose(np.asarray(K.sum(axis=0)), 0)          # conservation of matter
-assert K[0, 0] == 0                                        # the unit state is untouched
 L = spynach.hamiltonian(spin_system_two_sites_nmr) + 1j * K
 ```
 
@@ -363,8 +347,7 @@ source) of `inter["chem"]["concs"]`:
 
 ```python
 rates = np.array([[-50.0, 950.0], [50.0, -950.0]])
-assert np.allclose(spynach.equilibrate(rates, np.array([1.0, 50 / 950])), [1.0, 50 / 950])
-assert np.allclose(spynach.equilibrate(rates, np.array([0.5, 0.5])), [0.95, 0.05])
+print(spynach.equilibrate(rates, np.array([0.5, 0.5])))
 ```
 
 ## Analytical filters
@@ -381,11 +364,11 @@ space on the last axis, so they work on stacks of state vectors too.
 ```python
 rho = spynach.state(spin_system_hc_nmr, "L+", "all") + spynach.state(spin_system_hc_nmr, ["Lz", "L+"], [0, 1])
 single = spynach.correlation(spin_system_hc_nmr, rho, [1])
-assert np.count_nonzero(single) == 2                      # L+ on 1H and on 13C
+print(np.flatnonzero(single))                     # L+ on 1H and on 13C
 proton = spynach.coherence(spin_system_hc_nmr, rho, [("1H", [1]), ("13C", [0])])
-assert np.count_nonzero(proton) == 1                      # only L+ on the proton
+print(np.flatnonzero(proton))                     # only L+ on the proton
 stack = np.stack([rho, 2 * rho])
-assert spynach.correlation(spin_system_hc_nmr, stack, [2]).shape == (2, 16)
+print(spynach.correlation(spin_system_hc_nmr, stack, [2]).shape)
 ```
 
 ## Propagation: `step`, `evolution`, and the reductions
@@ -407,7 +390,7 @@ L = spynach.frqoffset(
 rho = spynach.state(spin_system_hc_nmr, "L+", "1H")
 dt = 1e-3
 rho_dt = spynach.step(spin_system_hc_nmr, L, rho, dt)
-assert np.allclose(rho_dt, sla.expm(-1j * np.asarray(L) * dt) @ rho, rtol=1e-12)
+print(np.abs(rho_dt - sla.expm(-1j * np.asarray(L) * dt) @ rho).max())
 ```
 
 `evolution(spin_system, L, rho, dt, nsteps, output, coil=...)` runs a whole free
@@ -442,9 +425,9 @@ spin_system_hc_plain = spynach.assume(
     spynach.basis(spin_system_hc_plain, {"formalism": "sphten-liouv", "approximation": "none"}), "nmr"
 )
 fid_plain = spynach.evolution(spin_system_hc_plain, L, rho, 1 / 500, 63, "observable", coil=coil)
-assert np.allclose(fid, fid_plain, rtol=1e-9)
+print(np.abs(fid - fid_plain).max())
 projectors = spynach.reduce(spin_system_hc_nmr, L.conj().T, coil)
-assert sum(p.shape[1] for p in projectors) == 2     # L+(H) and L+(H)Lz(C) are all that reaches the coil
+print([p.shape[1] for p in projectors])     # L+(H) and L+(H)Lz(C) are all that reaches the coil
 ```
 
 Outputs: `'observable'` returns `coil^H rho(t)` at `nsteps + 1` points
@@ -463,7 +446,7 @@ L_hilb = spynach.frqoffset(
 )
 rho_hilb = spynach.state(spin_system_hc_hilb_nmr, "L+", "1H")
 fid_hilb = spynach.evolution(spin_system_hc_hilb_nmr, L_hilb, rho_hilb, 1 / 500, 63, "observable", coil=rho_hilb)
-assert np.allclose(4 * fid, fid_hilb, rtol=1e-9)
+print(np.abs(4 * fid - fid_hilb).max())
 ```
 
 Two tools of Spinach's look at states and trajectories in this basis.
@@ -478,10 +461,9 @@ a state with the `(l, m)` of every spin, as Spinach reports them:
 ```python
 traj = spynach.evolution(spin_system_hc_nmr, L, rho, 1 / 500, 63, "trajectory")
 amplitudes, labels = spynach.trajan(spin_system_hc_nmr, traj, "coherence_order")
-assert labels == ["-2", "-1", "0", "+1", "+2"] and amplitudes.shape == (5, 64)
-assert np.allclose(amplitudes[3, 0], np.linalg.norm(rho[1:]))          # L+(H) starts as pure +1 coherence
+print(labels, amplitudes[:, 0].round(3))          # L+(H) starts as pure +1 coherence
 largest = spynach.stateinfo(spin_system_hc_nmr, traj[:, -1], 2)
-assert all(abs(coefficient) > 0 for _, coefficient, _ in largest)
+print(largest)
 ```
 
 ## Pulse-acquire and chemical exchange through `liquid`

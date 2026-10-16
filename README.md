@@ -106,14 +106,16 @@ ignored.
 ## Development
 
 ```
-OPENBLAS_NUM_THREADS=4 PYTHONPATH=src python -m pytest -q
+PYTHONPATH=src python -m pytest -q
 ```
 
 Parity tests skip when fixtures are absent (`$SPYNACH_FIXTURES`, default
-`/fixtures`). In this container OpenBLAS sees 12 cores but the cgroup quota
-is 4 CPUs; with the default thread count, dense LAPACK calls run ~1000x
+`/fixtures`). A caveat for containers: when the CPU quota is below the
+visible core count (the development container sees 12 cores under a 4-CPU
+quota), OpenBLAS oversubscribes the quota and dense LAPACK calls run ~1000x
 slower (a 256x256 `eigh` takes 10 s instead of 10 ms). Set
-`OPENBLAS_NUM_THREADS` to the quota for tests and especially for benchmarks.
+`OPENBLAS_NUM_THREADS` to the quota there, for tests and especially for
+benchmarks; on an ordinary machine nothing needs to be set.
 
 To test on a macOS host outside the container, install
 [uv](https://docs.astral.sh/uv/) (`brew install uv`) and run

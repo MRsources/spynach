@@ -66,7 +66,6 @@ spin_system_hc = spynach.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
                     "temperature": 298, "tau_c": [[100e-12]]})
 spin_system_hc = spynach.basis(spin_system_hc, {"formalism": "sphten-liouv", "approximation": "none"})
 R = spynach.relaxation(spin_system_hc)
-assert R.shape == (16, 16)
 ```
 
 ## Redfield theory
@@ -106,9 +105,9 @@ b = (
 )
 J = lambda w: 100e-12 / (1 + (w * 100e-12) ** 2)
 wH, wC = abs(spin_system_hc.basefrqs[0]), abs(spin_system_hc.basefrqs[1])
-assert np.isclose(rate(Lz_H, Lz_H), b**2 / 10 * (J(wH - wC) + 3 * J(wH) + 6 * J(wH + wC)), rtol=1e-4)
-assert np.isclose(rate(Lz_H, Lz_C), b**2 / 10 * (6 * J(wH + wC) - J(wH - wC)), rtol=1e-4)
-print(f"R1(1H) = {rate(Lz_H, Lz_H):.3f} Hz, sigma(HC) = {rate(Lz_H, Lz_C):.3f} Hz")
+print(f"Redfield: R1(1H) = {rate(Lz_H, Lz_H):.3f} Hz, sigma(HC) = {rate(Lz_H, Lz_C):.3f} Hz")
+print(f"Solomon:  R1(1H) = {b**2 / 10 * (J(wH - wC) + 3 * J(wH) + 6 * J(wH + wC)):.3f} Hz, "
+      f"sigma(HC) = {b**2 / 10 * (6 * J(wH + wC) - J(wH - wC)):.3f} Hz")
 ```
 
 The agreement is limited by the integral's truncation
@@ -138,9 +137,8 @@ def pair(keep, **extra):
 
 R_lab = dense(spynach.relaxation(pair("labframe", rlx_dfs="keep")))
 R_diag = dense(spynach.relaxation(pair("diagonal")))
-assert np.abs(R_lab.imag).max() > 0                       # dynamic frequency shifts
-assert np.allclose(R_diag, np.diag(np.diag(R_diag)))
-assert np.allclose(np.diag(R_diag), np.diag(R_lab).real, atol=1e-9)
+print(f"largest dynamic frequency shift {np.abs(R_lab.imag).max():.3g} rad/s; "
+f"off-diagonal part of R_diag {np.abs(R_diag - np.diag(np.diag(R_diag))).max():.3g}")
 ```
 
 ## T1/T2 and damping models
@@ -160,9 +158,9 @@ spin_system_t1t2 = spynach.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
 spin_system_t1t2 = spynach.basis(spin_system_t1t2, {"formalism": "sphten-liouv", "approximation": "none"})
 R_t = dense(spynach.relaxation(spin_system_t1t2))
 row = lambda spec: np.flatnonzero((spin_system_t1t2.basis.basis == spec).all(axis=1))[0]
-assert R_t[row([2, 0]), row([2, 0])] == -1.5          # Lz(H): R1 + damping
-assert R_t[row([1, 3]), row([1, 3])] == -12.5         # L+(H) L-(C): R2(H) + R2(C) + damping
-assert R_t[0, 0] == 0                                  # the unit state never relaxes
+print(R_t[row([2, 0]), row([2, 0])])          # Lz(H): R1 + damping
+print(R_t[row([1, 3]), row([1, 3])])          # L+(H) L-(C): R2(H) + R2(C) + damping
+print(R_t[0, 0])                              # the unit state never relaxes
 ```
 
 ## Scalar relaxation of the first and second kind
@@ -192,7 +190,6 @@ spin_system_srfk = spynach.create({"isotopes": ["1H", "1H"], "magnet": 14.1},
                          "srfk_mdepth": [[None, 15.0], [None, None]]})
 spin_system_srfk = spynach.basis(spin_system_srfk, {"formalism": "sphten-liouv", "approximation": "none"})
 R_s = dense(spynach.relaxation(spin_system_srfk)).real
-assert R_s[0, 0] == 0 and np.all(np.diag(R_s) <= 0)
 print(f"largest SRFK rate {-np.diag(R_s).min():.2f} Hz from a 15 Hz modulation with tau = 1 ms")
 ```
 
@@ -232,8 +229,8 @@ self_rate = lambda M, v: -np.vdot(v, M @ v).real / np.vdot(v, v).real
 T1, T2 = 1 / self_rate(R_base, Lz_N), 1 / self_rate(R_base, Lp_N)
 A, dw = 2 * np.pi * 50.0, spin_system_hn.basefrqs[0] - spin_system_hn.basefrqs[1]
 R2_add = (1 / 3) * A**2 * 2 * (T1 + T2 / (1 + dw**2 * T2**2))      # S(S+1) = 2 for 14N
-assert np.isclose(self_rate(R_srsk, Lp_H), self_rate(R_base, Lp_H) + R2_add, rtol=1e-9)
-print(f"14N T1 = {T1 * 1e6:.1f} us, T2 = {T2 * 1e6:.1f} us; proton R2 gains {R2_add:.3f} Hz")
+print(f"14N T1 = {T1 * 1e6:.1f} us, T2 = {T2 * 1e6:.1f} us; proton R2 gains "
+      f"{self_rate(R_srsk, Lp_H) - self_rate(R_base, Lp_H):.3f} Hz (formula: {R2_add:.3f} Hz)")
 ```
 
 Both appear in Spinach's `examples/relaxation_theory/maz_noesy_2.m`, the
@@ -256,14 +253,12 @@ equation, adds a drive from the unit state (`R -> R - (R rho_eq) u^T`);
 
 ```python
 rho_eq = spynach.equilibrium(spin_system_hc)
-assert rho_eq[0] == 1
 spin_system_zero = pair("kite")
 R0 = spynach.relaxation(spin_system_zero)
 HL = spynach.hamiltonian(spynach.assume(spin_system_zero, "labframe"), "left")
 R_ime = spynach.thermalize(spin_system_zero, R0, "IME", rho_eq=rho_eq)
 R_dibari = spynach.thermalize(spin_system_zero, R0, "dibari", H_left=HL, temperature=298.0)
-for R_th in (R_ime, R_dibari):
-    assert np.linalg.norm(dense(R_th) @ rho_eq) < 1e-9       # rho_eq is stationary
+print(*[float(np.linalg.norm(dense(R_th) @ rho_eq)) for R_th in (R_ime, R_dibari)])   # rho_eq is stationary
 ```
 
 ## Transient NOE
@@ -279,7 +274,6 @@ rho = rho_eq - 2 * Lz1 * np.vdot(Lz1, rho_eq) / np.vdot(Lz1, Lz1).real   # proto
 coils = np.stack([Lz1, Lz2], axis=1)
 dt, nsteps = 1e-2, 400
 noe = spynach.evolution(spin_system_hc, 1j * R, rho, dt, nsteps, "multichannel", coil=coils).real
-assert noe.shape == (2, nsteps + 1)
 ```
 
 ```python

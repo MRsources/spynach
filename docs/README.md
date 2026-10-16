@@ -11,9 +11,11 @@
 | [Coming from Spinach](coming-from-spinach.md) | [coming-from-spinach.ipynb](notebooks/coming-from-spinach.ipynb) | what carries over from Spinach and what differs: spin systems, basis, operators, Hamiltonians, parameters, calculation modalities, processing |
 
 The notebooks are saved with their outputs, plots included. Open them
-with `OPENBLAS_NUM_THREADS=4 jupyter lab docs/notebooks/` after
-`pip install -e ".[docs]"`, or in VS Code with the Python and Jupyter
-extensions; the plots are interactive in both. (GitHub's notebook viewer
+with `jupyter lab docs/notebooks/` after `pip install -e ".[docs]"`, or in
+VS Code with the Python and Jupyter extensions; the plots are interactive
+in both. (In a container whose CPU quota is below its visible core count,
+set `OPENBLAS_NUM_THREADS` to the quota first; see the setup section of the
+[Hilbert space guide](hilbert-space.md#setup).) (GitHub's notebook viewer
 does not show Plotly figures; nbviewer does, and the project page
 [ajerschow.github.io/spynach](https://ajerschow.github.io/spynach/)
 links every notebook through it.)
@@ -64,7 +66,9 @@ option, or behaviour change is not done until the guides describe it.
 1. **Markdown is the source.** Guides are `docs/<name>.md`. Every
    ```` ```python ```` block is executed by `tests/docs/test_guides.py`, in
    order and in one namespace per guide, so examples must run as written
-   and should assert what they claim.
+   and show what they claim with a `print` or a plot. Verification
+   belongs in `tests/`, not in the guides, so they carry no `assert`
+   statements.
 2. **Notebooks are generated.** `python docs/build_notebooks.py` writes
    `docs/notebooks/<name>.ipynb` for every guide, runs it in a fresh kernel,
    and saves it with its outputs. Never edit a notebook by hand; the tests

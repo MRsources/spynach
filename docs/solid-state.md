@@ -48,7 +48,7 @@ inter = {"zeeman": {"eigs": [[-7, -7, -1], [4, 2, 9]],           # ppm, principa
 spin_system_csa = spynach.create(sys, inter)
 R = euler2dcm([0.3, 0.9, 1.2])
 shielding = (spin_system_csa.zeeman_matrix[1] / spin_system_csa.basefrqs[1] - np.eye(3)) * 1e6   # back to ppm
-assert np.allclose(shielding, R @ np.diag([4, 2, 9]) @ R.T)
+print(np.linalg.eigvalsh(shielding))          # the eigenvalues given, in ppm
 ```
 
 `eigs` and `euler` must be given together, with the same `None` pattern;
@@ -78,8 +78,7 @@ b = (
     * spin_system_pair.tols.mu0
     / (4 * np.pi * r**3)
 )  # dipolar constant, rad/s
-assert np.allclose(spin_system_pair.coupling_matrix[0][1], 0.5 * b * np.diag([1, 1, -2]))
-assert np.allclose(spin_system_pair.coupling_matrix[1][0], spin_system_pair.coupling_matrix[0][1])
+print(np.round(spin_system_pair.coupling_matrix[0][1] / b, 6))     # b/2 diag(1, 1, -2) along the bond
 print(f"one-bond 1H-13C dipolar coupling: {abs(b) / (2 * np.pi) / 1e3:.1f} kHz")
 ```
 
@@ -98,7 +97,6 @@ and the Euler angles, as Spinach's `eeqq2nqi`:
 from spynach.conventions import eeqq2nqi
 
 nqi = eeqq2nqi(1.24e6, 0.22, 1, [0, 0, 0])        # 14N: e^2qQ/h = 1.24 MHz, eta = 0.22
-assert np.isclose(np.trace(nqi), 0)
 spin_system_nitrogen = spynach.create(
     {"isotopes": ["14N"], "magnet": 21.1}, {"coupling": {"matrix": [[nqi.tolist()]]}}
 )
@@ -135,12 +133,12 @@ spin_system_single = spynach.assume(
     "nmr",
 )
 I, Q = spynach.hamiltonian(spin_system_single, aniso=True)
-assert len(Q) == 2 and len(Q[0]) == 3 and len(Q[1]) == 5
+print(len(Q), [len(q) for q in Q])     # ranks 1 and 2, with 2r + 1 components each
 angles = [0.3, 0.9, 1.2]
 H = dense(I) + dense(spynach.orientation(Q, angles))
 Z = euler2dcm(angles) @ spin_system_single.zeeman_matrix[0] @ euler2dcm(angles).T
 expected = (Z[2, 2] - spin_system_single.basefrqs[0]) * dense(spynach.operator(spin_system_single, "Lz", "1H"))
-assert np.allclose(H, expected, atol=1e-6)
+print(np.abs(H - expected).max())
 ```
 
 For a dipolar pair the same machinery gives the familiar
@@ -152,8 +150,7 @@ spin_system_dipolar = spynach.assume(spynach.basis(spynach.create({"isotopes": [
                                  {"formalism": "zeeman-hilb", "approximation": "none"}), "nmr")
 I_dip, Q_dip = spynach.hamiltonian(spin_system_dipolar, aniso=True)
 splitting = lambda beta: np.ptp(np.linalg.eigvalsh(dense(spynach.orientation(Q_dip, [0, beta, 0]))))
-assert np.isclose(splitting(np.pi / 2) / splitting(0.0), 0.5)
-assert splitting(np.arccos(1 / np.sqrt(3))) < 1e-6
+print(splitting(np.pi / 2) / splitting(0.0), splitting(np.arccos(1 / np.sqrt(3))))   # 1/2, and 0 at the magic angle
 ```
 
 Everything works the same in Liouville space, where the components are
@@ -174,7 +171,6 @@ pars = {"spins": ["1H"], "offset": 0.0, "sweep": 15000.0, "npoints": 128, "zerof
         "rho0": spynach.state(spin_system, "L+", "1H"), "coil": spynach.state(spin_system, "L+", "1H"),
         "axis_units": "ppm"}
 fid_crystal = spynach.crystal(spin_system, spynach.acquire, {**pars, "orientation": [0.3, 0.9, 1.2]}, "nmr")
-assert fid_crystal.shape == (128,)
 ```
 
 ## Powder averages: `powder` and the grids
@@ -192,9 +188,9 @@ sequences that are not invariant under the third angle, icosahedral
 
 ```python
 grid = spynach.load_grid("rep_2ang_200pts_sph")
-assert set(grid) == {"alphas", "betas", "gammas", "weights"} and np.isclose(grid["weights"].sum(), 1)
+print(sorted(grid), grid["weights"].sum())
 fid_powder = spynach.powder(spin_system, spynach.acquire, {**pars, "grid": "rep_2ang_200pts_sph"}, "nmr")
-assert np.isclose(fid_powder[0], fid_crystal[0])       # at t = 0 every orientation gives the full signal
+print(fid_powder[0], fid_crystal[0])       # at t = 0 every orientation gives the full signal
 ```
 
 The static CSA powder pattern of Spinach's
@@ -242,7 +238,6 @@ esr_pars = {
     "coil": spynach.state(spin_system_nitroxide, "L+", "E"),
 }
 fid_esr = spynach.powder(spin_system_nitroxide, spynach.acquire, {**esr_pars, "grid": "rep_2ang_200pts_sph"}, "esr")
-assert np.isclose(abs(fid_esr[0]), 0.5)
 ```
 
 ## What is not ported yet
