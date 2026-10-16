@@ -18,6 +18,14 @@ does not show Plotly figures; nbviewer does, and the project page
 [ajerschow.github.io/spynach](https://ajerschow.github.io/spynach/)
 links every notebook through it.)
 
+[`colab/quick-start.ipynb`](colab/quick-start.ipynb) is a stand-alone
+notebook for [Google Colab](https://colab.research.google.com/github/ajerschow/spynach/blob/main/docs/colab/quick-start.ipynb):
+it installs Spynach from GitHub and runs the project page's two-spin
+example with a plot. It is the one hand-written notebook (it is not
+generated from a guide and is saved without outputs, since Colab runs it);
+keep its example in step with the quick start on `index.html` and in the
+README.
+
 To experiment, copy a notebook into `scratch/` at the repository root
 (ignored by git) and work on the copy; it uses the same `spynach` code. The
 notebooks in `docs/notebooks/` are rebuilt from the guides, so edits to them

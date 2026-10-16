@@ -62,7 +62,7 @@ nav.top a:not(.brand) { color: var(--muted); text-decoration: none; }
 nav.top a:not(.brand):hover { color: var(--accent-ink); }
 .hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 2rem 3rem; align-items: center; padding-block: 3rem 2.5rem; }
 .hero p.lede { font-size: 1.25rem; color: var(--muted); margin-top: 1rem; }
-.hero .actions { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 1.6rem; }
+.actions { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 1.6rem; }
 .btn { display: inline-block; padding: 0.55rem 1rem; border-radius: 6px; text-decoration: none; font-weight: 500; border: 1px solid var(--accent); color: var(--accent-ink); }
 .btn.primary { background: var(--accent); color: var(--bg); }
 .btn.primary:hover { color: var(--bg); filter: brightness(1.08); }
@@ -107,6 +107,7 @@ footer { border-top: 1px solid var(--line); padding-block: 1.6rem; font-size: 0.
   <a href="#quick-start">Quick start</a>
   <a href="#docs">Documentation</a>
   <a href="#reports">Parity and timing</a>
+  <a href="#acknowledgements">Acknowledgements</a>
   <a href="https://github.com/ajerschow/spynach">GitHub</a>
   <a href="https://spindynamics.org">Spinach</a>
 </nav>
@@ -214,6 +215,10 @@ pars = {"spins": ["1H"], "offset": 660, "sweep": 500, "npoints": 1024,
 fid = spynach.liquid(spin_system, spynach.acquire, pars, "nmr")
 spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))</code></pre>
     <p>On machines whose NumPy uses OpenBLAS, set <code>OPENBLAS_NUM_THREADS</code> to the number of cores you actually have; dense LAPACK calls slow down badly when the library sees more cores than the process may use.</p>
+    <p>To try the example without installing anything, open it as a notebook that installs Spynach and plots the spectrum:</p>
+    <div class="actions">
+      <a class="btn" href="https://colab.research.google.com/github/ajerschow/spynach/blob/main/docs/colab/quick-start.ipynb">Open in Google Colab</a>
+    </div>
   </div>
 </section>
 
@@ -287,6 +292,15 @@ spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))</code></pre>
       </div>
     </div>
     <p>Both runs: Apple silicon Mac, 12 cores; MATLAB R2026b with an 11-worker pool; Python 3.12 with NumPy and SciPy on Accelerate. The protocol, including how to add a case, is in <a href="https://github.com/ajerschow/spynach/blob/main/comparison/README.md">comparison/README.md</a>.</p>
+  </div>
+</section>
+
+<section id="acknowledgements">
+  <header><span class="eyebrow">Thanks</span><h2>Acknowledgements</h2></header>
+  <div>
+    <ul class="plain">
+      <li>Grateful to Claude for the amazing work, and to Ilya for encouragement and for suggesting the catchy name!</li>
+    </ul>
   </div>
 </section>
 

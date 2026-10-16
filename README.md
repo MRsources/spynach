@@ -6,7 +6,9 @@ original. **Start with the [Hilbert-space guide](docs/hilbert-space.md)**; if yo
 Spinach, also read [Coming from Spinach](docs/coming-from-spinach.md). Each
 guide has a runnable Jupyter notebook in [`docs/notebooks/`](docs/notebooks/). The project
 page at [ajerschow.github.io/spynach](https://ajerschow.github.io/spynach/) links the
-guides, the notebooks (rendered by nbviewer) and the Spinach comparison reports. See `HANDOFF.md` for goals and design decisions, and
+guides, the notebooks (rendered by nbviewer) and the Spinach comparison reports, and
+has an "Open in Google Colab" button that runs the quick-start example without a local
+install ([`docs/colab/quick-start.ipynb`](docs/colab/quick-start.ipynb)). See `HANDOFF.md` for goals and design decisions, and
 `oracle/README.md` for the reference-data ("fixture") harness.
 
 ## Status
