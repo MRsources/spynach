@@ -72,13 +72,15 @@ initial state over the rotor phase (a powder has every rotor phase at
 `examples/nmr_solids/mas_powder_csa_fplanck.m` with a coarser grid:
 
 ```python
-csa = respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1},
+spin_system_csa = respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1},
                     {"zeeman": {"eigs": [[-7, -7, -1], [4, 2, 9]], "euler": [[0, 0, 0], [0, 0, 0]]}})
-csa = respinach.basis(csa, {"formalism": "sphten-liouv", "approximation": "none", "projections": [[1]]})
+spin_system_csa = respinach.basis(
+    spin_system_csa, {"formalism": "sphten-liouv", "approximation": "none", "projections": [[1]]}
+)
 pars = {"spins": ["1H"], "offset": 0.0, "rate": 500.0, "axis": [1, 1, 1], "max_rank": 17,
         "grid": "leb_2ang_rank_17", "sweep": 2e4, "npoints": 512, "zerofill": 4096, "axis_units": "ppm",
-        "rho0": respinach.state(csa, "L+", "1H"), "coil": respinach.state(csa, "L+", "1H")}
-fid = respinach.singlerot(csa, respinach.acquire, pars, "nmr")
+        "rho0": respinach.state(spin_system_csa, "L+", "1H"), "coil": respinach.state(spin_system_csa, "L+", "1H")}
+fid = respinach.singlerot(spin_system_csa, respinach.acquire, pars, "nmr")
 assert fid.shape == (512,) and np.isclose(fid[0], 1.0)
 ```
 
@@ -87,7 +89,7 @@ from respinach.plotting import plot_1d
 
 fid_apod = fid * np.exp(-6 * np.arange(pars["npoints"]) / pars["npoints"])
 spectrum = np.fft.fftshift(np.fft.fft(fid_apod, pars["zerofill"]))
-plot_1d(csa, spectrum.real, {**pars, "invert_axis": True})
+plot_1d(spin_system_csa, spectrum.real, {**pars, "invert_axis": True})
 ```
 
 The static powder pattern of the solid-state guide breaks up into a
@@ -102,17 +104,28 @@ the anisotropy dephases it. Spinning far above the anisotropy averages it
 to nothing and leaves the isotropic shift:
 
 ```python
-one = respinach.create({"isotopes": ["1H"], "magnet": 14.1}, {"zeeman": {"eigs": [[4, 2, 9]], "euler": [[0.3, 0.9, 1.2]]}})
-one = respinach.basis(one, {"formalism": "sphten-liouv", "approximation": "none", "projections": [[1]]})
-p1 = {**pars, "rho0": respinach.state(one, "L+", "1H"), "coil": respinach.state(one, "L+", "1H"), "npoints": 161}
-fid_one = respinach.singlerot(one, respinach.acquire, p1, "nmr")
+spin_system_single = respinach.create(
+    {"isotopes": ["1H"], "magnet": 14.1}, {"zeeman": {"eigs": [[4, 2, 9]], "euler": [[0.3, 0.9, 1.2]]}}
+)
+spin_system_single = respinach.basis(
+    spin_system_single, {"formalism": "sphten-liouv", "approximation": "none", "projections": [[1]]}
+)
+p1 = {
+    **pars,
+    "rho0": respinach.state(spin_system_single, "L+", "1H"),
+    "coil": respinach.state(spin_system_single, "L+", "1H"),
+    "npoints": 161,
+}
+fid_one = respinach.singlerot(spin_system_single, respinach.acquire, p1, "nmr")
 period = int(round(p1["sweep"] / p1["rate"]))                      # dwell times per rotor period
 echoes = fid_one[::period]
 assert np.allclose(np.abs(echoes), abs(fid_one[0]), rtol=1e-6)      # exact rotor echoes
-iso = one.basefrqs[0] * 5e-6
+iso = spin_system_single.basefrqs[0] * 5e-6
 assert np.isclose(np.angle(echoes[1] / echoes[0]), np.angle(np.exp(-1j * iso / p1["rate"])), atol=1e-6)
 assert abs(fid_one[period // 2]) < 0.9 * abs(fid_one[0])             # dephased in between
-fast = respinach.singlerot(one, respinach.acquire, {**p1, "rate": 5e5, "max_rank": 5, "npoints": 64}, "nmr")
+fast = respinach.singlerot(
+    spin_system_single, respinach.acquire, {**p1, "rate": 5e5, "max_rank": 5, "npoints": 64}, "nmr"
+)
 t = np.arange(64) / p1["sweep"]
 assert np.allclose(fast, fast[0] * np.exp(-1j * iso * t), atol=2e-3 * abs(fast[0]))
 ```
@@ -132,11 +145,15 @@ experiment:
 
 ```python
 static = {**p1, "rate": 0.0, "max_rank": 0, "grid": "single_crystal", "npoints": 32}
-fid_static = respinach.singlerot(one, respinach.acquire, static, "nmr")
+fid_static = respinach.singlerot(spin_system_single, respinach.acquire, static, "nmr")
 rotor_phi, rotor_theta = np.arctan2(1, 1), np.arccos(1 / np.sqrt(3))
-fid_crystal = respinach.crystal(one, respinach.acquire, {**static, "orientation": [rotor_phi, rotor_theta, 0]}, "nmr")
+fid_crystal = respinach.crystal(
+    spin_system_single, respinach.acquire, {**static, "orientation": [rotor_phi, rotor_theta, 0]}, "nmr"
+)
 assert np.allclose(fid_static, fid_crystal, rtol=1e-9)
-off_axis = respinach.singlerot(one, respinach.acquire, {**p1, "axis": [0.5, 0.2, 1.0], "max_rank": 7, "npoints": 64}, "nmr")
+off_axis = respinach.singlerot(
+    spin_system_single, respinach.acquire, {**p1, "axis": [0.5, 0.2, 1.0], "max_rank": 7, "npoints": 64}, "nmr"
+)
 assert off_axis.shape == (64,)
 ```
 

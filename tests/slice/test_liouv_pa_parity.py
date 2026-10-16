@@ -115,8 +115,8 @@ def spin_system(case):
 
 @pytest.fixture
 def liouvillian(case, spin_system):
-    nmr = respinach.assume(spin_system, "nmr")
-    H = respinach.frqoffset(spin_system, respinach.hamiltonian(nmr), CASES[case]["pars"])
+    spin_system_nmr = respinach.assume(spin_system, "nmr")
+    H = respinach.frqoffset(spin_system, respinach.hamiltonian(spin_system_nmr), CASES[case]["pars"])
     return H + 1j * respinach.kinetics(spin_system)
 
 

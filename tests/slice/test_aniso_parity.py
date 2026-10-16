@@ -137,8 +137,8 @@ def test_interaction_tensors(fx, spin_system):
 
 
 def test_hamiltonian_components(fx, case, spin_system):
-    assumed = respinach.assume(spin_system, CASES[case]["assumptions"])
-    I, Q = respinach.hamiltonian(assumed, aniso=True)
+    spin_system_assumed = respinach.assume(spin_system, CASES[case]["assumptions"])
+    I, Q = respinach.hamiltonian(spin_system_assumed, aniso=True)
     assert_matches(I, fx["/ham/I"], **HAMILTONIAN_TOL, name="I")
     for rank, key in ((0, "/ham/Q1"), (1, "/ham/Q2")):
         ref = fx[key]

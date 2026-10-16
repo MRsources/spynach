@@ -60,12 +60,12 @@ def dense(x):
     return x.toarray() if hasattr(x, "toarray") else np.asarray(x)
 
 
-hc = respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
+spin_system_hc = respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
                    {"zeeman": {"scalar": [0.0, 0.0]}, "coordinates": [[0, 0, 0], [0, 0, 1.03]],
                     "relaxation": ["redfield"], "equilibrium": "dibari", "rlx_keep": "kite",
                     "temperature": 298, "tau_c": [[100e-12]]})
-hc = respinach.basis(hc, {"formalism": "sphten-liouv", "approximation": "none"})
-R = respinach.relaxation(hc)
+spin_system_hc = respinach.basis(spin_system_hc, {"formalism": "sphten-liouv", "approximation": "none"})
+R = respinach.relaxation(spin_system_hc)
 assert R.shape == (16, 16)
 ```
 
@@ -95,11 +95,17 @@ and cross-relaxation rates are `rho_I = b^2/10 [J(wI-wS) + 3J(wI) +
 `R` between normalised `Lz` states:
 
 ```python
-Lz_H, Lz_C = respinach.state(hc, ["Lz"], [0]), respinach.state(hc, ["Lz"], [1])
+Lz_H, Lz_C = respinach.state(spin_system_hc, ["Lz"], [0]), respinach.state(spin_system_hc, ["Lz"], [1])
 rate = lambda bra, ket: -np.vdot(bra, dense(R) @ ket).real / np.sqrt(np.vdot(bra, bra).real * np.vdot(ket, ket).real)
-b = hc.gammas[0] * hc.gammas[1] * hc.tols.hbar * hc.tols.mu0 / (4 * np.pi * 1.03e-10**3)
+b = (
+    spin_system_hc.gammas[0]
+    * spin_system_hc.gammas[1]
+    * spin_system_hc.tols.hbar
+    * spin_system_hc.tols.mu0
+    / (4 * np.pi * 1.03e-10**3)
+)
 J = lambda w: 100e-12 / (1 + (w * 100e-12) ** 2)
-wH, wC = abs(hc.basefrqs[0]), abs(hc.basefrqs[1])
+wH, wC = abs(spin_system_hc.basefrqs[0]), abs(spin_system_hc.basefrqs[1])
 assert np.isclose(rate(Lz_H, Lz_H), b**2 / 10 * (J(wH - wC) + 3 * J(wH) + 6 * J(wH + wC)), rtol=1e-4)
 assert np.isclose(rate(Lz_H, Lz_C), b**2 / 10 * (6 * J(wH + wC) - J(wH - wC)), rtol=1e-4)
 print(f"R1(1H) = {rate(Lz_H, Lz_H):.3f} Hz, sigma(HC) = {rate(Lz_H, Lz_C):.3f} Hz")
@@ -148,12 +154,12 @@ the field direction at the orientation handed to `relaxation`).
 (in Hilbert space, every element at half the rate):
 
 ```python
-t1t2 = respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
+spin_system_t1t2 = respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
                      {"relaxation": ["t1_t2", "damp"], "equilibrium": "zero", "rlx_keep": "diagonal",
                       "r1_rates": [1.0, 2.0], "r2_rates": [5.0, 7.0], "damp_rate": 0.5})
-t1t2 = respinach.basis(t1t2, {"formalism": "sphten-liouv", "approximation": "none"})
-R_t = dense(respinach.relaxation(t1t2))
-row = lambda spec: np.flatnonzero((t1t2.basis.basis == spec).all(axis=1))[0]
+spin_system_t1t2 = respinach.basis(spin_system_t1t2, {"formalism": "sphten-liouv", "approximation": "none"})
+R_t = dense(respinach.relaxation(spin_system_t1t2))
+row = lambda spec: np.flatnonzero((spin_system_t1t2.basis.basis == spec).all(axis=1))[0]
 assert R_t[row([2, 0]), row([2, 0])] == -1.5          # Lz(H): R1 + damping
 assert R_t[row([1, 3]), row([1, 3])] == -12.5         # L+(H) L-(C): R2(H) + R2(C) + damping
 assert R_t[0, 0] == 0                                  # the unit state never relaxes
@@ -180,12 +186,12 @@ coupling between spins `n` and `k` (0-based), `srfk_tau_c` the components
 Redfield theory:
 
 ```python
-srfk = respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1},
+spin_system_srfk = respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1},
                         {"zeeman": {"scalar": [0.0, 2.0]}, "relaxation": ["SRFK"], "rlx_keep": "kite",
                          "equilibrium": "zero", "srfk_tau_c": [[1.0, 1e-3]],
                          "srfk_mdepth": [[None, 15.0], [None, None]]})
-srfk = respinach.basis(srfk, {"formalism": "sphten-liouv", "approximation": "none"})
-R_s = dense(respinach.relaxation(srfk)).real
+spin_system_srfk = respinach.basis(spin_system_srfk, {"formalism": "sphten-liouv", "approximation": "none"})
+R_s = dense(respinach.relaxation(spin_system_srfk)).real
 assert R_s[0, 0] == 0 and np.all(np.diag(R_s) <= 0)
 print(f"largest SRFK rate {-np.diag(R_s).min():.2f} Hz from a 15 Hz modulation with tau = 1 ms")
 ```
@@ -213,14 +219,18 @@ def hn_pair(theories, **extra):
 
 R_base = dense(respinach.relaxation(hn_pair(["redfield"])))
 R_srsk = dense(respinach.relaxation(hn_pair(["redfield", "SRSK"], srsk_sources=[1])))
-hn = hn_pair(["redfield"])
-Lp_H, Lp_N, Lz_N = respinach.state(hn, ["L+"], [0]), respinach.state(hn, ["L+"], [1]), respinach.state(hn, ["Lz"], [1])
+spin_system_hn = hn_pair(["redfield"])
+Lp_H, Lp_N, Lz_N = (
+    respinach.state(spin_system_hn, ["L+"], [0]),
+    respinach.state(spin_system_hn, ["L+"], [1]),
+    respinach.state(spin_system_hn, ["Lz"], [1]),
+)
 ```
 
 ```python
 self_rate = lambda M, v: -np.vdot(v, M @ v).real / np.vdot(v, v).real
 T1, T2 = 1 / self_rate(R_base, Lz_N), 1 / self_rate(R_base, Lp_N)
-A, dw = 2 * np.pi * 50.0, hn.basefrqs[0] - hn.basefrqs[1]
+A, dw = 2 * np.pi * 50.0, spin_system_hn.basefrqs[0] - spin_system_hn.basefrqs[1]
 R2_add = (1 / 3) * A**2 * 2 * (T1 + T2 / (1 + dw**2 * T2**2))      # S(S+1) = 2 for 14N
 assert np.isclose(self_rate(R_srsk, Lp_H), self_rate(R_base, Lp_H) + R2_add, rtol=1e-9)
 print(f"14N T1 = {T1 * 1e6:.1f} us, T2 = {T2 * 1e6:.1f} us; proton R2 gains {R2_add:.3f} Hz")
@@ -245,13 +255,13 @@ equation, adds a drive from the unit state (`R -> R - (R rho_eq) u^T`);
 `inter["equilibrium"]`; `thermalize` applies either to a given `R`:
 
 ```python
-rho_eq = respinach.equilibrium(hc)
+rho_eq = respinach.equilibrium(spin_system_hc)
 assert rho_eq[0] == 1
-zero = pair("kite")
-R0 = respinach.relaxation(zero)
-HL = respinach.hamiltonian(respinach.assume(zero, "labframe"), "left")
-R_ime = respinach.thermalize(zero, R0, "IME", rho_eq=rho_eq)
-R_dibari = respinach.thermalize(zero, R0, "dibari", H_left=HL, temperature=298.0)
+spin_system_zero = pair("kite")
+R0 = respinach.relaxation(spin_system_zero)
+HL = respinach.hamiltonian(respinach.assume(spin_system_zero, "labframe"), "left")
+R_ime = respinach.thermalize(spin_system_zero, R0, "IME", rho_eq=rho_eq)
+R_dibari = respinach.thermalize(spin_system_zero, R0, "dibari", H_left=HL, temperature=298.0)
 for R_th in (R_ime, R_dibari):
     assert np.linalg.norm(dense(R_th) @ rho_eq) < 1e-9       # rho_eq is stationary
 ```
@@ -264,11 +274,11 @@ under `R` alone, with the `"multichannel"` output of `evolution` (one
 trace per coil column):
 
 ```python
-Lz1, Lz2 = respinach.state(hc, ["Lz"], [0]), respinach.state(hc, ["Lz"], [1])
+Lz1, Lz2 = respinach.state(spin_system_hc, ["Lz"], [0]), respinach.state(spin_system_hc, ["Lz"], [1])
 rho = rho_eq - 2 * Lz1 * np.vdot(Lz1, rho_eq) / np.vdot(Lz1, Lz1).real   # proton inverted
 coils = np.stack([Lz1, Lz2], axis=1)
 dt, nsteps = 1e-2, 400
-noe = respinach.evolution(hc, 1j * R, rho, dt, nsteps, "multichannel", coil=coils).real
+noe = respinach.evolution(spin_system_hc, 1j * R, rho, dt, nsteps, "multichannel", coil=coils).real
 assert noe.shape == (2, nsteps + 1)
 ```
 

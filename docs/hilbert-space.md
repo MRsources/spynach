@@ -171,13 +171,13 @@ kinetics superoperator and exchanging systems need the Liouville-space
 formalism, which is not ported yet.
 
 ```python
-exchanging = respinach.create(
+spin_system_exchange = respinach.create(
     {"isotopes": ["1H", "1H"], "magnet": 14.1},
     {"zeeman": {"scalar": [0.0, 3.0]},
      "chem": {"parts": [[0], [1]], "rates": [[-2e3, 2e3], [2e3, -2e3]], "concs": [1.0, 1.0]}},
 )
-assert exchanging.chem.parts == ((0,), (1,))
-assert exchanging.chem.rates.sum(axis=0).tolist() == [0.0, 0.0]
+assert spin_system_exchange.chem.parts == ((0,), (1,))
+assert spin_system_exchange.chem.rates.sum(axis=0).tolist() == [0.0, 0.0]
 ```
 
 The result is a frozen `SpinSystem`. Internally everything is in angular
@@ -405,9 +405,9 @@ plot_1d(spin_system, spectra, pars_hc, names=["acquire from L+", "90° pulse fro
 values. Override any of them at creation:
 
 ```python
-ss_fine = respinach.create({"isotopes": ["1H"], "magnet": 14.1, "tols": {"prop_chop": 1e-14}}, {})
-assert ss_fine.tols.prop_chop == 1e-14
-assert ss_fine.tols.small_matrix == 200
+spin_system_fine = respinach.create({"isotopes": ["1H"], "magnet": 14.1, "tols": {"prop_chop": 1e-14}}, {})
+assert spin_system_fine.tols.prop_chop == 1e-14
+assert spin_system_fine.tols.small_matrix == 200
 ```
 
 The ones that matter for the ported code:

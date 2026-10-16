@@ -45,9 +45,9 @@ def dense(x):
 sys = {"isotopes": ["1H", "1H"], "magnet": 14.1}
 inter = {"zeeman": {"eigs": [[-7, -7, -1], [4, 2, 9]],           # ppm, principal values
                     "euler": [[0, 0, 0], [0.3, 0.9, 1.2]]}}      # rad, ZYZ Euler angles
-csa = respinach.create(sys, inter)
+spin_system_csa = respinach.create(sys, inter)
 R = euler2dcm([0.3, 0.9, 1.2])
-shielding = (csa.zeeman_matrix[1] / csa.basefrqs[1] - np.eye(3)) * 1e6   # back to ppm
+shielding = (spin_system_csa.zeeman_matrix[1] / spin_system_csa.basefrqs[1] - np.eye(3)) * 1e6   # back to ppm
 assert np.allclose(shielding, R @ np.diag([4, 2, 9]) @ R.T)
 ```
 
@@ -67,11 +67,19 @@ the Liouville guide. Spinach stores *half* the dipolar tensor in both
 does the same, so the tensors match element for element:
 
 ```python
-pair = respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1}, {"coordinates": [[0, 0, 0], [0, 0, 1.09]]})
+spin_system_pair = respinach.create(
+    {"isotopes": ["1H", "13C"], "magnet": 14.1}, {"coordinates": [[0, 0, 0], [0, 0, 1.09]]}
+)
 r = 1.09e-10
-b = pair.gammas[0] * pair.gammas[1] * pair.tols.hbar * pair.tols.mu0 / (4 * np.pi * r**3)   # dipolar constant, rad/s
-assert np.allclose(pair.coupling_matrix[0][1], 0.5 * b * np.diag([1, 1, -2]))
-assert np.allclose(pair.coupling_matrix[1][0], pair.coupling_matrix[0][1])
+b = (
+    spin_system_pair.gammas[0]
+    * spin_system_pair.gammas[1]
+    * spin_system_pair.tols.hbar
+    * spin_system_pair.tols.mu0
+    / (4 * np.pi * r**3)
+)  # dipolar constant, rad/s
+assert np.allclose(spin_system_pair.coupling_matrix[0][1], 0.5 * b * np.diag([1, 1, -2]))
+assert np.allclose(spin_system_pair.coupling_matrix[1][0], spin_system_pair.coupling_matrix[0][1])
 print(f"one-bond 1H-13C dipolar coupling: {abs(b) / (2 * np.pi) / 1e3:.1f} kHz")
 ```
 
@@ -91,7 +99,9 @@ from respinach.conventions import eeqq2nqi
 
 nqi = eeqq2nqi(1.24e6, 0.22, 1, [0, 0, 0])        # 14N: e^2qQ/h = 1.24 MHz, eta = 0.22
 assert np.isclose(np.trace(nqi), 0)
-nitrogen = respinach.create({"isotopes": ["14N"], "magnet": 21.1}, {"coupling": {"matrix": [[nqi.tolist()]]}})
+spin_system_nitrogen = respinach.create(
+    {"isotopes": ["14N"], "magnet": 21.1}, {"coupling": {"matrix": [[nqi.tolist()]]}}
+)
 ```
 
 Quadratic couplings have no isotropic part: they enter only through the
@@ -114,15 +124,22 @@ assumptions a shielding tensor contributes its secular part, the `zz`
 element of the rotated tensor:
 
 ```python
-one = respinach.assume(respinach.basis(respinach.create({"isotopes": ["1H"], "magnet": 14.1},
-                                               {"zeeman": {"eigs": [[-2, -2, 4]], "euler": [[0, 0, 0]], "scalar": [3.0]}}),
-                                 {"formalism": "zeeman-hilb", "approximation": "none"}), "nmr")
-I, Q = respinach.hamiltonian(one, aniso=True)
+spin_system_single = respinach.assume(
+    respinach.basis(
+        respinach.create(
+            {"isotopes": ["1H"], "magnet": 14.1},
+            {"zeeman": {"eigs": [[-2, -2, 4]], "euler": [[0, 0, 0]], "scalar": [3.0]}},
+        ),
+        {"formalism": "zeeman-hilb", "approximation": "none"},
+    ),
+    "nmr",
+)
+I, Q = respinach.hamiltonian(spin_system_single, aniso=True)
 assert len(Q) == 2 and len(Q[0]) == 3 and len(Q[1]) == 5
 angles = [0.3, 0.9, 1.2]
 H = dense(I) + dense(respinach.orientation(Q, angles))
-Z = euler2dcm(angles) @ one.zeeman_matrix[0] @ euler2dcm(angles).T
-expected = (Z[2, 2] - one.basefrqs[0]) * dense(respinach.operator(one, "Lz", "1H"))
+Z = euler2dcm(angles) @ spin_system_single.zeeman_matrix[0] @ euler2dcm(angles).T
+expected = (Z[2, 2] - spin_system_single.basefrqs[0]) * dense(respinach.operator(spin_system_single, "Lz", "1H"))
 assert np.allclose(H, expected, atol=1e-6)
 ```
 
@@ -130,10 +147,10 @@ For a dipolar pair the same machinery gives the familiar
 `(3 cos^2 beta - 1)` dependence, vanishing at the magic angle:
 
 ```python
-dip = respinach.assume(respinach.basis(respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1},
+spin_system_dipolar = respinach.assume(respinach.basis(respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1},
                                                {"coordinates": [[0, 0, 0], [0, 0, 3.0]]}),
                                  {"formalism": "zeeman-hilb", "approximation": "none"}), "nmr")
-I_dip, Q_dip = respinach.hamiltonian(dip, aniso=True)
+I_dip, Q_dip = respinach.hamiltonian(spin_system_dipolar, aniso=True)
 splitting = lambda beta: np.ptp(np.linalg.eigvalsh(dense(respinach.orientation(Q_dip, [0, beta, 0]))))
 assert np.isclose(splitting(np.pi / 2) / splitting(0.0), 0.5)
 assert splitting(np.arccos(1 / np.sqrt(3))) < 1e-6
@@ -150,7 +167,9 @@ the sample; it builds `I + orientation(Q, angles)`, Hermitises it, and
 hands it to the sequence:
 
 ```python
-spin_system = respinach.basis(csa, {"formalism": "sphten-liouv", "approximation": "none", "projections": [[1]]})
+spin_system = respinach.basis(
+    spin_system_csa, {"formalism": "sphten-liouv", "approximation": "none", "projections": [[1]]}
+)
 pars = {"spins": ["1H"], "offset": 0.0, "sweep": 15000.0, "npoints": 128, "zerofill": 512,
         "rho0": respinach.state(spin_system, "L+", "1H"), "coil": respinach.state(spin_system, "L+", "1H"),
         "axis_units": "ppm"}
@@ -208,14 +227,21 @@ weak and pseudosecular hyperfine couplings, all nuclear terms;
 hyperfine tensor at X-band:
 
 ```python
-nitroxide = respinach.create({"isotopes": ["E", "14N"], "magnet": 0.33},
+spin_system_nitroxide = respinach.create({"isotopes": ["E", "14N"], "magnet": 0.33},
                           {"zeeman": {"eigs": [[2.0089, 2.0061, 2.0027], None], "euler": [[0, 0, 0], None]},
                            "coupling": {"eigs": [[None, [16e6, 16e6, 86e6]], [None, None]],
                                         "euler": [[None, [0, 0, 0]], [None, None]]}})
-nitroxide = respinach.basis(nitroxide, {"formalism": "sphten-liouv", "approximation": "none"})
-esr_pars = {"spins": ["E"], "offset": 0.0, "sweep": 1e9, "npoints": 128, "zerofill": 512,
-            "rho0": respinach.state(nitroxide, "L+", "E"), "coil": respinach.state(nitroxide, "L+", "E")}
-fid_esr = respinach.powder(nitroxide, respinach.acquire, {**esr_pars, "grid": "rep_2ang_200pts_sph"}, "esr")
+spin_system_nitroxide = respinach.basis(spin_system_nitroxide, {"formalism": "sphten-liouv", "approximation": "none"})
+esr_pars = {
+    "spins": ["E"],
+    "offset": 0.0,
+    "sweep": 1e9,
+    "npoints": 128,
+    "zerofill": 512,
+    "rho0": respinach.state(spin_system_nitroxide, "L+", "E"),
+    "coil": respinach.state(spin_system_nitroxide, "L+", "E"),
+}
+fid_esr = respinach.powder(spin_system_nitroxide, respinach.acquire, {**esr_pars, "grid": "rep_2ang_200pts_sph"}, "esr")
 assert np.isclose(abs(fid_esr[0]), 0.5)
 ```
 

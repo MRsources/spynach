@@ -139,9 +139,9 @@ def test_unported_inputs_are_refused():
     spin_system = respinach.create({"isotopes": ["1H"], "magnet": 14.1}, {})
     with pytest.raises(NotImplementedError, match="zeeman-liouv"):
         respinach.basis(spin_system, {"formalism": "zeeman-liouv", "approximation": "none"})
-    liouv = respinach.basis(spin_system, {"formalism": "sphten-liouv", "approximation": "none"})
+    spin_system_liouv = respinach.basis(spin_system, {"formalism": "sphten-liouv", "approximation": "none"})
     with pytest.raises(NotImplementedError, match="total"):
-        respinach.evolution(liouv, np.zeros((4, 4)), np.ones(4), 1.0, 1, "total", coil=np.ones(4))
+        respinach.evolution(spin_system_liouv, np.zeros((4, 4)), np.ones(4), 1.0, 1, "total", coil=np.ones(4))
     with pytest.raises(NotImplementedError, match="qnmr"):
         respinach.assume(spin_system, "qnmr")
     spin_system_hilb = respinach.basis(spin_system, HILB)

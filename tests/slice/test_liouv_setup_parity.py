@@ -222,8 +222,8 @@ def test_states(fx, case, spin_system):
 
 
 def test_hamiltonian(fx, case, spin_system):
-    nmr = respinach.assume(spin_system, "nmr")
-    H = respinach.hamiltonian(nmr)
+    spin_system_nmr = respinach.assume(spin_system, "nmr")
+    H = respinach.hamiltonian(spin_system_nmr)
     assert_matches(H, fx["/ham/H"], **HAMILTONIAN_TOL, name="H")
     assert_matches(
         respinach.hamiltonian(respinach.assume(spin_system, "nmr", "zeeman")), fx["/ham/H_zeeman"], **HAMILTONIAN_TOL
@@ -233,8 +233,10 @@ def test_hamiltonian(fx, case, spin_system):
         fx["/ham/H_coupling"],
         **HAMILTONIAN_TOL,
     )
-    assert_matches(respinach.hamiltonian(nmr, "left"), fx["/ham/H_left"], **HAMILTONIAN_TOL, name="H_left")
-    assert_matches(respinach.hamiltonian(nmr, "right"), fx["/ham/H_right"], **HAMILTONIAN_TOL, name="H_right")
+    assert_matches(respinach.hamiltonian(spin_system_nmr, "left"), fx["/ham/H_left"], **HAMILTONIAN_TOL, name="H_left")
+    assert_matches(
+        respinach.hamiltonian(spin_system_nmr, "right"), fx["/ham/H_right"], **HAMILTONIAN_TOL, name="H_right"
+    )
     pars = {"spins": [CASES[case]["det"]], "offset": [CASES[case]["offset"]]}
     assert_matches(respinach.frqoffset(spin_system, H, pars), fx["/ham/H_off"], **HAMILTONIAN_TOL, name="H_off")
 

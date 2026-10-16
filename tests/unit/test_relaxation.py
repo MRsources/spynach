@@ -78,12 +78,14 @@ def test_redfield_dipolar_rates_match_solomon(isotopes, r, tau_c):
 
 
 def test_retention_policies_and_dfs():
-    ls_lab = redfield_pair(["1H", "13C"], 1.03, 100e-12, keep="labframe", equilibrium="zero", rlx_dfs="keep")
-    R_lab = dense(respinach.relaxation(ls_lab))
+    spin_system_labframe = redfield_pair(
+        ["1H", "13C"], 1.03, 100e-12, keep="labframe", equilibrium="zero", rlx_dfs="keep"
+    )
+    R_lab = dense(respinach.relaxation(spin_system_labframe))
     assert np.abs(R_lab.imag).max() > 0  # dynamic frequency shifts kept
     R_sec = dense(respinach.relaxation(redfield_pair(["1H", "13C"], 1.03, 100e-12, keep="secular", equilibrium="zero")))
-    _, projs = respinach.operators.lin2lm(ls_lab.basis.basis)
-    frequencies = projs @ ls_lab.basefrqs
+    _, projs = respinach.operators.lin2lm(spin_system_labframe.basis.basis)
+    frequencies = projs @ spin_system_labframe.basefrqs
     rows, cols = np.nonzero(R_sec)
     assert np.all(frequencies[rows] == frequencies[cols])
     R_diag = dense(
@@ -115,7 +117,7 @@ def test_t1_t2_model_and_damping():
     assert R[row([1, 0]), row([1, 0])] == -5.0 and R[row([1, 3]), row([1, 3])] == -12.0
     assert R[row([2, 2]), row([2, 2])] == -3.0 and R[0, 0] == 0
     # Anisotropic rates need an orientation; along z the zz element applies
-    aniso = respinach.create(
+    spin_system_aniso = respinach.create(
         {"isotopes": ["1H"], "magnet": 14.1},
         {
             "relaxation": ["t1_t2"],
@@ -125,19 +127,19 @@ def test_t1_t2_model_and_damping():
             "r2_rates": [4.0],
         },
     )
-    la = respinach.basis(aniso, LIOUV)
+    spin_system_aniso_liouv = respinach.basis(spin_system_aniso, LIOUV)
     with pytest.raises(ValueError, match="Euler angles"):
-        respinach.relaxation(la)
-    assert dense(respinach.relaxation(la, [0, 0, 0]))[2, 2] == -3.0
-    assert np.isclose(dense(respinach.relaxation(la, [0, np.pi / 2, 0]))[2, 2], -1.0)
+        respinach.relaxation(spin_system_aniso_liouv)
+    assert dense(respinach.relaxation(spin_system_aniso_liouv, [0, 0, 0]))[2, 2] == -3.0
+    assert np.isclose(dense(respinach.relaxation(spin_system_aniso_liouv, [0, np.pi / 2, 0]))[2, 2], -1.0)
     # Damping: every state but the unit state in Liouville space; everything in Hilbert space
-    damp = respinach.create(
+    spin_system_damp = respinach.create(
         {"isotopes": ["1H", "1H"], "magnet": 14.1},
         {"relaxation": ["damp"], "equilibrium": "zero", "rlx_keep": "diagonal", "damp_rate": 5.0},
     )
-    R = dense(respinach.relaxation(respinach.basis(damp, LIOUV)))
+    R = dense(respinach.relaxation(respinach.basis(spin_system_damp, LIOUV)))
     assert R[0, 0] == 0 and np.allclose(np.diag(R)[1:], -5.0)
-    R = dense(respinach.relaxation(respinach.basis(damp, HILB)))
+    R = dense(respinach.relaxation(respinach.basis(spin_system_damp, HILB)))
     assert np.allclose(R, -2.5 * np.eye(4))
 
 
@@ -247,21 +249,21 @@ def quadrupolar_pair(theories, **extra):
 
 
 def test_srsk_adds_abragam_rates_to_the_coupled_spin():
-    base = quadrupolar_pair(["redfield"])
-    with_srsk = quadrupolar_pair(["redfield", "SRSK"], srsk_sources=[1])
-    R_base, R = respinach.relaxation(base), respinach.relaxation(with_srsk)
-    Lz, Lp = respinach.state(base, ["Lz"], [0]), respinach.state(base, ["L+"], [0])
-    Nz, Np = respinach.state(base, ["Lz"], [1]), respinach.state(base, ["L+"], [1])
+    spin_system_redfield = quadrupolar_pair(["redfield"])
+    spin_system_srsk = quadrupolar_pair(["redfield", "SRSK"], srsk_sources=[1])
+    R_base, R = respinach.relaxation(spin_system_redfield), respinach.relaxation(spin_system_srsk)
+    Lz, Lp = respinach.state(spin_system_redfield, ["Lz"], [0]), respinach.state(spin_system_redfield, ["L+"], [0])
+    Nz, Np = respinach.state(spin_system_redfield, ["Lz"], [1]), respinach.state(spin_system_redfield, ["L+"], [1])
     T1k, T2k = 1 / rate(R_base, Nz, Nz), 1 / rate(R_base, Np, Np)
-    A, Sk, dw = 2 * np.pi * 50.0, 1.0, base.basefrqs[0] - base.basefrqs[1]
+    A, Sk, dw = 2 * np.pi * 50.0, 1.0, spin_system_redfield.basefrqs[0] - spin_system_redfield.basefrqs[1]
     R1add = (2 / 3) * A**2 * Sk * (Sk + 1) * T2k / (1 + dw**2 * T2k**2)
     R2add = (1 / 3) * A**2 * Sk * (Sk + 1) * (T1k + T2k / (1 + dw**2 * T2k**2))
     assert np.isclose(rate(R, Lz, Lz), rate(R_base, Lz, Lz) + R1add, rtol=1e-9)
     assert np.isclose(rate(R, Lp, Lp), rate(R_base, Lp, Lp) + R2add, rtol=1e-9)
     assert np.isclose(rate(R, Nz, Nz), rate(R_base, Nz, Nz))  # the source spin itself is untouched
     # too slow a source: the quadrupolar coupling a hundred times smaller
-    slow = quadrupolar_pair(["redfield", "SRSK"], srsk_sources=[1])
-    slow = respinach.create(
+    spin_system_slow = quadrupolar_pair(["redfield", "SRSK"], srsk_sources=[1])
+    spin_system_slow = respinach.create(
         {"isotopes": ["1H", "14N"], "magnet": 11.75},
         {
             "zeeman": {"scalar": [0.0, 0.0]},
@@ -279,7 +281,7 @@ def test_srsk_adds_abragam_rates_to_the_coupled_spin():
         },
     )
     with pytest.raises(ValueError, match="source spin relaxation is too slow"):
-        respinach.relaxation(respinach.basis(slow, LIOUV))
+        respinach.relaxation(respinach.basis(spin_system_slow, LIOUV))
 
 
 def test_srfk_is_the_scalar_redfield_integral():
@@ -302,8 +304,12 @@ def test_srfk_is_the_scalar_redfield_integral():
     assert np.all(np.diag(R) <= 0) and np.diag(R).min() < -1
     # the explicit formula of rlx_scalar.m
     H0 = respinach.hamiltonian(respinach.assume(spin_system, "labframe"), "comm")
-    J = respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1}, {"coupling": {"scalar": [[0, 15.0], [0, 0]]}})
-    H1 = respinach.hamiltonian(respinach.assume(respinach.basis(J, LIOUV), "labframe", "couplings"), "comm")
+    spin_system_coupled = respinach.create(
+        {"isotopes": ["1H", "1H"], "magnet": 14.1}, {"coupling": {"scalar": [[0, 15.0], [0, 0]]}}
+    )
+    H1 = respinach.hamiltonian(
+        respinach.assume(respinach.basis(spin_system_coupled, LIOUV), "labframe", "couplings"), "comm"
+    )
     H0, H1 = dense((H0 + H0.conj().T) / 2), dense((H1 + H1.conj().T) / 2)
     from respinach.utilities import clean_up
 
@@ -312,7 +318,7 @@ def test_srfk_is_the_scalar_redfield_integral():
     expected = -H1 @ dense(expmint(spin_system, H0c, H1.conj().T, H0c + (1j / tau) * np.eye(16), upper))
     assert_matches(R, expected.real, rtol=1e-9, atol=1e-12, name="SRFK")
     # validity: a modulation slower than the relaxation it causes is refused
-    too_slow = respinach.create(
+    spin_system_too_slow = respinach.create(
         {"isotopes": ["1H", "1H"], "magnet": 14.1},
         {
             "zeeman": {"scalar": [0.0, 2.0]},
@@ -324,7 +330,7 @@ def test_srfk_is_the_scalar_redfield_integral():
         },
     )
     with pytest.raises(ValueError, match="srfk_tau_c validity"):
-        respinach.relaxation(respinach.basis(too_slow, LIOUV))
+        respinach.relaxation(respinach.basis(spin_system_too_slow, LIOUV))
 
 
 def test_scalar_relaxation_inputs_are_validated():

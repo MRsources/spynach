@@ -202,7 +202,7 @@ inter = {
     "coupling": {"scalar": [[None, 145.0],
                             [None, None]]},
 }
-hc = respinach.create(sys, inter)
+spin_system_hc = respinach.create(sys, inter)
 ```
 
 - **Same:** isotope names (from Spinach's `spin.m`, including `'E'` for
@@ -222,8 +222,8 @@ hc = respinach.create(sys, inter)
 
 ```python
 for J in (140.0, 145.0, 150.0):
-    scanned = respinach.create(sys, {**inter, "coupling": {"scalar": [[0, J], [0, 0]]}})
-    assert np.isclose(scanned.coupling_matrix[0][1][0, 0], 2 * np.pi * J)
+    spin_system_scanned = respinach.create(sys, {**inter, "coupling": {"scalar": [[0, J], [0, 0]]}})
+    assert np.isclose(spin_system_scanned.coupling_matrix[0][1][0, 0], 2 * np.pi * J)
 ```
 
 - **Tensors and coordinates:** `inter.zeeman.eigs`/`euler` and
@@ -253,8 +253,8 @@ inter.chem.concs=[1.0 1.0];
 ```python
 inter_exch = {"zeeman": {"scalar": [0.0, 3.0]},
               "chem": {"parts": [[0], [1]], "rates": [[-2e3, 2e3], [2e3, -2e3]], "concs": [1.0, 1.0]}}
-exch = respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1}, inter_exch)
-assert exch.chem.parts == ((0,), (1,))
+spin_system_exchange = respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1}, inter_exch)
+assert spin_system_exchange.chem.parts == ((0,), (1,))
 ```
 
 **Not ported yet** (each raises `NotImplementedError` naming the field):
@@ -274,7 +274,7 @@ not ported yet either; see [Calculation modalities](#calculation-modalities).
 
 ```python
 bas = {"formalism": "zeeman-hilb", "approximation": "none"}
-hc = respinach.basis(hc, bas)
+spin_system_hc = respinach.basis(spin_system_hc, bas)
 ```
 
 - **Same:** field names and meanings: `formalism`, `approximation`,
@@ -306,9 +306,9 @@ bas.projections={+1};
 ```python
 bas_ik2 = {"formalism": "sphten-liouv", "approximation": "IK-2",
            "connectivity": "scalar_couplings", "prox_level": 1, "projections": [[1]]}
-hc_liouv = respinach.basis(hc, bas_ik2)
-assert hc_liouv.basis.basis[0].tolist() == [0, 0]     # unit state first
-assert set(hc_liouv.basis.tot_proj[1:]) == {1}        # coherence order +1 only
+spin_system_hc_liouv = respinach.basis(spin_system_hc, bas_ik2)
+assert spin_system_hc_liouv.basis.basis[0].tolist() == [0, 0]     # unit state first
+assert set(spin_system_hc_liouv.basis.tot_proj[1:]) == {1}        # coherence order +1 only
 ```
 
 - **Not ported yet:** `zeeman-liouv`, the `IK-DNP` and `IK-SBS`
@@ -335,8 +335,8 @@ In respinach the type of the *first* argument does: a string gives a sum, a
 list gives a product.
 
 ```python
-Lz_sum = respinach.operator(hc, "Lz", [0, 1])         # Lz(H) + Lz(C)
-LzSz = respinach.operator(hc, ["Lz", "Lz"], [0, 1])   # Lz(H) Lz(C)
+Lz_sum = respinach.operator(spin_system_hc, "Lz", [0, 1])         # Lz(H) + Lz(C)
+LzSz = respinach.operator(spin_system_hc, ["Lz", "Lz"], [0, 1])   # Lz(H) Lz(C)
 assert np.allclose((LzSz @ LzSz).toarray(), np.eye(4) / 16)
 ```
 
@@ -365,9 +365,9 @@ rho=state(spin_system,'L+','1H','cheap');
 ```
 
 ```python
-hc_none = respinach.basis(hc, {"formalism": "sphten-liouv", "approximation": "none"})
-Lz_L = respinach.operator(hc_none, "Lz", "1H", "left")
-rho_cheap = respinach.state(hc_none, "L+", "1H", "cheap")
+spin_system_hc_none = respinach.basis(spin_system_hc, {"formalism": "sphten-liouv", "approximation": "none"})
+Lz_L = respinach.operator(spin_system_hc_none, "Lz", "1H", "left")
+rho_cheap = respinach.state(spin_system_hc_none, "L+", "1H", "cheap")
 assert Lz_L.shape == (16, 16) and rho_cheap.shape == (16,)
 assert np.isclose(rho_cheap[np.flatnonzero(rho_cheap)[0]], -np.sqrt(2))
 ```
@@ -379,8 +379,8 @@ assert np.isclose(rho_cheap[np.flatnonzero(rho_cheap)[0]], -np.sqrt(2))
 ## Assumptions and the Hamiltonian
 
 ```python
-H = respinach.hamiltonian(respinach.assume(hc, "nmr"))
-H_zeeman = respinach.hamiltonian(respinach.assume(hc, "nmr", "zeeman"))
+H = respinach.hamiltonian(respinach.assume(spin_system_hc, "nmr"))
+H_zeeman = respinach.hamiltonian(respinach.assume(spin_system_hc, "nmr", "zeeman"))
 assert np.allclose(H - H_zeeman, 2 * np.pi * 145.0 * LzSz.toarray())  # weak 1H-13C coupling
 ```
 
@@ -410,10 +410,10 @@ assert np.allclose(H - H_zeeman, 2 * np.pi * 145.0 * LzSz.toarray())  # weak 1H-
   stacked state array.
 
 ```python
-hc_liouv = respinach.assume(hc_none, "nmr")
-H_comm = respinach.hamiltonian(hc_liouv)                  # [H, .] in Liouville space
-H_left = respinach.hamiltonian(hc_liouv, "left")
-H_right = respinach.hamiltonian(hc_liouv, "right")
+spin_system_hc_liouv = respinach.assume(spin_system_hc_none, "nmr")
+H_comm = respinach.hamiltonian(spin_system_hc_liouv)                  # [H, .] in Liouville space
+H_left = respinach.hamiltonian(spin_system_hc_liouv, "left")
+H_right = respinach.hamiltonian(spin_system_hc_liouv, "right")
 assert abs(H_comm - (H_left - H_right)).max() < 1e-9   # each is rounded to liouv_zero separately
 ```
 

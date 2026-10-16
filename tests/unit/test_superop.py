@@ -80,15 +80,17 @@ def test_superoperators_in_a_complete_basis(ops, spins, operator_type):
 def test_restricted_superoperator_is_a_projection():
     """In a truncated basis the superoperator is the complete one restricted to the kept states."""
     spin_system = system(["1H", "1H", "13C"], coupling={"scalar": [[0, 5.0, 100.0], [0, 0, 20.0], [0, 0, 0]]})
-    full = respinach.basis(spin_system, LIOUV)
-    small = respinach.basis(spin_system, {**LIOUV, "approximation": "IK-0", "inter_level": 2})
-    kept = [np.flatnonzero((full.basis.basis == row).all(axis=1))[0] for row in small.basis.basis]
+    spin_system_full = respinach.basis(spin_system, LIOUV)
+    spin_system_small = respinach.basis(spin_system, {**LIOUV, "approximation": "IK-0", "inter_level": 2})
+    kept = [
+        np.flatnonzero((spin_system_full.basis.basis == row).all(axis=1))[0] for row in spin_system_small.basis.basis
+    ]
     for ops, spins in (("Lz", "all"), (["L+", "L-"], [0, 2]), (["Lz", "Lz", "L+"], [0, 1, 2])):
-        A_full = respinach.operator(full, ops, spins).toarray()
-        A_small = respinach.operator(small, ops, spins)
+        A_full = respinach.operator(spin_system_full, ops, spins).toarray()
+        A_small = respinach.operator(spin_system_small, ops, spins)
         assert_matches(A_small, A_full[np.ix_(kept, kept)], **TIGHT)
     # A three-spin operator has no matrix elements among states of order <= 2 except via the unit state
-    assert respinach.operator(small, ["L+", "L-", "Lz"], [0, 1, 2], "left").count_nonzero() > 0
+    assert respinach.operator(spin_system_small, ["L+", "L-", "Lz"], [0, 1, 2], "left").count_nonzero() > 0
 
 
 def test_states_in_liouville_space():

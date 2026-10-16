@@ -46,8 +46,8 @@ def test_apodisation():
 
 def test_decouple_and_homospoil():
     spin_system = system(["1H", "13C"], coupling={"scalar": [[0, 140.0], [0, 0]]})
-    nmr = respinach.assume(spin_system, "nmr")
-    H = respinach.hamiltonian(nmr)
+    spin_system_nmr = respinach.assume(spin_system, "nmr")
+    H = respinach.hamiltonian(spin_system_nmr)
     rho = respinach.state(spin_system, "L+", "all") + respinach.state(spin_system, ["L+", "Lz"], [0, 1])
     H_dec, rho_dec = respinach.decouple(spin_system, H, rho, ["13C"])
     carbon = spin_system.basis.basis[:, 1] > 0
@@ -80,11 +80,13 @@ def test_decouple_and_homospoil():
         np.count_nonzero(respinach.homospoil(spin_system, respinach.state(spin_system, ["L+", "L-"], [0, 1]), "keep"))
         == 0
     )
-    hh = system(["1H", "1H"])
+    spin_system_hh = system(["1H", "1H"])
     assert (
         np.count_nonzero(
             respinach.homospoil(
-                hh, respinach.state(hh, ["L+", "L-"], [0, 1]) + respinach.state(hh, "L+", "all"), "keep"
+                spin_system_hh,
+                respinach.state(spin_system_hh, ["L+", "L-"], [0, 1]) + respinach.state(spin_system_hh, "L+", "all"),
+                "keep",
             )
         )
         == 1
@@ -125,16 +127,16 @@ def test_cosy_cross_peaks_need_a_coupling():
         "spins": ["1H"],
         "zerofill": [256, 256],
     }
-    coupled = system(["1H", "1H"], zeeman={"scalar": shifts}, coupling={"scalar": [[0, J], [0, 0]]})
-    uncoupled = system(["1H", "1H"], zeeman={"scalar": shifts})
+    spin_system_coupled = system(["1H", "1H"], zeeman={"scalar": shifts}, coupling={"scalar": [[0, J], [0, 0]]})
+    spin_system_uncoupled = system(["1H", "1H"], zeeman={"scalar": shifts})
     spectra = {}
-    for name, spin_system in (("coupled", coupled), ("uncoupled", uncoupled)):
+    for name, spin_system in (("coupled", spin_system_coupled), ("uncoupled", spin_system_uncoupled)):
         fid = respinach.liquid(spin_system, respinach.cosy, pars, "nmr")
         assert fid.shape == (64, 64)
         spectra[name] = spectrum_2d(respinach.apodisation(fid, [("sqcos",), ("sqcos",)]), (256, 256))
     from respinach.plotting import axis_2d
 
-    f1, f2, _, _ = axis_2d(coupled, spectra["coupled"], {**pars, "axis_units": "ppm"})
+    f1, f2, _, _ = axis_2d(spin_system_coupled, spectra["coupled"], {**pars, "axis_units": "ppm"})
     # Cross peak region: F1 at spin 1, F2 at spin 2
 
     def near(axis, value):
@@ -146,7 +148,7 @@ def test_cosy_cross_peaks_need_a_coupling():
     # Without a coupling only truncation sidelobes of the diagonal peaks (about 1 %) reach the cross-peak region
     assert np.abs(spectra["uncoupled"])[np.ix_(near(f2, 3.0), near(f1, 1.0))].max() < 0.02 * diagonal
     with pytest.raises(ValueError, match="angle"):
-        respinach.liquid(coupled, respinach.cosy, {k: v for k, v in pars.items() if k != "angle"}, "nmr")
+        respinach.liquid(spin_system_coupled, respinach.cosy, {k: v for k, v in pars.items() if k != "angle"}, "nmr")
 
 
 def test_noesy_cross_peaks_from_cross_relaxation():
@@ -236,12 +238,12 @@ def test_kill_spin_and_dilute():
             "coordinates": [[0, 0, 0], [0, 0, 1.09], [0, 0, 2.6]],
         },
     )
-    sub = respinach.dilute(spin_system, "13C")
-    assert [s.isotopes for s in sub] == [("1H", "13C"), ("1H", "13C")]
-    assert np.isclose(sub[1].zeeman_matrix[1][0, 0] / sub[1].basefrqs[1], 1 + 50e-6)
-    assert np.isclose(np.trace(sub[0].coupling_matrix[0][1]) / 3, 2 * np.pi * 140.0)  # one-bond J kept
-    assert np.isclose(np.trace(sub[1].coupling_matrix[0][1]), 0)  # only the dipolar part remains
-    assert sub[0].basis is None and sub[0].chem.parts == ((0, 1),)
+    subsystems = respinach.dilute(spin_system, "13C")
+    assert [s.isotopes for s in subsystems] == [("1H", "13C"), ("1H", "13C")]
+    assert np.isclose(subsystems[1].zeeman_matrix[1][0, 0] / subsystems[1].basefrqs[1], 1 + 50e-6)
+    assert np.isclose(np.trace(subsystems[0].coupling_matrix[0][1]) / 3, 2 * np.pi * 140.0)  # one-bond J kept
+    assert np.isclose(np.trace(subsystems[1].coupling_matrix[0][1]), 0)  # only the dipolar part remains
+    assert subsystems[0].basis is None and subsystems[0].chem.parts == ((0, 1),)
     pairs = respinach.dilute(spin_system, "13C", 2)
     assert len(pairs) == 1 and pairs[0].isotopes == ("1H", "13C", "13C")
     with pytest.raises(ValueError, match="not enough"):

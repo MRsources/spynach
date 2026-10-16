@@ -43,54 +43,54 @@ def test_ik0_state_count(level):
 
 def test_ik1_and_ik2_on_a_chain():
     spin_system = chain(6)
-    ik2 = respinach.basis(
+    spin_system_ik2 = respinach.basis(
         spin_system, {**NONE, "approximation": "IK-2", "connectivity": "scalar_couplings", "prox_level": 1}
     )
-    ik1 = respinach.basis(
+    spin_system_ik1 = respinach.basis(
         spin_system,
         {**NONE, "approximation": "IK-1", "connectivity": "scalar_couplings", "inter_level": 3, "prox_level": 1},
     )
     # States supported on up to three consecutive spins: 1 + 6*3 + 9*9 + 4*27
-    assert ik2.basis.nstates == ik1.basis.nstates == 208
-    ik1_2 = respinach.basis(
+    assert spin_system_ik2.basis.nstates == spin_system_ik1.basis.nstates == 208
+    spin_system_ik1_2 = respinach.basis(
         spin_system,
         {**NONE, "approximation": "IK-1", "connectivity": "scalar_couplings", "inter_level": 2, "prox_level": 1},
     )
-    assert ik1_2.basis.nstates == 1 + 6 * 3 + 5 * 9
+    assert spin_system_ik1_2.basis.nstates == 1 + 6 * 3 + 5 * 9
     # Uncoupled spins only get single-spin states under IK-2
-    isolated = respinach.basis(
+    spin_system_isolated = respinach.basis(
         system(["1H"] * 3), {**NONE, "approximation": "IK-2", "connectivity": "scalar_couplings", "prox_level": 2}
     )
-    assert isolated.basis.nstates == 1 + 3 * 3
+    assert spin_system_isolated.basis.nstates == 1 + 3 * 3
 
 
 def test_full_tensor_connectivity_sees_traceless_couplings():
     tensor = np.diag([1.0, 1.0, -2.0]).tolist()
     spin_system = system(["1H", "1H"], coupling={"matrix": [[None, tensor], [None, None]]})
-    scalar = respinach.basis(
+    spin_system_scalar = respinach.basis(
         spin_system, {**NONE, "approximation": "IK-2", "connectivity": "scalar_couplings", "prox_level": 1}
     )
-    full = respinach.basis(
+    spin_system_full = respinach.basis(
         spin_system, {**NONE, "approximation": "IK-2", "connectivity": "full_tensors", "prox_level": 1}
     )
-    assert scalar.basis.nstates == 7 and full.basis.nstates == 16
+    assert spin_system_scalar.basis.nstates == 7 and spin_system_full.basis.nstates == 16
 
 
 def test_filters():
     spin_system = system(["1H", "13C", "1H"])
-    plus = respinach.basis(spin_system, {**NONE, "projections": [[1]]})
-    assert plus.basis.tot_proj[0] == 0 and set(plus.basis.tot_proj[1:]) == {1}
-    longitudinal = respinach.basis(spin_system, {**NONE, "longitudinal": [["13C"]]})
-    assert set(longitudinal.basis.basis[:, 1]) == {0, 2} and longitudinal.basis.nstates == 32
-    by_number = respinach.basis(spin_system, {**NONE, "longitudinal": [[1]]})
-    assert by_number.basis.basis.tolist() == longitudinal.basis.basis.tolist()
-    zq = respinach.basis(spin_system, {**NONE, "zero_quantum": [["1H"]]})
-    _, m = respinach.operators.lin2lm(zq.basis.basis[:, [0, 2]])
-    assert np.all(m.sum(axis=1) == 0) and zq.basis.nstates == 6 * 4
-    manual = respinach.basis(
+    spin_system_plus = respinach.basis(spin_system, {**NONE, "projections": [[1]]})
+    assert spin_system_plus.basis.tot_proj[0] == 0 and set(spin_system_plus.basis.tot_proj[1:]) == {1}
+    spin_system_longitudinal = respinach.basis(spin_system, {**NONE, "longitudinal": [["13C"]]})
+    assert set(spin_system_longitudinal.basis.basis[:, 1]) == {0, 2} and spin_system_longitudinal.basis.nstates == 32
+    spin_system_by_number = respinach.basis(spin_system, {**NONE, "longitudinal": [[1]]})
+    assert spin_system_by_number.basis.basis.tolist() == spin_system_longitudinal.basis.basis.tolist()
+    spin_system_zq = respinach.basis(spin_system, {**NONE, "zero_quantum": [["1H"]]})
+    _, m = respinach.operators.lin2lm(spin_system_zq.basis.basis[:, [0, 2]])
+    assert np.all(m.sum(axis=1) == 0) and spin_system_zq.basis.nstates == 6 * 4
+    spin_system_manual = respinach.basis(
         spin_system, {**NONE, "approximation": "IK-0", "inter_level": 1, "manual": [[True, False, True]]}
     )
-    assert manual.basis.nstates == 1 + 3 * 3 + 9
+    assert spin_system_manual.basis.nstates == 1 + 3 * 3 + 9
 
 
 def test_chemical_subsystems_share_only_the_unit_state():

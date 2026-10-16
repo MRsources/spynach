@@ -62,13 +62,20 @@ def test_restricted_hamiltonian_is_a_projection():
         zeeman={"scalar": [1.0, 1.15, 3.0]},
         coupling={"scalar": [[0, 15.0, 7.0], [0, 0, 3.0], [0, 0, 0]]},
     )
-    full = respinach.assume(respinach.basis(spin_system, LIOUV), "nmr")
-    small = respinach.assume(respinach.basis(spin_system, {**LIOUV, "approximation": "IK-0", "inter_level": 2}), "nmr")
-    kept = [np.flatnonzero((full.basis.basis == row).all(axis=1))[0] for row in small.basis.basis]
-    assert_matches(
-        respinach.hamiltonian(small), dense(respinach.hamiltonian(full))[np.ix_(kept, kept)], rtol=0, atol=1e-12
+    spin_system_full = respinach.assume(respinach.basis(spin_system, LIOUV), "nmr")
+    spin_system_small = respinach.assume(
+        respinach.basis(spin_system, {**LIOUV, "approximation": "IK-0", "inter_level": 2}), "nmr"
     )
-    assert small.basis.nstates == 1 + 9 + 27
+    kept = [
+        np.flatnonzero((spin_system_full.basis.basis == row).all(axis=1))[0] for row in spin_system_small.basis.basis
+    ]
+    assert_matches(
+        respinach.hamiltonian(spin_system_small),
+        dense(respinach.hamiltonian(spin_system_full))[np.ix_(kept, kept)],
+        rtol=0,
+        atol=1e-12,
+    )
+    assert spin_system_small.basis.nstates == 1 + 9 + 27
 
 
 def test_kinetics_exchange_superoperator():

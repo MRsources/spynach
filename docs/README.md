@@ -74,7 +74,12 @@ option, or behaviour change is not done until the guides describe it.
    what differs (call syntax, defaults, return types, units, numerics), and
    what is still not ported. Move items out of the "not ported" lists of
    both guides and the README status table as they are ported.
-6. **Split guides by theme as they grow.** When a guide passes about 500
+6. **Name the spin system `spin_system`**, as Spinach does, in guides,
+   README, examples and tests; when several coexist in one namespace, add
+   a qualifier (`spin_system_hilb`, `spin_system_ik2`, `spin_system_plain`).
+   Helper functions that build one are verbs or nouns (`make_spin_system`,
+   `hn_pair`), never the bare name.
+7. **Split guides by theme as they grow.** When a guide passes about 500
    lines, or a new formalism, context, or experiment family arrives, give it
    its own guide (for example `liouville-space.md`, `relaxation.md`,
    `solid-state.md`) rather than appending, and add it to the table above.

@@ -39,10 +39,10 @@ along the direct dimension, columns along the indirect one. Spinach's
 import numpy as np
 import respinach
 
-derome = respinach.create({"isotopes": ["1H"] * 3, "magnet": 16.1},
+spin_system_derome = respinach.create({"isotopes": ["1H"] * 3, "magnet": 16.1},
                        {"zeeman": {"scalar": [3.70, 3.92, 4.50]},
                         "coupling": {"scalar": [[0, 10, 4], [0, 0, 12], [0, 0, 0]]}})
-derome = respinach.basis(derome, {"formalism": "sphten-liouv", "approximation": "none"})
+spin_system_derome = respinach.basis(spin_system_derome, {"formalism": "sphten-liouv", "approximation": "none"})
 
 
 def my_cosy(spin_system, parameters, H, R, K):
@@ -63,9 +63,9 @@ def my_cosy(spin_system, parameters, H, R, K):
 
 pars = {"angle": np.pi / 2, "offset": 2800.0, "sweep": 700.0, "npoints": [64, 64], "zerofill": [256, 256],
         "spins": ["1H"], "axis_units": "ppm"}
-fid = respinach.liquid(derome, my_cosy, pars, "nmr")
+fid = respinach.liquid(spin_system_derome, my_cosy, pars, "nmr")
 assert fid.shape == (64, 64)
-assert np.allclose(fid, respinach.liquid(derome, respinach.cosy, pars, "nmr"))
+assert np.allclose(fid, respinach.liquid(spin_system_derome, respinach.cosy, pars, "nmr"))
 ```
 
 The filters take the spin state space on the *last* axis, hence the
@@ -93,7 +93,15 @@ from respinach.plotting import plot_2d
 fid_apod = respinach.apodisation(fid, [("sqcos",), ("sqcos",)])
 cosy_spectrum = np.fft.fftshift(np.fft.fft2(fid_apod, pars["zerofill"]))
 plot_2d(
-    derome, cosy_spectrum.real, pars, ncont=20, delta=(0.1, 0.5, 0.1, 0.5), k=2, ncol=256, m=6, signs="both",
+    spin_system_derome,
+    cosy_spectrum.real,
+    pars,
+    ncont=20,
+    delta=(0.1, 0.5, 0.1, 0.5),
+    k=2,
+    ncol=256,
+    m=6,
+    signs="both",
     title="COSY-90, Derome's three-spin system",
 )
 ```
@@ -114,15 +122,15 @@ add a homodecoupling term. `homospoil(spin_system, rho, "destroy")` kills every
 coherence (a gradient pulse), `"keep"` retains zero-quantum ones:
 
 ```python
-hc = respinach.basis(respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
+spin_system_hc = respinach.basis(respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
                                 {"zeeman": {"scalar": [2.0, 30.0]}, "coupling": {"scalar": [[0, 145.0], [0, 0]]}}),
                   {"formalism": "sphten-liouv", "approximation": "none"})
 acq = {"spins": ["1H"], "offset": 1200.0, "sweep": 2000.0, "npoints": 128,
-       "rho0": respinach.state(hc, "L+", "1H"), "coil": respinach.state(hc, "L+", "1H")}
-coupled = respinach.liquid(hc, respinach.acquire, acq, "nmr")
-decoupled = respinach.liquid(hc, respinach.acquire, {**acq, "decouple": ["13C"]}, "nmr")
+       "rho0": respinach.state(spin_system_hc, "L+", "1H"), "coil": respinach.state(spin_system_hc, "L+", "1H")}
+coupled = respinach.liquid(spin_system_hc, respinach.acquire, acq, "nmr")
+decoupled = respinach.liquid(spin_system_hc, respinach.acquire, {**acq, "decouple": ["13C"]}, "nmr")
 t = np.arange(128) / 2000.0
-omega = hc.basefrqs[0] * 2.0e-6 + 2 * np.pi * 1200.0          # 2 ppm shift in the frame of the 1200 Hz offset
+omega = spin_system_hc.basefrqs[0] * 2.0e-6 + 2 * np.pi * 1200.0  # 2 ppm shift in the frame of the 1200 Hz offset
 assert np.allclose(decoupled, decoupled[0] * np.exp(-1j * omega * t), rtol=1e-6)   # a pure singlet
 assert not np.allclose(coupled, decoupled)
 ```
@@ -146,21 +154,29 @@ combined after the F1 transform. It needs relaxation, and the thermal
 equilibrium as the initial state (`needs=["rho_eq"]`):
 
 ```python
-pair = respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1},
+spin_system_pair = respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1},
                      {"zeeman": {"scalar": [1.0, 3.0]}, "coordinates": [[0, 0, 0], [0, 0, 2.5]],
                       "relaxation": ["redfield"], "equilibrium": "IME", "rlx_keep": "kite",
                       "temperature": 298, "tau_c": [[2e-9]]})
-pair = respinach.basis(pair, {"formalism": "sphten-liouv", "approximation": "none"})
+spin_system_pair = respinach.basis(spin_system_pair, {"formalism": "sphten-liouv", "approximation": "none"})
 noesy_pars = {"tmix": 0.3, "offset": 1200.0, "sweep": [2000.0, 2000.0], "npoints": [64, 64], "zerofill": [256, 256],
               "spins": ["1H"], "needs": ["rho_eq"], "axis_units": "ppm"}
-fid_noesy = respinach.liquid(pair, respinach.noesy, noesy_pars, "nmr")
+fid_noesy = respinach.liquid(spin_system_pair, respinach.noesy, noesy_pars, "nmr")
 cos = respinach.apodisation(fid_noesy["cos"], [("sqcos",), ("sqcos",)])
 sin = respinach.apodisation(fid_noesy["sin"], [("sqcos",), ("sqcos",)])
 f1_cos = np.real(np.fft.fftshift(np.fft.fft(cos, 256, axis=0), axes=0))
 f1_sin = np.real(np.fft.fftshift(np.fft.fft(sin, 256, axis=0), axes=0))
 noesy_spectrum = np.fft.fftshift(np.fft.fft(f1_cos - 1j * f1_sin, 256, axis=1), axes=1)
 plot_2d(
-    pair, -noesy_spectrum.real, noesy_pars, ncont=20, delta=(0.05, 0.5, 0.05, 0.5), k=2, ncol=256, m=6, signs="both",
+    spin_system_pair,
+    -noesy_spectrum.real,
+    noesy_pars,
+    ncont=20,
+    delta=(0.05, 0.5, 0.05, 0.5),
+    k=2,
+    ncol=256,
+    m=6,
+    signs="both",
     title="NOESY, 300 ms mixing",
 )
 ```
@@ -181,20 +197,33 @@ delays. Natural-abundance 13C spectra are sums over isotopomers:
 removed (`kill_spin`), each of which is simulated separately:
 
 ```python
-sugar = respinach.create({"isotopes": ["1H", "13C", "13C", "1H"], "magnet": 5.9},
+spin_system_sugar = respinach.create({"isotopes": ["1H", "13C", "13C", "1H"], "magnet": 5.9},
                       {"zeeman": {"scalar": [3.0, 40.0, 50.0, 1.0]},
                        "coupling": {"scalar": [[0, 140, 0, 7], [0, 0, 35, 0], [0, 0, 0, 150], [0, 0, 0, 0]]}})
-hsqc_pars = {"J": 140.0, "sweep": [3000.0, 2000.0], "offset": [2800.0, 500.0], "npoints": [48, 48], "zerofill": [256, 256],
-             "spins": ["13C", "1H"], "decouple_f1": ["1H"], "decouple_f2": ["13C"], "axis_units": "ppm"}
+hsqc_pars = {
+    "J": 140.0,
+    "sweep": [3000.0, 2000.0],
+    "offset": [2800.0, 500.0],
+    "npoints": [48, 48],
+    "zerofill": [256, 256],
+    "spins": ["13C", "1H"],
+    "decouple_f1": ["1H"],
+    "decouple_f2": ["13C"],
+    "axis_units": "ppm",
+}
 hsqc_spectrum = np.zeros((256, 256), dtype=complex)
-for sub in respinach.dilute(sugar, "13C"):
-    sub = respinach.basis(sub, {"formalism": "sphten-liouv", "approximation": "none"})
-    fid_hsqc = respinach.liquid(sub, respinach.hsqc, hsqc_pars, "nmr")
-    pos = np.fft.fftshift(np.fft.fft(respinach.apodisation(fid_hsqc["pos"], [("sqcos",), ("sqcos",)]), 256, axis=0), axes=0)
-    neg = np.fft.fftshift(np.fft.fft(respinach.apodisation(fid_hsqc["neg"], [("sqcos",), ("sqcos",)]), 256, axis=0), axes=0)
+for spin_system_sub in respinach.dilute(spin_system_sugar, "13C"):
+    spin_system_sub = respinach.basis(spin_system_sub, {"formalism": "sphten-liouv", "approximation": "none"})
+    fid_hsqc = respinach.liquid(spin_system_sub, respinach.hsqc, hsqc_pars, "nmr")
+    pos = np.fft.fftshift(
+        np.fft.fft(respinach.apodisation(fid_hsqc["pos"], [("sqcos",), ("sqcos",)]), 256, axis=0), axes=0
+    )
+    neg = np.fft.fftshift(
+        np.fft.fft(respinach.apodisation(fid_hsqc["neg"], [("sqcos",), ("sqcos",)]), 256, axis=0), axes=0
+    )
     hsqc_spectrum += np.fft.fftshift(np.fft.fft(pos + np.conj(neg), 256, axis=1), axes=1)
 plot_2d(
-    sugar, hsqc_spectrum.real, hsqc_pars, ncont=20, delta=(0.05, 1.0, 0.05, 1.0), k=2, ncol=256, m=6,
+    spin_system_sugar, hsqc_spectrum.real, hsqc_pars, ncont=20, delta=(0.05, 1.0, 0.05, 1.0), k=2, ncol=256, m=6,
     signs="positive", title="HSQC, two isotopomers",
 )
 ```

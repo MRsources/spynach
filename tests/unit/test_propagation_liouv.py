@@ -23,8 +23,8 @@ def system(isotopes, inter=None, sys=None, **kwargs):
 
 
 def liouvillian(spin_system, pars=PARS):
-    nmr = respinach.assume(spin_system, "nmr")
-    return respinach.frqoffset(nmr, respinach.hamiltonian(nmr), pars)
+    spin_system_nmr = respinach.assume(spin_system, "nmr")
+    return respinach.frqoffset(spin_system_nmr, respinach.hamiltonian(spin_system_nmr), pars)
 
 
 def test_step_matches_the_exponential_propagator():
@@ -55,11 +55,11 @@ def test_step_in_hilbert_space():
     rho = respinach.state(spin_system_hilb, "L+", "1H")
     P = sla.expm(-1j * dense(H) * 1e-3)
     assert_matches(respinach.step(spin_system_hilb, H, rho, 1e-3), P @ dense(rho) @ P.conj().T, rtol=1e-12, atol=0)
-    big = respinach.create(
+    spin_system_big = respinach.create(
         {"isotopes": ["1H", "1H"], "magnet": 14.1, "tols": {"small_matrix": 2}}, CASES["ab_2spin"][1]
     )
-    hs_big = respinach.basis(big, HILB)
-    assert_matches(respinach.step(hs_big, H, rho, 1e-3), P @ dense(rho) @ P.conj().T, rtol=1e-12, atol=0)
+    spin_system_hilb_big = respinach.basis(spin_system_big, HILB)
+    assert_matches(respinach.step(spin_system_hilb_big, H, rho, 1e-3), P @ dense(rho) @ P.conj().T, rtol=1e-12, atol=0)
 
 
 @pytest.mark.parametrize("case", ["ab_2spin", "hc_2spin", "hd_2spin"])

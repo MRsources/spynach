@@ -97,19 +97,19 @@ def test_dipolar_couplings_from_coordinates():
     assert np.allclose(D, 0.5 * b * np.diag([1, 1, -2])) and np.allclose(spin_system.coupling_matrix[1][0], D)
     assert spin_system.proxmatrix.tolist() == [[False, True], [True, False]]
     assert np.isclose(abs(b) / (2 * np.pi), 23.3e3, rtol=0.01)  # the usual 1H-13C one-bond dipolar coupling
-    far = respinach.create(
+    spin_system_far = respinach.create(
         {"isotopes": ["1H", "13C"], "magnet": 14.1, "tols": {"prox_cutoff": 1.0}},
         {"coordinates": [[0, 0, 0], [0, 0, 1.09]]},
     )
-    assert far.coupling_matrix[0][1] is None and not far.proxmatrix.any()
+    assert spin_system_far.coupling_matrix[0][1] is None and not spin_system_far.proxmatrix.any()
     with pytest.raises(ValueError, match="collision"):
         respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1}, {"coordinates": [[0, 0, 0], [0, 0, 0.3]]})
     # Coordinates only couple spins within one chemical subsystem
-    two = respinach.create(
+    spin_system_two = respinach.create(
         {"isotopes": ["1H", "1H"], "magnet": 14.1},
         {"coordinates": [[0, 0, 0], [0, 0, 2.0]], "chem": {"parts": [[0], [1]], "concs": [1, 1]}},
     )
-    assert two.coupling_matrix[0][1] is None
+    assert spin_system_two.coupling_matrix[0][1] is None
 
 
 def test_proximity_graph_drives_ik_bases():
@@ -118,12 +118,12 @@ def test_proximity_graph_drives_ik_bases():
         {"isotopes": ["1H"] * 4, "magnet": 14.1, "tols": {"prox_cutoff": 2.0}}, {"coordinates": coords}
     )
     assert spin_system.proxmatrix.sum() == 4  # 0-1 and 1-2, both ways
-    bas = respinach.basis(
+    spin_system_ik1 = respinach.basis(
         spin_system,
         {**LIOUV, "approximation": "IK-1", "connectivity": "scalar_couplings", "inter_level": 1, "prox_level": 2},
     ).basis
     # pairs (0,1) and (1,2) correlate; spin 3 and the pair (0,2) do not
-    assert bas.nstates == 1 + 4 * 3 + 2 * 9
+    assert spin_system_ik1.nstates == 1 + 4 * 3 + 2 * 9
 
 
 @pytest.mark.parametrize("bas", [HILB, LIOUV])
