@@ -5,9 +5,9 @@ import pytest
 import scipy.linalg as sla
 import scipy.sparse as sps
 
-import respinach
-from respinach.oracle import assert_matches
-from respinach.reduction import binpack, path_trace, zte
+import spynach
+from spynach.oracle import assert_matches
+from spynach.reduction import binpack, path_trace, zte
 
 from .test_liouvillian import CASES, dense
 
@@ -17,68 +17,62 @@ PARS = {"spins": ["1H"], "offset": [660.0], "sweep": 500.0, "npoints": 64}
 
 
 def system(isotopes, inter=None, sys=None, **kwargs):
-    return respinach.create(
-        {"isotopes": isotopes, "magnet": 14.1, **(sys or {})}, inter if inter is not None else kwargs
-    )
+    return spynach.create({"isotopes": isotopes, "magnet": 14.1, **(sys or {})}, inter if inter is not None else kwargs)
 
 
 def liouvillian(spin_system, pars=PARS):
-    spin_system_nmr = respinach.assume(spin_system, "nmr")
-    return respinach.frqoffset(spin_system_nmr, respinach.hamiltonian(spin_system_nmr), pars)
+    spin_system_nmr = spynach.assume(spin_system, "nmr")
+    return spynach.frqoffset(spin_system_nmr, spynach.hamiltonian(spin_system_nmr), pars)
 
 
 def test_step_matches_the_exponential_propagator():
-    spin_system_liouv = respinach.basis(system(*CASES["hd_2spin"]), LIOUV)
+    spin_system_liouv = spynach.basis(system(*CASES["hd_2spin"]), LIOUV)
     L = liouvillian(spin_system_liouv)
-    rho = respinach.state(spin_system_liouv, "L+", "1H") + 0.3 * respinach.state(
-        spin_system_liouv, ["Lz", "T2,1"], [0, 1]
-    )
+    rho = spynach.state(spin_system_liouv, "L+", "1H") + 0.3 * spynach.state(spin_system_liouv, ["Lz", "T2,1"], [0, 1])
     for dt in (1e-3, 2e-2):  # the second needs several Taylor substeps
         P = sla.expm(-1j * dense(L) * dt)
-        assert_matches(respinach.step(spin_system_liouv, L, rho, dt), P @ rho, rtol=1e-12, atol=0, name=f"step dt={dt}")
+        assert_matches(spynach.step(spin_system_liouv, L, rho, dt), P @ rho, rtol=1e-12, atol=0, name=f"step dt={dt}")
         stack = np.stack([rho, 2j * rho, np.roll(rho, 3)], axis=1)
-        assert_matches(respinach.step(spin_system_liouv, L, stack, dt), P @ stack, rtol=1e-12, atol=0, name="stack")
+        assert_matches(spynach.step(spin_system_liouv, L, stack, dt), P @ stack, rtol=1e-12, atol=0, name="stack")
+        assert_matches(spynach.step(spin_system_liouv, [L, L], rho, dt), P @ rho, rtol=1e-12, atol=0, name="two-point")
         assert_matches(
-            respinach.step(spin_system_liouv, [L, L], rho, dt), P @ rho, rtol=1e-12, atol=0, name="two-point"
+            spynach.step(spin_system_liouv, [L, L, L], rho, dt), P @ rho, rtol=1e-12, atol=0, name="three-point"
         )
-        assert_matches(
-            respinach.step(spin_system_liouv, [L, L, L], rho, dt), P @ rho, rtol=1e-12, atol=0, name="three-point"
-        )
-    assert respinach.step(spin_system_liouv, L, rho, 0.0) is rho
+    assert spynach.step(spin_system_liouv, L, rho, 0.0) is rho
     with pytest.raises(ValueError, match="dt is too long"):
-        respinach.step(spin_system_liouv, L, rho, 1e3)
+        spynach.step(spin_system_liouv, L, rho, 1e3)
 
 
 def test_step_in_hilbert_space():
-    spin_system_hilb = respinach.basis(system(*CASES["ab_2spin"]), HILB)
+    spin_system_hilb = spynach.basis(system(*CASES["ab_2spin"]), HILB)
     H = liouvillian(spin_system_hilb)
-    rho = respinach.state(spin_system_hilb, "L+", "1H")
+    rho = spynach.state(spin_system_hilb, "L+", "1H")
     P = sla.expm(-1j * dense(H) * 1e-3)
-    assert_matches(respinach.step(spin_system_hilb, H, rho, 1e-3), P @ dense(rho) @ P.conj().T, rtol=1e-12, atol=0)
-    spin_system_big = respinach.create(
+    assert_matches(spynach.step(spin_system_hilb, H, rho, 1e-3), P @ dense(rho) @ P.conj().T, rtol=1e-12, atol=0)
+    spin_system_big = spynach.create(
         {"isotopes": ["1H", "1H"], "magnet": 14.1, "tols": {"small_matrix": 2}}, CASES["ab_2spin"][1]
     )
-    spin_system_hilb_big = respinach.basis(spin_system_big, HILB)
-    assert_matches(respinach.step(spin_system_hilb_big, H, rho, 1e-3), P @ dense(rho) @ P.conj().T, rtol=1e-12, atol=0)
+    spin_system_hilb_big = spynach.basis(spin_system_big, HILB)
+    assert_matches(spynach.step(spin_system_hilb_big, H, rho, 1e-3), P @ dense(rho) @ P.conj().T, rtol=1e-12, atol=0)
 
 
 @pytest.mark.parametrize("case", ["ab_2spin", "hc_2spin", "hd_2spin"])
 def test_liouville_fid_equals_hilbert_fid(case):
     """exact states carry 1/sqrt(dim) each, so the Liouville observable is the Hilbert one over dim."""
     spin_system = system(*CASES[case])
-    spin_system_hilb, spin_system_liouv = respinach.basis(spin_system, HILB), respinach.basis(spin_system, LIOUV)
+    spin_system_hilb, spin_system_liouv = spynach.basis(spin_system, HILB), spynach.basis(spin_system, LIOUV)
     dim = int(np.prod(spin_system.mults))
-    fid_h = respinach.evolution(
+    fid_h = spynach.evolution(
         spin_system_hilb,
         liouvillian(spin_system_hilb),
-        respinach.state(spin_system_hilb, "L+", "1H"),
+        spynach.state(spin_system_hilb, "L+", "1H"),
         1 / PARS["sweep"],
         PARS["npoints"] - 1,
         "observable",
-        coil=respinach.state(spin_system_hilb, "L+", "1H"),
+        coil=spynach.state(spin_system_hilb, "L+", "1H"),
     )
-    coil, rho0 = respinach.state(spin_system_liouv, "L+", "1H"), respinach.state(spin_system_liouv, "L+", "1H")
-    fid_l = respinach.evolution(
+    coil, rho0 = spynach.state(spin_system_liouv, "L+", "1H"), spynach.state(spin_system_liouv, "L+", "1H")
+    fid_l = spynach.evolution(
         spin_system_liouv,
         liouvillian(spin_system_liouv),
         rho0,
@@ -92,7 +86,7 @@ def test_liouville_fid_equals_hilbert_fid(case):
     # Same through the context, with kinetics zero
     pars = {**PARS, "rho0": rho0, "coil": coil}
     assert_matches(
-        dim * respinach.liquid(spin_system_liouv, respinach.acquire, pars, "nmr"),
+        dim * spynach.liquid(spin_system_liouv, spynach.acquire, pars, "nmr"),
         fid_h,
         rtol=1e-9,
         atol=0,
@@ -101,27 +95,27 @@ def test_liouville_fid_equals_hilbert_fid(case):
 
 
 def test_outputs_and_stacks_are_consistent():
-    spin_system_liouv = respinach.basis(system(*CASES["ab_2spin"]), LIOUV)
+    spin_system_liouv = spynach.basis(system(*CASES["ab_2spin"]), LIOUV)
     L = liouvillian(spin_system_liouv)
-    coil, rho0 = respinach.state(spin_system_liouv, "L+", "1H"), respinach.state(spin_system_liouv, "L+", "1H")
+    coil, rho0 = spynach.state(spin_system_liouv, "L+", "1H"), spynach.state(spin_system_liouv, "L+", "1H")
     dt, nsteps = 1 / PARS["sweep"], 20
-    traj = respinach.evolution(spin_system_liouv, L, rho0, dt, nsteps, "trajectory")
-    final = respinach.evolution(spin_system_liouv, L, rho0, dt, nsteps, "final")
-    fid = respinach.evolution(spin_system_liouv, L, rho0, dt, nsteps, "observable", coil=coil)
+    traj = spynach.evolution(spin_system_liouv, L, rho0, dt, nsteps, "trajectory")
+    final = spynach.evolution(spin_system_liouv, L, rho0, dt, nsteps, "final")
+    fid = spynach.evolution(spin_system_liouv, L, rho0, dt, nsteps, "observable", coil=coil)
     assert traj.shape == (16, nsteps + 1) and final.shape == (16,)
     assert_matches(final, traj[:, -1], rtol=1e-11, atol=1e-14)
     assert_matches(fid, coil.conj() @ traj, rtol=1e-11, atol=1e-14)
     P = sla.expm(-1j * dense(L) * dt)
     assert_matches(final, np.linalg.matrix_power(P, nsteps) @ rho0, rtol=1e-10, atol=1e-14)
-    stack = np.stack([rho0, respinach.state(spin_system_liouv, "Lz", "1H")], axis=1)
-    fid_stack = respinach.evolution(spin_system_liouv, L, stack, dt, nsteps, "observable", coil=coil)
+    stack = np.stack([rho0, spynach.state(spin_system_liouv, "Lz", "1H")], axis=1)
+    fid_stack = spynach.evolution(spin_system_liouv, L, stack, dt, nsteps, "observable", coil=coil)
     assert fid_stack.shape == (nsteps + 1, 2)
     assert_matches(fid_stack[:, 0], fid, rtol=1e-11, atol=1e-14)
     assert np.allclose(fid_stack[:, 1], 0)  # Lz never reaches L+ under a secular Hamiltonian
-    final_stack = respinach.evolution(spin_system_liouv, L, stack, dt, nsteps, "final")
+    final_stack = spynach.evolution(spin_system_liouv, L, stack, dt, nsteps, "final")
     assert_matches(final_stack[:, 0], final, rtol=1e-10, atol=1e-14)
     with pytest.raises(ValueError, match="stacks"):
-        respinach.evolution(spin_system_liouv, L, stack, dt, nsteps, "trajectory")
+        spynach.evolution(spin_system_liouv, L, stack, dt, nsteps, "trajectory")
 
 
 def test_reductions_do_not_change_the_answer():
@@ -135,9 +129,9 @@ def test_reductions_do_not_change_the_answer():
         ("krylov", {"enable": ["krylov"]}),
         ("path tracing", {"tols": {"merge_dim": 2}}),
     ):
-        spin_system_liouv = respinach.basis(system(["1H", "13C"], ss_inter, sys=sys), LIOUV)
-        coil = respinach.state(spin_system_liouv, "L+", "1H")
-        results[label] = respinach.evolution(
+        spin_system_liouv = spynach.basis(system(["1H", "13C"], ss_inter, sys=sys), LIOUV)
+        coil = spynach.state(spin_system_liouv, "L+", "1H")
+        results[label] = spynach.evolution(
             spin_system_liouv, liouvillian(spin_system_liouv), coil, 1 / PARS["sweep"], 32, "observable", coil=coil
         )
     for label, fid in results.items():
@@ -145,11 +139,11 @@ def test_reductions_do_not_change_the_answer():
 
 
 def test_zte_and_path_trace():
-    spin_system_liouv = respinach.basis(
+    spin_system_liouv = spynach.basis(
         system(["1H", "13C"], CASES["hc_2spin"][1], sys={"tols": {"merge_dim": 2}}), LIOUV
     )
     L = liouvillian(spin_system_liouv)
-    coil = respinach.state(spin_system_liouv, "L+", "1H")
+    coil = spynach.state(spin_system_liouv, "L+", "1H")
     projector = zte(spin_system_liouv, L, coil)
     kept = projector.indices if sps.issparse(projector) else None
     # L+(H) evolves into L+(H)Lz(C) under the weak coupling and nowhere else
@@ -161,10 +155,10 @@ def test_zte_and_path_trace():
     assert len(parts) == 1 and sorted(parts[0].indices.tolist()) == [4, 6]
     parts_all = path_trace(spin_system_liouv, L, None)
     assert sum(p.shape[1] for p in parts_all) == 16
-    projectors = respinach.reduce(spin_system_liouv, L, coil)
+    projectors = spynach.reduce(spin_system_liouv, L, coil)
     assert sum(p.shape[1] for p in projectors) == 2
     with pytest.raises(NotImplementedError, match="sphten-liouv"):
-        respinach.reduce(respinach.basis(system(["1H"]), HILB), np.eye(2), np.eye(2))
+        spynach.reduce(spynach.basis(system(["1H"]), HILB), np.eye(2), np.eye(2))
 
 
 def test_binpack():
@@ -181,11 +175,11 @@ def test_two_site_exchange_matches_mcconnell():
         zeeman={"scalar": shifts},
         chem={"parts": [[0], [1]], "rates": [[-k, k], [k, -k]], "concs": [1.0, 1.0]},
     )
-    spin_system_liouv = respinach.basis(spin_system, LIOUV)
+    spin_system_liouv = spynach.basis(spin_system, LIOUV)
     pars = {"spins": ["1H"], "offset": [900.0], "sweep": 5000.0, "npoints": 128}
-    pars["rho0"] = respinach.state(spin_system_liouv, "L+", "1H", "chem")
-    pars["coil"] = respinach.state(spin_system_liouv, "L+", "1H")
-    fid = respinach.liquid(spin_system_liouv, respinach.acquire, pars, "nmr")
+    pars["rho0"] = spynach.state(spin_system_liouv, "L+", "1H", "chem")
+    pars["coil"] = spynach.state(spin_system_liouv, "L+", "1H")
+    fid = spynach.liquid(spin_system_liouv, spynach.acquire, pars, "nmr")
     # Rotating-frame offsets of the two sites in rad/s: omega = basefrq*shift*1e-6 + 2*pi*offset
     omega = spin_system.basefrqs * np.array(shifts) * 1e-6 + 2 * np.pi * pars["offset"][0]
     M = np.array([[-1j * omega[0] - k, k], [k, -1j * omega[1] - k]])
@@ -196,10 +190,10 @@ def test_two_site_exchange_matches_mcconnell():
 
 
 def test_unported_evolution_options_are_refused():
-    spin_system_liouv = respinach.basis(system(*CASES["ab_2spin"]), LIOUV)
+    spin_system_liouv = spynach.basis(system(*CASES["ab_2spin"]), LIOUV)
     L = liouvillian(spin_system_liouv)
-    rho = respinach.state(spin_system_liouv, "L+", "1H")
+    rho = spynach.state(spin_system_liouv, "L+", "1H")
     with pytest.raises(NotImplementedError, match="total"):
-        respinach.evolution(spin_system_liouv, L, rho, 1e-3, 2, "total", coil=rho)
+        spynach.evolution(spin_system_liouv, L, rho, 1e-3, 2, "total", coil=rho)
     with pytest.raises(NotImplementedError, match="not ported"):
-        respinach.create({"isotopes": ["1H"], "magnet": 14.1, "disable": ["symmetry"]}, {})
+        spynach.create({"isotopes": ["1H"], "magnet": 14.1, "disable": ["symmetry"]}, {})

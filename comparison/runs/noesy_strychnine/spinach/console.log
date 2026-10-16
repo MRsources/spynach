@@ -1,6 +1,6 @@
-== noesy_strychnine (Spinach /Users/alexej/Documents/PROG/respinach-spinach) -> /Users/alexej/Documents/PROG/respinach/comparison/runs/noesy_strychnine/spinach
+== noesy_strychnine (Spinach /Users/alexej/Documents/PROG/spynach-spinach) -> /Users/alexej/Documents/PROG/spynach/comparison/runs/noesy_strychnine/spinach
 Running startup checks...
-[..._comparison > noesy_strychnine_spinach > create ]  scratch location: /Users/alexej/Documents/PROG/respinach-spinach/scratch
+[..._comparison > noesy_strychnine_spinach > create ]  scratch location: /Users/alexej/Documents/PROG/spynach-spinach/scratch
 [...on > noesy_strychnine_spinach > create > banner ]   
 [...on > noesy_strychnine_spinach > create > banner ]  ============================================
 [...on > noesy_strychnine_spinach > create > banner ]  =                                          =
@@ -2722,9 +2722,9 @@ processing                            0.2 s
 [...comparison > noesy_strychnine_spinach > plot_2d ]  plotting...
 plot                                  3.6 s
 total                               110.9 s
-== noesy_strychnine (Spinach /Users/alexej/Documents/PROG/respinach-spinach) -> /Users/alexej/Documents/PROG/respinach/comparison/runs/noesy_strychnine/spinach
+== noesy_strychnine (Spinach /Users/alexej/Documents/PROG/spynach-spinach) -> /Users/alexej/Documents/PROG/spynach/comparison/runs/noesy_strychnine/spinach
 Running startup checks...
-[..._comparison > noesy_strychnine_spinach > create ]  scratch location: /Users/alexej/Documents/PROG/respinach-spinach/scratch
+[..._comparison > noesy_strychnine_spinach > create ]  scratch location: /Users/alexej/Documents/PROG/spynach-spinach/scratch
 [...on > noesy_strychnine_spinach > create > banner ]   
 [...on > noesy_strychnine_spinach > create > banner ]  ============================================
 [...on > noesy_strychnine_spinach > create > banner ]  =                                          =
@@ -5446,9 +5446,9 @@ processing                            0.2 s
 [...comparison > noesy_strychnine_spinach > plot_2d ]  plotting...
 plot                                  3.2 s
 total                               107.7 s
-== noesy_strychnine (Spinach /Users/alexej/Documents/PROG/respinach-spinach) -> /Users/alexej/Documents/PROG/respinach/comparison/runs/noesy_strychnine/spinach
+== noesy_strychnine (Spinach /Users/alexej/Documents/PROG/spynach-spinach) -> /Users/alexej/Documents/PROG/spynach/comparison/runs/noesy_strychnine/spinach
 Running startup checks...
-[..._comparison > noesy_strychnine_spinach > create ]  scratch location: /Users/alexej/Documents/PROG/respinach-spinach/scratch
+[..._comparison > noesy_strychnine_spinach > create ]  scratch location: /Users/alexej/Documents/PROG/spynach-spinach/scratch
 [...on > noesy_strychnine_spinach > create > banner ]   
 [...on > noesy_strychnine_spinach > create > banner ]  ============================================
 [...on > noesy_strychnine_spinach > create > banner ]  =                                          =

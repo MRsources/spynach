@@ -1,4 +1,4 @@
-# respinach documentation
+# Spynach documentation
 
 | guide | notebook | covers |
 |---|---|---|
@@ -15,11 +15,11 @@ with `OPENBLAS_NUM_THREADS=4 jupyter lab docs/notebooks/` after
 `pip install -e ".[docs]"`, or in VS Code with the Python and Jupyter
 extensions; the plots are interactive in both. (GitHub's notebook viewer
 does not show Plotly figures; nbviewer does, and the project page
-[ajerschow.github.io/respinach](https://ajerschow.github.io/respinach/)
+[ajerschow.github.io/spynach](https://ajerschow.github.io/spynach/)
 links every notebook through it.)
 
 To experiment, copy a notebook into `scratch/` at the repository root
-(ignored by git) and work on the copy; it uses the same `respinach` code. The
+(ignored by git) and work on the copy; it uses the same `spynach` code. The
 notebooks in `docs/notebooks/` are rebuilt from the guides, so edits to them
 are overwritten; if you run one there, `git restore docs/notebooks/` discards
 the changed outputs.
@@ -61,7 +61,7 @@ option, or behaviour change is not done until the guides describe it.
    `docs/notebooks/<name>.ipynb` for every guide, runs it in a fresh kernel,
    and saves it with its outputs. Never edit a notebook by hand; the tests
    fail if one is stale, was saved without outputs, or has no guide.
-3. **Plots** go in their own blocks, use `respinach.plotting` (or Plotly
+3. **Plots** go in their own blocks, use `spynach.plotting` (or Plotly
    directly), end with the figure as the last expression so the notebook
    shows it, and define no names that later blocks need: without Plotly
    installed, the tests skip them. Show the results a section computes:

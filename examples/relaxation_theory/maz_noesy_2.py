@@ -28,14 +28,14 @@ and after the F1 Fourier transform respectively, then run it in MATLAB:
     save('maz_noesy_2.mat','fid_cos','fid_sin','spectrum','-v7');    % after 'F1 Fourier transform'
 
 and run this script with --compare maz_noesy_2.mat. It prints the normwise relative
-error ||respinach - spinach||_F / ||spinach||_F of the two FIDs and the spectrum, the
-metric of respinach.oracle.compare. The sizes must match: run both at the same
+error ||spynach - spinach||_F / ||spinach||_F of the two FIDs and the spectrum, the
+metric of spynach.oracle.compare. The sizes must match: run both at the same
 npoints and zerofill.
 
 Differences from the MATLAB script: spin indices are 0-based, so the 14N source
 spin is 3 and the modulated couplings are (0,4), (1,4), (2,4); the shielding
 tensors are converted to shift tensors with the experimental isotropic shifts
-exactly as the MATLAB loop does, before create(). respinach runs serially.
+exactly as the MATLAB loop does, before create(). spynach runs serially.
 """
 
 from __future__ import annotations
@@ -48,7 +48,7 @@ from pathlib import Path
 
 import numpy as np
 
-import respinach
+import spynach
 
 # Absolute shielding tensors (vacuum DFT), ppm, in the order H3, H2, H4, N, HN, Me, Me, Me
 SHIELDING = [
@@ -153,7 +153,7 @@ def simulate(npoints: int = 256, zerofill: int = 1024, timer: Timer | None = Non
 
     The stages are timed with ``timer`` (default: one that prints); the labels
     are those of comparison/cases/maz_noesy_2, keep them in step. ``gpu``
-    adds ``'gpu'`` to ``sys['enable']``; respinach refuses it until the GPU
+    adds ``'gpu'`` to ``sys['enable']``; spynach refuses it until the GPU
     backend exists (porting/gpu-notes.md).
     """
     timer = Timer() if timer is None else timer
@@ -161,9 +161,9 @@ def simulate(npoints: int = 256, zerofill: int = 1024, timer: Timer | None = Non
 
     # Spinach housekeeping
     with timer("create"):
-        spin_system = respinach.create(sys_, inter)
+        spin_system = spynach.create(sys_, inter)
     with timer("basis"):
-        spin_system = respinach.basis(spin_system, bas)
+        spin_system = spynach.basis(spin_system, bas)
 
     # Sequence parameters
     parameters = {
@@ -174,17 +174,17 @@ def simulate(npoints: int = 256, zerofill: int = 1024, timer: Timer | None = Non
         "npoints": [npoints, npoints],
         "zerofill": [zerofill, zerofill],
         "axis_units": "ppm",
-        "rho0": respinach.state(spin_system, "Lz", "1H"),
+        "rho0": spynach.state(spin_system, "Lz", "1H"),
     }
 
     # Simulation
     with timer("liquid/noesy"):
-        fid = respinach.liquid(spin_system, respinach.noesy, parameters, "nmr")
+        fid = spynach.liquid(spin_system, spynach.noesy, parameters, "nmr")
 
     with timer("processing"):
         # Apodisation
-        cos = respinach.apodisation(fid["cos"], [("cos",), ("cos",)])
-        sin = respinach.apodisation(fid["sin"], [("cos",), ("cos",)])
+        cos = spynach.apodisation(fid["cos"], [("cos",), ("cos",)])
+        sin = spynach.apodisation(fid["sin"], [("cos",), ("cos",)])
 
         # F2 Fourier transform
         f1_cos = np.real(np.fft.fftshift(np.fft.fft(cos, parameters["zerofill"][1], axis=0), axes=0))
@@ -204,7 +204,7 @@ def plot(spin_system, parameters, spectrum, timer: Timer | None = None):
 
     plot_2d(spin_system,-real(spectrum),parameters,40,[0.025 0.50 0.025 0.50],2,256,6,'both')
     """
-    from respinach.plotting import plot_2d
+    from spynach.plotting import plot_2d
 
     timer = Timer() if timer is None else timer
     with timer("plot"):
@@ -223,10 +223,10 @@ def plot(spin_system, parameters, spectrum, timer: Timer | None = None):
 
 
 def relative_error(actual: np.ndarray, expected: np.ndarray) -> float:
-    """||actual - expected||_F / ||expected||_F, the normwise metric of respinach.oracle.compare."""
+    """||actual - expected||_F / ||expected||_F, the normwise metric of spynach.oracle.compare."""
     actual, expected = np.asarray(actual), np.asarray(expected)
     if actual.shape != expected.shape:
-        raise ValueError(f"shape mismatch: respinach {actual.shape}, Spinach {expected.shape}")
+        raise ValueError(f"shape mismatch: spynach {actual.shape}, Spinach {expected.shape}")
     return float(np.linalg.norm(actual - expected) / np.linalg.norm(expected))
 
 

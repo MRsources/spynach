@@ -1,5 +1,5 @@
 % Stage timer for comparison cases. Records the wall-clock time of named
-% stages; the same labels are used on the respinach side, so the report can
+% stages; the same labels are used on the spynach side, so the report can
 % put the two next to each other. Syntax:
 %
 %     timer=cmp_timer();

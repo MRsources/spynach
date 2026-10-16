@@ -1,11 +1,11 @@
-# respinach
+# Spynach
 
 A Python reimplementation of the [Spinach](https://spindynamics.org) spin
 dynamics kernel (MIT licence, see `LICENSE`), verified stage by stage against the MATLAB
 original. **Start with the [Hilbert-space guide](docs/hilbert-space.md)**; if you use
 Spinach, also read [Coming from Spinach](docs/coming-from-spinach.md). Each
 guide has a runnable Jupyter notebook in [`docs/notebooks/`](docs/notebooks/). The project
-page at [ajerschow.github.io/respinach](https://ajerschow.github.io/respinach/) links the
+page at [ajerschow.github.io/spynach](https://ajerschow.github.io/spynach/) links the
 guides, the notebooks (rendered by nbviewer) and the Spinach comparison reports. See `HANDOFF.md` for goals and design decisions, and
 `oracle/README.md` for the reference-data ("fixture") harness.
 
@@ -40,38 +40,38 @@ verified against Spinach 2.13 fixtures (`tests/slice/test_seq_parity.py`).
 
 ```python
 import numpy as np
-import respinach
+import spynach
 
-spin_system = respinach.create(
+spin_system = spynach.create(
     {"isotopes": ["1H", "1H"], "magnet": 14.1},
     {"zeeman": {"scalar": [1.00, 1.20]}, "coupling": {"scalar": [[0, 12.0], [0, 0]]}},
 )
-spin_system = respinach.basis(spin_system, {"formalism": "zeeman-hilb", "approximation": "none"})
+spin_system = spynach.basis(spin_system, {"formalism": "zeeman-hilb", "approximation": "none"})
 pars = {"spins": ["1H"], "offset": 660, "sweep": 500, "npoints": 1024,
-        "rho0": respinach.state(spin_system, "L+", "1H"), "coil": respinach.state(spin_system, "L+", "1H")}
-fid = respinach.liquid(spin_system, respinach.acquire, pars, "nmr")
+        "rho0": spynach.state(spin_system, "L+", "1H"), "coil": spynach.state(spin_system, "L+", "1H")}
+fid = spynach.liquid(spin_system, spynach.acquire, pars, "nmr")
 spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))
 ```
 
-| Spinach | respinach | ported |
+| Spinach | Spynach | ported |
 |---|---|---|
-| `create.m`, `dipolar.m` | `respinach.create` | isotopes, magnet, tolerances, Zeeman and coupling tensors as scalars, matrices, or eigenvalues with Euler angles, coordinates with point dipolar couplings and the proximity graph, chemical subsystems (`inter.chem` parts, concentrations, exchange rates) |
-| `basis.m` | `respinach.basis` | `zeeman-hilb`; `sphten-liouv` with `none`, `IK-0`, `IK-1`, `IK-2`, the `projections`/`longitudinal`/`zero_quantum`/`manual` filters, and chemical subsystems (no symmetry, no coordinates) |
-| `operator.m`, `state.m` | `respinach.operator`, `respinach.state` | Hilbert space and `sphten-liouv` superoperators (`left`, `right`, `comm`, `acomm`); states by the `exact`, `cheap` and `chem` methods; `E`, `Lx`, `Ly`, `Lz`, `L+`, `L-`, `Tl,m` |
-| `assume.m` | `respinach.assume` | `nmr`, `esr`, `deer`, `deer-zz`, `labframe`, with `zeeman`/`couplings` retention |
-| `hamiltonian.m`, `orientation.m`, `frqoffset.m` | `respinach.hamiltonian`, `respinach.orientation`, `respinach.frqoffset` | isotropic part and the rank-1/rank-2 irreducible components `Q` (CSA, anisotropic couplings, quadrupolar); in `sphten-liouv` as `left`/`right`/`comm`/`acomm` superoperators |
-| `euler2dcm.m`, `mat2sphten.m`, `wigner.m`, `eeqq2nqi.m` | `respinach.conventions` | the same conventions |
-| `kinetics.m`, `equilibrate.m` | `respinach.kinetics`, `respinach.equilibrate` | first-order exchange between chemical subsystems; equilibrium concentrations |
-| `trajan.m`, `stateinfo.m` | `respinach.trajan`, `respinach.stateinfo`, `respinach.plotting.plot_trajan` | correlation-order, coherence-order and per-spin amplitudes along a trajectory; the largest coefficients of a state (no `level_populations`) |
-| `correlation.m`, `coherence.m` | `respinach.correlation`, `respinach.coherence` | `sphten-liouv` |
-| `propagator.m`, `step.m`, `krylov.m` | `respinach.propagator`, `respinach.step`, `respinach.krylov` | dense Pade below `small_matrix`, scaled-squared Taylor above; Taylor action on vectors with 1-, 2-, 3-point Lie quadratures |
-| `evolution.m` | `respinach.evolution` | `zeeman-hilb`: `observable`; `sphten-liouv`: `observable`, `final`, `trajectory`, `multichannel`, `refocus`, destination state screening, Krylov path |
-| `reduce.m`, `zte.m`, `path_trace.m` | `respinach.reduce`, `respinach.zte`, `respinach.path_trace` | zero track elimination, path tracing with subspace merging; no symmetry |
-| `relaxation.m`, `equilibrium.m`, `thermalize.m` | `respinach.relaxation`, `respinach.equilibrium`, `respinach.thermalize` | Redfield (isotropic, axial, rhombic diffusion; diagonalisation-free integral), `t1_t2`, `damp`, `SRFK` (`rlx_scalar.m`), `SRSK`; `rlx_keep`, `rlx_dfs`; `zero`/`IME`/`dibari` thermalisation |
-| `liquid.m`, `crystal.m`, `powder.m`, `singlerot.m`, `fourdif.m`, `acquire.m` | `respinach.liquid`, `respinach.crystal`, `respinach.powder`, `respinach.singlerot`, `respinach.contexts.fourdif`, `respinach.acquire` | both formalisms (MAS in Liouville space); relaxation and exchange kinetics; powder averages over Spinach's grids (shipped as `respinach/grids`); MAS in Fokker-Planck form with the Fourier spectral derivative; no decoupling |
-| `ft_axis.m`, `axis_1d.m`, `plot_1d.m`, `plot_2d.m`, `contspacing.m`, `apodisation.m` | `respinach.plotting`, `respinach.apodisation` | all axis units; interactive Plotly 1D and 2D contour figures; window functions except `bad-z*`; no `derivative` |
-| `etc/molecules/strychnine.m` | `respinach.molecules.strychnine` | the 22-proton system (shifts, couplings, coordinates); 13C/15N not ported |
-| `cosy.m`, `noesy.m`, `hsqc.m`, `decouple.m`, `homospoil.m`, `dilute.m`, `kill_spin.m` | `respinach.cosy`, `respinach.noesy`, `respinach.hsqc`, `respinach.decouple`, `respinach.homospoil`, `respinach.dilute`, `respinach.kill_spin` | COSY, States-TPPI NOESY, echo-antiecho HSQC; analytical decoupling; isotopomer sums |
+| `create.m`, `dipolar.m` | `spynach.create` | isotopes, magnet, tolerances, Zeeman and coupling tensors as scalars, matrices, or eigenvalues with Euler angles, coordinates with point dipolar couplings and the proximity graph, chemical subsystems (`inter.chem` parts, concentrations, exchange rates) |
+| `basis.m` | `spynach.basis` | `zeeman-hilb`; `sphten-liouv` with `none`, `IK-0`, `IK-1`, `IK-2`, the `projections`/`longitudinal`/`zero_quantum`/`manual` filters, and chemical subsystems (no symmetry, no coordinates) |
+| `operator.m`, `state.m` | `spynach.operator`, `spynach.state` | Hilbert space and `sphten-liouv` superoperators (`left`, `right`, `comm`, `acomm`); states by the `exact`, `cheap` and `chem` methods; `E`, `Lx`, `Ly`, `Lz`, `L+`, `L-`, `Tl,m` |
+| `assume.m` | `spynach.assume` | `nmr`, `esr`, `deer`, `deer-zz`, `labframe`, with `zeeman`/`couplings` retention |
+| `hamiltonian.m`, `orientation.m`, `frqoffset.m` | `spynach.hamiltonian`, `spynach.orientation`, `spynach.frqoffset` | isotropic part and the rank-1/rank-2 irreducible components `Q` (CSA, anisotropic couplings, quadrupolar); in `sphten-liouv` as `left`/`right`/`comm`/`acomm` superoperators |
+| `euler2dcm.m`, `mat2sphten.m`, `wigner.m`, `eeqq2nqi.m` | `spynach.conventions` | the same conventions |
+| `kinetics.m`, `equilibrate.m` | `spynach.kinetics`, `spynach.equilibrate` | first-order exchange between chemical subsystems; equilibrium concentrations |
+| `trajan.m`, `stateinfo.m` | `spynach.trajan`, `spynach.stateinfo`, `spynach.plotting.plot_trajan` | correlation-order, coherence-order and per-spin amplitudes along a trajectory; the largest coefficients of a state (no `level_populations`) |
+| `correlation.m`, `coherence.m` | `spynach.correlation`, `spynach.coherence` | `sphten-liouv` |
+| `propagator.m`, `step.m`, `krylov.m` | `spynach.propagator`, `spynach.step`, `spynach.krylov` | dense Pade below `small_matrix`, scaled-squared Taylor above; Taylor action on vectors with 1-, 2-, 3-point Lie quadratures |
+| `evolution.m` | `spynach.evolution` | `zeeman-hilb`: `observable`; `sphten-liouv`: `observable`, `final`, `trajectory`, `multichannel`, `refocus`, destination state screening, Krylov path |
+| `reduce.m`, `zte.m`, `path_trace.m` | `spynach.reduce`, `spynach.zte`, `spynach.path_trace` | zero track elimination, path tracing with subspace merging; no symmetry |
+| `relaxation.m`, `equilibrium.m`, `thermalize.m` | `spynach.relaxation`, `spynach.equilibrium`, `spynach.thermalize` | Redfield (isotropic, axial, rhombic diffusion; diagonalisation-free integral), `t1_t2`, `damp`, `SRFK` (`rlx_scalar.m`), `SRSK`; `rlx_keep`, `rlx_dfs`; `zero`/`IME`/`dibari` thermalisation |
+| `liquid.m`, `crystal.m`, `powder.m`, `singlerot.m`, `fourdif.m`, `acquire.m` | `spynach.liquid`, `spynach.crystal`, `spynach.powder`, `spynach.singlerot`, `spynach.contexts.fourdif`, `spynach.acquire` | both formalisms (MAS in Liouville space); relaxation and exchange kinetics; powder averages over Spinach's grids (shipped as `spynach/grids`); MAS in Fokker-Planck form with the Fourier spectral derivative; no decoupling |
+| `ft_axis.m`, `axis_1d.m`, `plot_1d.m`, `plot_2d.m`, `contspacing.m`, `apodisation.m` | `spynach.plotting`, `spynach.apodisation` | all axis units; interactive Plotly 1D and 2D contour figures; window functions except `bad-z*`; no `derivative` |
+| `etc/molecules/strychnine.m` | `spynach.molecules.strychnine` | the 22-proton system (shifts, couplings, coordinates); 13C/15N not ported |
+| `cosy.m`, `noesy.m`, `hsqc.m`, `decouple.m`, `homospoil.m`, `dilute.m`, `kill_spin.m` | `spynach.cosy`, `spynach.noesy`, `spynach.hsqc`, `spynach.decouple`, `spynach.homospoil`, `spynach.dilute`, `spynach.kill_spin` | COSY, States-TPPI NOESY, echo-antiecho HSQC; analytical decoupling; isotopomer sums |
 
 Anything not ported raises `NotImplementedError`; inputs are never silently
 ignored.
@@ -106,7 +106,7 @@ ignored.
 OPENBLAS_NUM_THREADS=4 PYTHONPATH=src python -m pytest -q
 ```
 
-Parity tests skip when fixtures are absent (`$RESPINACH_FIXTURES`, default
+Parity tests skip when fixtures are absent (`$SPYNACH_FIXTURES`, default
 `/fixtures`). In this container OpenBLAS sees 12 cores but the cgroup quota
 is 4 CPUs; with the default thread count, dense LAPACK calls run ~1000x
 slower (a 256x256 `eigh` takes 10 s instead of 10 ms). Set
@@ -118,7 +118,7 @@ To test on a macOS host outside the container, install
 does not work on the host, so the script keeps a separate `.venv-mac` and
 syncs it with `pyproject.toml` before every run. Source edits need no
 reinstall. Point VS Code's interpreter at `.venv-mac/bin/python`.
-`scripts/mac-compare.sh` runs the respinach side of a comparison case in
+`scripts/mac-compare.sh` runs the Spynach side of a comparison case in
 the same environment (with the `compare` extra), so that both sides of a
 report are timed on the same machine.
 
@@ -150,13 +150,13 @@ are sparsity patterns of the strychnine NOESY Liouvillian rendered by
 `compare` extra brings in), kept as alternatives; the script embeds the
 full-matrix mask into the page when the page carries its SVG mask element.
 
-`src/respinach/_isotope_data.py` is generated from Spinach's `spin.m` by
+`src/spynach/_isotope_data.py` is generated from Spinach's `spin.m` by
 `porting/tools/gen_isotopes.py`; do not edit it by hand.
-`src/respinach/grids/*.npz` are generated from Spinach's `kernel/grids` by
+`src/spynach/grids/*.npz` are generated from Spinach's `kernel/grids` by
 `porting/tools/gen_grids.py`. `examples/` holds full-size translations of
 Spinach example scripts for side-by-side comparison with MATLAB (see
 [`docs/README.md`](docs/README.md#example-scripts)); `comparison/` holds the
-protocol for timed, profiled Spinach-vs-respinach runs with an HTML report
+protocol for timed, profiled Spinach-vs-spynach runs with an HTML report
 ([`comparison/README.md`](comparison/README.md)). `porting/tools/bench_strychnine.py` times the
 kernel on the 22-proton strychnine system (12 316 states at `IK-2`,
 proximity level 3): basis 0.04 s, Hamiltonian 0.1 s, Redfield
@@ -165,7 +165,7 @@ container.
 
 ## Licence and attribution
 
-respinach is released under the MIT licence (`LICENSE`). It is derived from
+Spynach is released under the MIT licence (`LICENSE`). It is derived from
 [Spinach](https://spindynamics.org) by Ilya Kuprov and co-workers, also MIT
 licensed: the kernel, molecule data, isotope table, spherical grids and
 example scripts were translated from it, and Spinach's copyright and
@@ -178,7 +178,7 @@ who reviewed the results; commits made by the agent are marked as such in
 the git history. Correctness rests on the test suite's comparison with
 Spinach reference data, not on the method of authorship (see `LICENSE`).
 
-Results obtained with respinach should cite Spinach: H. J. Hogben,
+Results obtained with Spynach should cite Spinach: H. J. Hogben,
 M. Krzystyniak, G. T. P. Charnock, P. J. Hore, I. Kuprov, *Spinach: a
 software library for simulation of spin dynamics in large spin systems*,
 J. Magn. Reson. 208, 179 (2011), together with the method papers that the

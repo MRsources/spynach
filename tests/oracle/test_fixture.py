@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import scipy.sparse as sps
 
-from respinach.oracle import find_case, load_fixture
+from spynach.oracle import find_case, load_fixture
 from tests.oracle.layout import write_case
 
 
@@ -72,7 +72,7 @@ def test_round_trip(case):
 
 
 def test_find_case(case, monkeypatch):
-    monkeypatch.setenv("RESPINACH_FIXTURES", str(case))
+    monkeypatch.setenv("SPYNACH_FIXTURES", str(case))
     assert find_case("case") == case / "tag" / "case"
     assert find_case("case", tag="tag") == case / "tag" / "case"
     assert find_case("absent") is None

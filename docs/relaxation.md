@@ -53,19 +53,19 @@ superoperator `R` in Hz; it enters the Liouvillian as `L = H + 1j * R +
 ```python
 import numpy as np
 import scipy.linalg as sla
-import respinach
+import spynach
 
 
 def dense(x):
     return x.toarray() if hasattr(x, "toarray") else np.asarray(x)
 
 
-spin_system_hc = respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
+spin_system_hc = spynach.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
                    {"zeeman": {"scalar": [0.0, 0.0]}, "coordinates": [[0, 0, 0], [0, 0, 1.03]],
                     "relaxation": ["redfield"], "equilibrium": "dibari", "rlx_keep": "kite",
                     "temperature": 298, "tau_c": [[100e-12]]})
-spin_system_hc = respinach.basis(spin_system_hc, {"formalism": "sphten-liouv", "approximation": "none"})
-R = respinach.relaxation(spin_system_hc)
+spin_system_hc = spynach.basis(spin_system_hc, {"formalism": "sphten-liouv", "approximation": "none"})
+R = spynach.relaxation(spin_system_hc)
 assert R.shape == (16, 16)
 ```
 
@@ -73,7 +73,7 @@ assert R.shape == (16, 16)
 
 Bloch-Redfield-Wangsness theory treats the anisotropic part of the
 Hamiltonian, modulated by rotational diffusion, as a perturbation of the
-lab-frame isotropic Hamiltonian. respinach uses Spinach's
+lab-frame isotropic Hamiltonian. Spynach uses Spinach's
 diagonalisation-free form (Kuprov 2011): every pair of irreducible
 components `Q[r][k][m]`, `Q[r][p][q]` of the anisotropic Hamiltonian (the
 same `Q` as in the solid-state guide, here as commutation superoperators
@@ -85,7 +85,7 @@ where `L0` is the lab-frame Liouvillian, the weights `w` and decay rates
 `1/tau` come from the rotational diffusion model (isotropic, axial or
 rhombic, from one, two or three correlation times), and the integral is a
 block of one matrix exponential (the auxiliary-matrix formalism of
-Goodwin and Kuprov 2015, `respinach.relaxation.expmint`). No eigenvectors are
+Goodwin and Kuprov 2015, `spynach.relaxation.expmint`). No eigenvectors are
 ever needed, so the method scales to restricted bases.
 
 For a dipolar-coupled pair the result is the Solomon theory: with
@@ -95,7 +95,7 @@ and cross-relaxation rates are `rho_I = b^2/10 [J(wI-wS) + 3J(wI) +
 `R` between normalised `Lz` states:
 
 ```python
-Lz_H, Lz_C = respinach.state(spin_system_hc, ["Lz"], [0]), respinach.state(spin_system_hc, ["Lz"], [1])
+Lz_H, Lz_C = spynach.state(spin_system_hc, ["Lz"], [0]), spynach.state(spin_system_hc, ["Lz"], [1])
 rate = lambda bra, ket: -np.vdot(bra, dense(R) @ ket).real / np.sqrt(np.vdot(bra, bra).real * np.vdot(ket, ket).real)
 b = (
     spin_system_hc.gammas[0]
@@ -130,14 +130,14 @@ shifts:
 
 ```python
 def pair(keep, **extra):
-    spin_system = respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
+    spin_system = spynach.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
                        {"zeeman": {"scalar": [0.0, 0.0]}, "coordinates": [[0, 0, 0], [0, 0, 1.03]],
                         "relaxation": ["redfield"], "equilibrium": "zero", "rlx_keep": keep,
                         "temperature": 298, "tau_c": [[100e-12]], **extra})
-    return respinach.basis(spin_system, {"formalism": "sphten-liouv", "approximation": "none"})
+    return spynach.basis(spin_system, {"formalism": "sphten-liouv", "approximation": "none"})
 
-R_lab = dense(respinach.relaxation(pair("labframe", rlx_dfs="keep")))
-R_diag = dense(respinach.relaxation(pair("diagonal")))
+R_lab = dense(spynach.relaxation(pair("labframe", rlx_dfs="keep")))
+R_diag = dense(spynach.relaxation(pair("diagonal")))
 assert np.abs(R_lab.imag).max() > 0                       # dynamic frequency shifts
 assert np.allclose(R_diag, np.diag(np.diag(R_diag)))
 assert np.allclose(np.diag(R_diag), np.diag(R_lab).real, atol=1e-9)
@@ -154,11 +154,11 @@ the field direction at the orientation handed to `relaxation`).
 (in Hilbert space, every element at half the rate):
 
 ```python
-spin_system_t1t2 = respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
+spin_system_t1t2 = spynach.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
                      {"relaxation": ["t1_t2", "damp"], "equilibrium": "zero", "rlx_keep": "diagonal",
                       "r1_rates": [1.0, 2.0], "r2_rates": [5.0, 7.0], "damp_rate": 0.5})
-spin_system_t1t2 = respinach.basis(spin_system_t1t2, {"formalism": "sphten-liouv", "approximation": "none"})
-R_t = dense(respinach.relaxation(spin_system_t1t2))
+spin_system_t1t2 = spynach.basis(spin_system_t1t2, {"formalism": "sphten-liouv", "approximation": "none"})
+R_t = dense(spynach.relaxation(spin_system_t1t2))
 row = lambda spec: np.flatnonzero((spin_system_t1t2.basis.basis == spec).all(axis=1))[0]
 assert R_t[row([2, 0]), row([2, 0])] == -1.5          # Lz(H): R1 + damping
 assert R_t[row([1, 3]), row([1, 3])] == -12.5         # L+(H) L-(C): R2(H) + R2(C) + damping
@@ -171,7 +171,7 @@ Two mechanisms act through scalar couplings rather than through the
 anisotropic interactions that Redfield theory integrates. Both are
 Liouville-space theories and combine with the others in
 `inter["relaxation"]`; Spinach evaluates them after Redfield theory and
-so does respinach.
+so does spynach.
 
 **First kind** (`"SRFK"`): a scalar coupling that jumps with a chemical
 process (the nitrogen inversion of aziridines modulates the H-N
@@ -186,12 +186,12 @@ coupling between spins `n` and `k` (0-based), `srfk_tau_c` the components
 Redfield theory:
 
 ```python
-spin_system_srfk = respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1},
+spin_system_srfk = spynach.create({"isotopes": ["1H", "1H"], "magnet": 14.1},
                         {"zeeman": {"scalar": [0.0, 2.0]}, "relaxation": ["SRFK"], "rlx_keep": "kite",
                          "equilibrium": "zero", "srfk_tau_c": [[1.0, 1e-3]],
                          "srfk_mdepth": [[None, 15.0], [None, None]]})
-spin_system_srfk = respinach.basis(spin_system_srfk, {"formalism": "sphten-liouv", "approximation": "none"})
-R_s = dense(respinach.relaxation(spin_system_srfk)).real
+spin_system_srfk = spynach.basis(spin_system_srfk, {"formalism": "sphten-liouv", "approximation": "none"})
+R_s = dense(spynach.relaxation(spin_system_srfk)).real
 assert R_s[0, 0] == 0 and np.all(np.diag(R_s) <= 0)
 print(f"largest SRFK rate {-np.diag(R_s).min():.2f} Hz from a 15 Hz modulation with tau = 1 ms")
 ```
@@ -214,16 +214,16 @@ def hn_pair(theories, **extra):
              "coupling": {"scalar": [[0, 50.0], [0, 0]], "eigs": [[None, None], [None, [1e6, 1e6, -2e6]]],
                           "euler": [[None, None], [None, [0, 0, 0]]]},
              "relaxation": theories, "rlx_keep": "secular", "equilibrium": "zero", "tau_c": [[1e-9]], **extra}
-    spin_system = respinach.create({"isotopes": ["1H", "14N"], "magnet": 11.75}, inter)
-    return respinach.basis(spin_system, {"formalism": "sphten-liouv", "approximation": "none"})
+    spin_system = spynach.create({"isotopes": ["1H", "14N"], "magnet": 11.75}, inter)
+    return spynach.basis(spin_system, {"formalism": "sphten-liouv", "approximation": "none"})
 
-R_base = dense(respinach.relaxation(hn_pair(["redfield"])))
-R_srsk = dense(respinach.relaxation(hn_pair(["redfield", "SRSK"], srsk_sources=[1])))
+R_base = dense(spynach.relaxation(hn_pair(["redfield"])))
+R_srsk = dense(spynach.relaxation(hn_pair(["redfield", "SRSK"], srsk_sources=[1])))
 spin_system_hn = hn_pair(["redfield"])
 Lp_H, Lp_N, Lz_N = (
-    respinach.state(spin_system_hn, ["L+"], [0]),
-    respinach.state(spin_system_hn, ["L+"], [1]),
-    respinach.state(spin_system_hn, ["Lz"], [1]),
+    spynach.state(spin_system_hn, ["L+"], [0]),
+    spynach.state(spin_system_hn, ["L+"], [1]),
+    spynach.state(spin_system_hn, ["Lz"], [1]),
 )
 ```
 
@@ -255,13 +255,13 @@ equation, adds a drive from the unit state (`R -> R - (R rho_eq) u^T`);
 `inter["equilibrium"]`; `thermalize` applies either to a given `R`:
 
 ```python
-rho_eq = respinach.equilibrium(spin_system_hc)
+rho_eq = spynach.equilibrium(spin_system_hc)
 assert rho_eq[0] == 1
 spin_system_zero = pair("kite")
-R0 = respinach.relaxation(spin_system_zero)
-HL = respinach.hamiltonian(respinach.assume(spin_system_zero, "labframe"), "left")
-R_ime = respinach.thermalize(spin_system_zero, R0, "IME", rho_eq=rho_eq)
-R_dibari = respinach.thermalize(spin_system_zero, R0, "dibari", H_left=HL, temperature=298.0)
+R0 = spynach.relaxation(spin_system_zero)
+HL = spynach.hamiltonian(spynach.assume(spin_system_zero, "labframe"), "left")
+R_ime = spynach.thermalize(spin_system_zero, R0, "IME", rho_eq=rho_eq)
+R_dibari = spynach.thermalize(spin_system_zero, R0, "dibari", H_left=HL, temperature=298.0)
 for R_th in (R_ime, R_dibari):
     assert np.linalg.norm(dense(R_th) @ rho_eq) < 1e-9       # rho_eq is stationary
 ```
@@ -274,11 +274,11 @@ under `R` alone, with the `"multichannel"` output of `evolution` (one
 trace per coil column):
 
 ```python
-Lz1, Lz2 = respinach.state(spin_system_hc, ["Lz"], [0]), respinach.state(spin_system_hc, ["Lz"], [1])
+Lz1, Lz2 = spynach.state(spin_system_hc, ["Lz"], [0]), spynach.state(spin_system_hc, ["Lz"], [1])
 rho = rho_eq - 2 * Lz1 * np.vdot(Lz1, rho_eq) / np.vdot(Lz1, Lz1).real   # proton inverted
 coils = np.stack([Lz1, Lz2], axis=1)
 dt, nsteps = 1e-2, 400
-noe = respinach.evolution(spin_system_hc, 1j * R, rho, dt, nsteps, "multichannel", coil=coils).real
+noe = spynach.evolution(spin_system_hc, 1j * R, rho, dt, nsteps, "multichannel", coil=coils).real
 assert noe.shape == (2, nsteps + 1)
 ```
 

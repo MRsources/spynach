@@ -1,6 +1,6 @@
 """Parity of scalar relaxation (SRFK, SRSK) against Spinach fixtures (FR-008).
 
-Each stage of oracle/matlab/dumps/dump_scalar.m is recomputed with respinach and
+Each stage of oracle/matlab/dumps/dump_scalar.m is recomputed with spynach and
 compared with the stored MATLAB result; the case definitions below must
 stay identical to the dump script's. Tests skip when the fixtures are not
 available.
@@ -16,8 +16,8 @@ import numpy as np
 import pytest
 import scipy.sparse as sps
 
-import respinach
-from respinach.oracle import assert_matches, find_case, load_fixture
+import spynach
+from spynach.oracle import assert_matches, find_case, load_fixture
 
 LIOUV = {"formalism": "sphten-liouv", "approximation": "none"}
 
@@ -100,7 +100,7 @@ def fx(case):
 @pytest.fixture
 def spin_system(case):
     spec = CASES[case]
-    return respinach.basis(respinach.create(spec["sys"], spec["inter"]), LIOUV)
+    return spynach.basis(spynach.create(spec["sys"], spec["inter"]), LIOUV)
 
 
 def dense(x):
@@ -120,7 +120,7 @@ def test_case_definitions_match_fixture(fx, case):
 
 
 def test_relaxation_superoperators(fx, case, spin_system):
-    assert_matches(respinach.relaxation(spin_system), fx["/rlx/R"], **R_TOL, name="R")
+    assert_matches(spynach.relaxation(spin_system), fx["/rlx/R"], **R_TOL, name="R")
     if CASES[case]["base"]:
         from dataclasses import replace
 
@@ -135,21 +135,21 @@ def test_relaxation_superoperators(fx, case, spin_system):
                 srsk_sources=(),
             ),
         )
-        assert_matches(respinach.relaxation(base), fx["/rlx/R_base"], **R_TOL, name="R without scalar relaxation")
+        assert_matches(spynach.relaxation(base), fx["/rlx/R_base"], **R_TOL, name="R without scalar relaxation")
 
 
 def test_equilibrium_and_transient_noe(fx, case, spin_system):
-    HL = respinach.hamiltonian(respinach.assume(spin_system, "labframe"), "left")
+    HL = spynach.hamiltonian(spynach.assume(spin_system, "labframe"), "left")
     assert_matches(HL, fx["/ham/HL"], rtol=1e-12, atol=0, name="HL")
-    rho_eq = respinach.equilibrium(spin_system, HL)
+    rho_eq = spynach.equilibrium(spin_system, HL)
     assert_matches(rho_eq, column(fx["/states/rho_eq"]), **STATE_TOL, name="rho_eq")
     noe = CASES[case]["noe"]
     R = fx["/rlx/R"]
     rho_eq = column(fx["/states/rho_eq"])
-    Lz1 = respinach.state(spin_system, ["Lz"], [0])
+    Lz1 = spynach.state(spin_system, ["Lz"], [0])
     rho = rho_eq - 2 * Lz1 * np.vdot(Lz1, rho_eq) / np.vdot(Lz1, Lz1).real
     assert_matches(rho, column(fx["/states/rho_inverted"]), **STATE_TOL, name="rho inverted")
-    coil = np.stack([respinach.state(spin_system, ["Lz"], [k]) for k in range(spin_system.nspins)], axis=1)
-    answer = respinach.evolution(spin_system, 1j * R, rho, noe["dt"], noe["nsteps"], "multichannel", coil=coil)
+    coil = np.stack([spynach.state(spin_system, ["Lz"], [k]) for k in range(spin_system.nspins)], axis=1)
+    answer = spynach.evolution(spin_system, 1j * R, rho, noe["dt"], noe["nsteps"], "multichannel", coil=coil)
     ref = dense(fx["/noe/multichannel"])
     assert_matches(answer, ref.reshape(answer.shape), **STATE_TOL, name="NOE")

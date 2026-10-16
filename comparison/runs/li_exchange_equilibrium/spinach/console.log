@@ -1,6 +1,6 @@
-== li_exchange_equilibrium (Spinach /Users/alexej/Documents/PROG/respinach-spinach) -> /Users/alexej/Documents/PROG/respinach/comparison/runs/li_exchange_equilibrium/spinach
+== li_exchange_equilibrium (Spinach /Users/alexej/Documents/PROG/spynach-spinach) -> /Users/alexej/Documents/PROG/spynach/comparison/runs/li_exchange_equilibrium/spinach
 Running startup checks...
-[...ison > li_exchange_equilibrium_spinach > create ]  scratch location: /Users/alexej/Documents/PROG/respinach-spinach/scratch
+[...ison > li_exchange_equilibrium_spinach > create ]  scratch location: /Users/alexej/Documents/PROG/spynach-spinach/scratch
 [..._exchange_equilibrium_spinach > create > banner ]   
 [..._exchange_equilibrium_spinach > create > banner ]  ============================================
 [..._exchange_equilibrium_spinach > create > banner ]  =                                          =
@@ -312,9 +312,9 @@ relaxation                            0.5 s
 [...n > li_exchange_equilibrium_spinach > evolution ]  recombining subspaces...
 [...n > li_exchange_equilibrium_spinach > evolution ]  data retrieval finished.
 trajectory                            0.1 s
-== li_exchange_equilibrium (Spinach /Users/alexej/Documents/PROG/respinach-spinach) -> /Users/alexej/Documents/PROG/respinach/comparison/runs/li_exchange_equilibrium/spinach
+== li_exchange_equilibrium (Spinach /Users/alexej/Documents/PROG/spynach-spinach) -> /Users/alexej/Documents/PROG/spynach/comparison/runs/li_exchange_equilibrium/spinach
 Running startup checks...
-[...ison > li_exchange_equilibrium_spinach > create ]  scratch location: /Users/alexej/Documents/PROG/respinach-spinach/scratch
+[...ison > li_exchange_equilibrium_spinach > create ]  scratch location: /Users/alexej/Documents/PROG/spynach-spinach/scratch
 [..._exchange_equilibrium_spinach > create > banner ]   
 [..._exchange_equilibrium_spinach > create > banner ]  ============================================
 [..._exchange_equilibrium_spinach > create > banner ]  =                                          =

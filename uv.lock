@@ -2243,7 +2243,7 @@ wheels = [
 ]
 
 [[package]]
-name = "respinach"
+name = "spynach"
 version = "0.0.1"
 source = { editable = "." }
 dependencies = [
@@ -2284,8 +2284,8 @@ requires-dist = [
     { name = "numpy", specifier = ">=1.26" },
     { name = "plotly", marker = "extra == 'plot'", specifier = ">=6" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8" },
-    { name = "respinach", extras = ["plot"], marker = "extra == 'compare'" },
-    { name = "respinach", extras = ["plot"], marker = "extra == 'docs'" },
+    { name = "spynach", extras = ["plot"], marker = "extra == 'compare'" },
+    { name = "spynach", extras = ["plot"], marker = "extra == 'docs'" },
     { name = "scipy", specifier = ">=1.11" },
 ]
 provides-extras = ["test", "plot", "compare", "docs"]

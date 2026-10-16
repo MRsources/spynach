@@ -1,6 +1,6 @@
 """Parity of the pulse sequence library against Spinach fixtures (FR-007).
 
-Each stage of oracle/matlab/dumps/dump_seq.m is recomputed with respinach and
+Each stage of oracle/matlab/dumps/dump_seq.m is recomputed with spynach and
 compared with the stored MATLAB result; the case definitions below must
 stay identical to the dump script's. Tests skip when the fixtures are not
 available. 2-D FIDs are (npoints[1], npoints[0]) arrays in both.
@@ -10,8 +10,8 @@ import numpy as np
 import pytest
 import scipy.sparse as sps
 
-import respinach
-from respinach.oracle import assert_matches, find_case, load_fixture
+import spynach
+from spynach.oracle import assert_matches, find_case, load_fixture
 
 LIOUV = {"formalism": "sphten-liouv", "approximation": "none"}
 FID_TOL = dict(rtol=1e-9, atol=0)
@@ -35,8 +35,8 @@ def fixture(name):
 
 def test_cosy_derome_and_processing():
     fx = fixture("seq_cosy_derome")
-    spin_system = respinach.basis(
-        respinach.create(
+    spin_system = spynach.basis(
+        spynach.create(
             {"isotopes": ["1H"] * 3, "magnet": 16.1},
             {"zeeman": {"scalar": [3.70, 3.92, 4.50]}, "coupling": {"scalar": [[0, 10, 4], [0, 0, 12], [0, 0, 0]]}},
         ),
@@ -50,46 +50,46 @@ def test_cosy_derome_and_processing():
         "zerofill": [128, 128],
         "spins": ["1H"],
     }
-    fid = respinach.liquid(spin_system, respinach.cosy, pars, "nmr")
+    fid = spynach.liquid(spin_system, spynach.cosy, pars, "nmr")
     assert_matches(fid, dense(fx["/fid/cosy"]), **FID_TOL, name="cosy")
-    apod = respinach.apodisation(fid, [("sqcos",), ("sqcos",)])
+    apod = spynach.apodisation(fid, [("sqcos",), ("sqcos",)])
     assert_matches(apod, dense(fx["/fid/cosy_apodised"]), **FID_TOL, name="cosy apodised")
     assert_matches(
         np.fft.fftshift(np.fft.fft2(apod, (128, 128))), dense(fx["/spectrum/cosy"]), **FID_TOL, name="cosy spectrum"
     )
     v = np.arange(1, 17) + 1j * np.arange(16, 0, -1)
     A = np.arange(1, 49).reshape(8, 6).T + 1j  # MATLAB reshape(1:48,[6 8]) is column-major
-    assert_matches(respinach.apodisation(v, [("exp", 6)]), column(fx["/apod/exp6"]), **EXACT)
-    assert_matches(respinach.apodisation(v, [("gauss", 4)], fp_half=False), column(fx["/apod/gauss4_nohalf"]), **EXACT)
-    assert_matches(respinach.apodisation(v, [("crisp",)]), column(fx["/apod/crisp"]), **EXACT)
-    assert_matches(respinach.apodisation(v, [("kaiser", 3)]), column(fx["/apod/kaiser3"]), rtol=1e-12, atol=0)
-    assert_matches(respinach.apodisation(A, [("sqcos",), ("sin",)]), dense(fx["/apod/matrix_sqcos_sin"]), **EXACT)
-    assert_matches(respinach.apodisation(A, [("none",), ("cos",)]), dense(fx["/apod/matrix_none_cos"]), **EXACT)
-    spin_system_nmr = respinach.assume(spin_system, "nmr")
-    H = respinach.frqoffset(spin_system, respinach.hamiltonian(spin_system_nmr), pars)
-    rho = respinach.state(spin_system, "L+", "1H")
-    stack = respinach.evolution(spin_system, H, rho, 1e-3, 7, "trajectory")
+    assert_matches(spynach.apodisation(v, [("exp", 6)]), column(fx["/apod/exp6"]), **EXACT)
+    assert_matches(spynach.apodisation(v, [("gauss", 4)], fp_half=False), column(fx["/apod/gauss4_nohalf"]), **EXACT)
+    assert_matches(spynach.apodisation(v, [("crisp",)]), column(fx["/apod/crisp"]), **EXACT)
+    assert_matches(spynach.apodisation(v, [("kaiser", 3)]), column(fx["/apod/kaiser3"]), rtol=1e-12, atol=0)
+    assert_matches(spynach.apodisation(A, [("sqcos",), ("sin",)]), dense(fx["/apod/matrix_sqcos_sin"]), **EXACT)
+    assert_matches(spynach.apodisation(A, [("none",), ("cos",)]), dense(fx["/apod/matrix_none_cos"]), **EXACT)
+    spin_system_nmr = spynach.assume(spin_system, "nmr")
+    H = spynach.frqoffset(spin_system, spynach.hamiltonian(spin_system_nmr), pars)
+    rho = spynach.state(spin_system, "L+", "1H")
+    stack = spynach.evolution(spin_system, H, rho, 1e-3, 7, "trajectory")
     assert_matches(stack, dense(fx["/evo/trajectory"]), **FID_TOL, name="trajectory")
     assert_matches(
-        respinach.evolution(spin_system, H, stack, 1e-3, 0, "refocus"),
+        spynach.evolution(spin_system, H, stack, 1e-3, 0, "refocus"),
         dense(fx["/evo/refocus"]),
         **FID_TOL,
         name="refocus",
     )
     apars = {"spins": ["1H"], "offset": 2800, "sweep": 700, "npoints": 32, "dead_time": 3e-3, "rho0": rho, "coil": rho}
     assert_matches(
-        respinach.liquid(spin_system, respinach.acquire, apars, "nmr"), column(fx["/fid/acquire_dead_time"]), **FID_TOL
+        spynach.liquid(spin_system, spynach.acquire, apars, "nmr"), column(fx["/fid/acquire_dead_time"]), **FID_TOL
     )
     assert_matches(
-        respinach.homospoil(spin_system, stack.T, "destroy").T, dense(fx["/states/homospoil_destroy"]), **EXACT
+        spynach.homospoil(spin_system, stack.T, "destroy").T, dense(fx["/states/homospoil_destroy"]), **EXACT
     )
-    assert_matches(respinach.homospoil(spin_system, stack.T, "keep").T, dense(fx["/states/homospoil_keep"]), **EXACT)
+    assert_matches(spynach.homospoil(spin_system, stack.T, "keep").T, dense(fx["/states/homospoil_keep"]), **EXACT)
 
 
 def test_noesy_pair():
     fx = fixture("seq_noesy_pair")
-    spin_system = respinach.basis(
-        respinach.create(
+    spin_system = spynach.basis(
+        spynach.create(
             {"isotopes": ["1H", "1H"], "magnet": 14.1},
             {
                 "zeeman": {"scalar": [1.0, 3.0]},
@@ -112,17 +112,17 @@ def test_noesy_pair():
         "spins": ["1H"],
         "needs": ["rho_eq"],
     }
-    assert_matches(respinach.equilibrium(spin_system), column(fx["/states/rho_eq"]), **FID_TOL, name="rho_eq")
-    fid = respinach.liquid(spin_system, respinach.noesy, pars, "nmr")
+    assert_matches(spynach.equilibrium(spin_system), column(fx["/states/rho_eq"]), **FID_TOL, name="rho_eq")
+    fid = spynach.liquid(spin_system, spynach.noesy, pars, "nmr")
     assert_matches(fid["cos"], dense(fx["/fid/noesy_cos"]), **FID_TOL, name="noesy cos")
     assert_matches(fid["sin"], dense(fx["/fid/noesy_sin"]), **FID_TOL, name="noesy sin")
-    old = respinach.liquid(spin_system, respinach.noesy, {**pars, "oldschool": True}, "nmr")
+    old = spynach.liquid(spin_system, spynach.noesy, {**pars, "oldschool": True}, "nmr")
     assert_matches(old["cos"], dense(fx["/fid/noesy_oldschool_cos"]), **FID_TOL, name="noesy oldschool")
 
 
 def test_hsqc_with_dilution():
     fx = fixture("seq_hsqc_dilute")
-    spin_system = respinach.create(
+    spin_system = spynach.create(
         {"isotopes": ["1H", "13C", "13C", "1H"], "magnet": 5.9},
         {
             "zeeman": {"scalar": [3.0, 40.0, 50.0, 1.0]},
@@ -139,27 +139,27 @@ def test_hsqc_with_dilution():
         "decouple_f1": ["1H"],
         "decouple_f2": ["13C"],
     }
-    subsystems = respinach.dilute(spin_system, "13C")
+    subsystems = spynach.dilute(spin_system, "13C")
     assert len(subsystems) == fx.meta["inputs"]["nsub"]
     spectrum = np.zeros((128, 128), dtype=complex)
     for n, spin_system_sub in enumerate(subsystems, start=1):
-        spin_system_sub = respinach.basis(spin_system_sub, LIOUV)
+        spin_system_sub = spynach.basis(spin_system_sub, LIOUV)
         np.testing.assert_array_equal(spin_system_sub.basis.basis, dense(fx[f"/sub/basis_{n}"]))
-        fid = respinach.liquid(spin_system_sub, respinach.hsqc, pars, "nmr")
+        fid = spynach.liquid(spin_system_sub, spynach.hsqc, pars, "nmr")
         assert_matches(fid["pos"], dense(fx[f"/fid/hsqc_pos_{n}"]), **FID_TOL, name=f"hsqc pos {n}")
         assert_matches(fid["neg"], dense(fx[f"/fid/hsqc_neg_{n}"]), **FID_TOL, name=f"hsqc neg {n}")
         pos = np.fft.fftshift(
-            np.fft.fft(respinach.apodisation(fid["pos"], [("sqcos",), ("sqcos",)]), 128, axis=0), axes=0
+            np.fft.fft(spynach.apodisation(fid["pos"], [("sqcos",), ("sqcos",)]), 128, axis=0), axes=0
         )
         neg = np.fft.fftshift(
-            np.fft.fft(respinach.apodisation(fid["neg"], [("sqcos",), ("sqcos",)]), 128, axis=0), axes=0
+            np.fft.fft(spynach.apodisation(fid["neg"], [("sqcos",), ("sqcos",)]), 128, axis=0), axes=0
         )
         spectrum += np.fft.fftshift(np.fft.fft(pos + np.conj(neg), 128, axis=1), axes=1)
     assert_matches(spectrum, dense(fx["/spectrum/hsqc"]), **FID_TOL, name="hsqc spectrum")
-    spin_system_full = respinach.basis(spin_system, LIOUV)
-    H = respinach.hamiltonian(respinach.assume(spin_system_full, "nmr"))
-    rho = respinach.state(spin_system_full, "L+", "1H") + respinach.state(spin_system_full, ["L+", "Lz"], [0, 1])
+    spin_system_full = spynach.basis(spin_system, LIOUV)
+    H = spynach.hamiltonian(spynach.assume(spin_system_full, "nmr"))
+    rho = spynach.state(spin_system_full, "L+", "1H") + spynach.state(spin_system_full, ["L+", "Lz"], [0, 1])
     assert_matches(H, fx["/decouple/H"], rtol=1e-12, atol=0, name="H")
-    H_dec, rho_dec = respinach.decouple(spin_system_full, H, rho, ["13C"])
+    H_dec, rho_dec = spynach.decouple(spin_system_full, H, rho, ["13C"])
     assert_matches(H_dec, fx["/decouple/H_dec"], rtol=1e-12, atol=0, name="H decoupled")
     assert_matches(rho_dec, column(fx["/decouple/rho_dec"]), **EXACT, name="rho decoupled")

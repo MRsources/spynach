@@ -47,7 +47,7 @@ fitting, and possibly a tensor-train backend. These are NOT phase 1.
   linear solver. Candidate third backend, not phase 1.
 
 ## Numerical backend decisions
-- Reference: NumPy/SciPy on CPU. GPU: CuPy, via a thin `respinach.backend` adapter
+- Reference: NumPy/SciPy on CPU. GPU: CuPy, via a thin `spynach.backend` adapter
   (array module + sparse adapter). PyTorch rejected for the core (complex sparse
   support partial); JAX rejected for the sparse engine (experimental sparse,
   static shapes vs. adaptive pruning) but planned later as a separate dense,

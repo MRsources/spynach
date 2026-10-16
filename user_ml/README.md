@@ -1,9 +1,9 @@
 # User-contributed Spinach scripts
 
 Scripts contributed by users, kept as received, with their inputs. Each
-has a line-by-line respinach translation in `examples/user_ml/` and a
+has a line-by-line Spynach translation in `examples/user_ml/` and a
 comparison case in `comparison/cases/` (see `comparison/README.md` for
-the timed, profiled Spinach-vs-respinach protocol and its report).
+the timed, profiled Spinach-vs-spynach protocol and its report).
 
 | script | author | translation | comparison case | inputs |
 |---|---|---|---|---|

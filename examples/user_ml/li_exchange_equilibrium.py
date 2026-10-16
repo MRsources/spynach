@@ -35,8 +35,8 @@ from pathlib import Path
 
 import numpy as np
 
-import respinach
-from respinach.conventions import eeqq2nqi
+import spynach
+from spynach.conventions import eeqq2nqi
 
 
 class Timer:
@@ -91,7 +91,7 @@ def simulate(nsteps_ex: int = 1_000_000, nsteps_eq: int = 200_000, timer: Timer 
     kex = 1e3
     kAB, kBA = pB * kex, pA * kex
     rates = np.array([[-kAB, kBA], [kAB, -kBA]])
-    concs = respinach.equilibrate(rates, np.array([1.0, kAB / kBA]))  # sanity check, as in the script
+    concs = spynach.equilibrate(rates, np.array([1.0, kAB / kBA]))  # sanity check, as in the script
 
     inter = {
         "coupling": {"matrix": coupling_matrix},
@@ -110,49 +110,49 @@ def simulate(nsteps_ex: int = 1_000_000, nsteps_eq: int = 200_000, timer: Timer 
 
     # Spinach init
     with timer("create"):
-        spin_system = respinach.create(sys_, inter)
+        spin_system = spynach.create(sys_, inter)
     with timer("basis"):
-        spin_system = respinach.basis(spin_system, bas)
+        spin_system = spynach.basis(spin_system, bas)
 
     # Liouvillian and equilibrium state
     with timer("hamiltonian"):
-        H0 = respinach.hamiltonian(respinach.assume(spin_system, "labframe"), "left")
-        Lx = respinach.operator(spin_system, "Lx", "7Li")
-        H = respinach.hamiltonian(respinach.assume(spin_system, "nmr"))
-        K = respinach.kinetics(spin_system)
+        H0 = spynach.hamiltonian(spynach.assume(spin_system, "labframe"), "left")
+        Lx = spynach.operator(spin_system, "Lx", "7Li")
+        H = spynach.hamiltonian(spynach.assume(spin_system, "nmr"))
+        K = spynach.kinetics(spin_system)
     with timer("equilibrium"):
-        rho_eq = respinach.equilibrium(spin_system, H0)
-        rho_eq_ex = respinach.evolution(
+        rho_eq = spynach.equilibrium(spin_system, H0)
+        rho_eq_ex = spynach.evolution(
             spin_system, H + 1j * K, rho_eq, 1e-5, nsteps_ex, "final"
         )  # 10 s of chemical equilibration
     with timer("relaxation"):
-        R = respinach.thermalize(spin_system, respinach.relaxation(spin_system), "IME", rho_eq=rho_eq_ex)
+        R = spynach.thermalize(spin_system, spynach.relaxation(spin_system), "IME", rho_eq=rho_eq_ex)
         L0 = H + 1j * R + 1j * K
     with timer("trajectory"):
-        rho_pert = respinach.step(spin_system, Lx, rho_eq_ex, 0)  # apply perturbation
-        traj_eq = respinach.evolution(
+        rho_pert = spynach.step(spin_system, Lx, rho_eq_ex, 0)  # apply perturbation
+        traj_eq = spynach.evolution(
             spin_system, L0, rho_pert, 1e-5, nsteps_eq, "trajectory"
         )  # 2 s for full equilibration
 
     # Analyse the trajectory during equilibration
     with timer("analysis"):
         time_eq = np.linspace(0, 1, traj_eq.shape[1])
-        T10 = respinach.state(spin_system, "T1,0", "7Li", "chem")
-        T20 = respinach.state(spin_system, "T2,0", "7Li", "chem")
-        T30 = respinach.state(spin_system, "T3,0", "7Li", "chem")
+        T10 = spynach.state(spin_system, "T1,0", "7Li", "chem")
+        T20 = spynach.state(spin_system, "T2,0", "7Li", "chem")
+        T30 = spynach.state(spin_system, "T3,0", "7Li", "chem")
         tensors = np.stack([np.conj(T) @ traj_eq for T in (T10, T20, T30)])
-        corr_order, corr_labels = respinach.trajan(spin_system, traj_eq, "correlation_order")
-        coh_order, coh_labels = respinach.trajan(spin_system, traj_eq, "coherence_order")
-        spin_total, spin_labels = respinach.trajan(spin_system, traj_eq, "total_each_spin")
+        corr_order, corr_labels = spynach.trajan(spin_system, traj_eq, "correlation_order")
+        coh_order, coh_labels = spynach.trajan(spin_system, traj_eq, "coherence_order")
+        spin_total, spin_labels = spynach.trajan(spin_system, traj_eq, "total_each_spin")
 
         # Density operator analysis
         print("Density Operator after equilibrium(H0)")
-        respinach.stateinfo(spin_system, rho_eq, 16)
+        spynach.stateinfo(spin_system, rho_eq, 16)
         print("Density Operator after H+1i*K (targeted state)")
-        respinach.stateinfo(spin_system, rho_eq_ex, 16)
+        spynach.stateinfo(spin_system, rho_eq_ex, 16)
         print("Density Operator after perturbation + H+1i*R+1i*K")
-        respinach.stateinfo(spin_system, traj_eq[:, -1], 16)
-        unit = respinach.state(spin_system, "E", "all")
+        spynach.stateinfo(spin_system, traj_eq[:, -1], 16)
+        unit = spynach.state(spin_system, "E", "all")
         unit_population = np.conj(unit) @ rho_eq_ex / np.linalg.norm(unit)
         print(f"Unity State population in the targeted state: {unit_population.real:g}")
 
@@ -172,7 +172,7 @@ def simulate(nsteps_ex: int = 1_000_000, nsteps_eq: int = 200_000, timer: Timer 
 
 def plot(spin_system, time_eq, data, labels, timer: Timer | None = None) -> dict:
     """The four panels of the script's figure 1 as separate figures: tensors, correlation, coherence, spins."""
-    from respinach.plotting import plot_time_series
+    from spynach.plotting import plot_time_series
 
     timer = Timer() if timer is None else timer
     with timer("plot"):

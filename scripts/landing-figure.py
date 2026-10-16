@@ -1,6 +1,6 @@
 """Render the hero figure of the landing page (index.html).
 
-The figures are sparsity patterns of the Liouvillian respinach builds for
+The figures are sparsity patterns of the Liouvillian spynach builds for
 examples/nmr_liquids/noesy_strychnine.py: the Hamiltonian commutation
 superoperator plus i times the Redfield relaxation superoperator of the 22
 protons of strychnine in the IK-2 basis. Nonzeros are binned into pixels;
@@ -46,10 +46,10 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "src"))
 
-import respinach  # noqa: E402
+import spynach  # noqa: E402
 from examples.nmr_liquids.noesy_strychnine import strychnine  # noqa: E402
-from respinach.assume import assume  # noqa: E402
-from respinach.hamiltonian import hamiltonian  # noqa: E402
+from spynach.assume import assume  # noqa: E402
+from spynach.hamiltonian import hamiltonian  # noqa: E402
 
 PIXELS = 1200  # image side; rendered at about 500 CSS pixels, so this is sharp on high-density displays
 THICKEN = 1  # grow each occupied pixel by this many pixels so single-element lines stay visible
@@ -66,9 +66,9 @@ def liouvillian() -> sps.csr_array:
     inter["rlx_keep"] = "kite"
     inter["tau_c"] = [[200e-12]]
     bas = {"formalism": "sphten-liouv", "approximation": "IK-2", "connectivity": "scalar_couplings", "prox_level": 3}
-    spin_system = respinach.basis(respinach.create(sys_, inter), bas)
+    spin_system = spynach.basis(spynach.create(sys_, inter), bas)
     H = hamiltonian(assume(spin_system, "nmr"), "comm")
-    R = respinach.relaxation(spin_system)
+    R = spynach.relaxation(spin_system)
     L = sps.csr_array(H + 1j * R)
     L.eliminate_zeros()
     return L

@@ -1,16 +1,16 @@
-"""Frequency axes and plots (respinach.plotting)."""
+"""Frequency axes and plots (spynach.plotting)."""
 
 import numpy as np
 import pytest
 
-import respinach
-from respinach.isotopes import spin
-from respinach.plotting import axis_1d, ft_axis, plot_1d, plot_fid
+import spynach
+from spynach.isotopes import spin
+from spynach.plotting import axis_1d, ft_axis, plot_1d, plot_fid
 
 
 @pytest.fixture(scope="module")
 def spin_system():
-    return respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1}, {})
+    return spynach.create({"isotopes": ["1H", "13C"], "magnet": 14.1}, {})
 
 
 @pytest.mark.parametrize("npoints", [8, 9, 1024, 1025])
@@ -102,7 +102,7 @@ def test_plot_fid_time_axis():
 
 
 def test_plot_2d_levels_and_binning():
-    from respinach.plotting import _bin_extremes, _level_index, contspacing, plot_2d
+    from spynach.plotting import _bin_extremes, _level_index, contspacing, plot_2d
 
     # the level map sends every contour level to its index, in between it is monotone
     levels = np.array([0.1, 0.4, 1.0])
@@ -125,7 +125,7 @@ def test_plot_2d_levels_and_binning():
     assert same is spectrum and same_axis is not None
 
     pytest.importorskip("plotly")
-    spin_system = respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1}, {"zeeman": {"scalar": [1.0, 3.0]}})
+    spin_system = spynach.create({"isotopes": ["1H", "1H"], "magnet": 14.1}, {"zeeman": {"scalar": [1.0, 3.0]}})
     pars = {"spins": ["1H"], "offset": 1200.0, "sweep": [2000.0, 2000.0], "npoints": [8, 8], "zerofill": [64, 64]}
     z = np.zeros((2000, 1500))
     z[500, 300] = 1.0
@@ -153,7 +153,7 @@ def test_plot_2d_levels_and_binning():
 
 def test_time_series_and_trajan_plots():
     pytest.importorskip("plotly")
-    from respinach.plotting import plot_time_series, plot_trajan
+    from spynach.plotting import plot_time_series, plot_trajan
 
     t = np.linspace(0, 1, 5)
     fig = plot_time_series(t, [np.ones(5), np.arange(5.0)], names=["a", "b"], xlabel="time (s)", ylabel="y")
@@ -162,12 +162,12 @@ def test_time_series_and_trajan_plots():
     assert len(many.data) == 12 and len({tr.line.color for tr in many.data}) == 12  # beyond the fixed palette
     with pytest.raises(ValueError, match="as long as"):
         plot_time_series(t, np.ones(4))
-    spin_system_liouv = respinach.basis(
-        respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1}, {}),
+    spin_system_liouv = spynach.basis(
+        spynach.create({"isotopes": ["1H", "13C"], "magnet": 14.1}, {}),
         {"formalism": "sphten-liouv", "approximation": "none"},
     )
     traj = np.stack(
-        [respinach.state(spin_system_liouv, ["Lz"], [0]), respinach.state(spin_system_liouv, ["L+"], [1])], axis=1
+        [spynach.state(spin_system_liouv, ["Lz"], [0]), spynach.state(spin_system_liouv, ["L+"], [1])], axis=1
     )
     fig = plot_trajan(spin_system_liouv, traj, "coherence_order", np.array([0.0, 0.5]))
     assert len(fig.data) == 5 and fig.layout.title.text == "coherence orders"

@@ -1,6 +1,6 @@
 # Magic angle spinning
 
-This guide covers sample rotation: how respinach, like Spinach, treats the
+This guide covers sample rotation: how Spynach, like Spinach, treats the
 rotor phase as a coordinate of the problem (the Fokker-Planck formalism
 of Kuprov 2016) and what the `singlerot` context does with it. It builds
 on the [solid-state](solid-state.md) guide, which explains the
@@ -34,12 +34,12 @@ rotor-turning term, a derivative with respect to `phi`:
 The generator is then time independent: the block-diagonal stack of the
 Hamiltonians at the grid phases plus `i 2 pi rate (D_phi (x) 1)`, where
 `D_phi` is the Fourier spectral differentiation matrix, exact for every
-harmonic the grid resolves (`respinach.contexts.fourdif`):
+harmonic the grid resolves (`spynach.contexts.fourdif`):
 
 ```python
 import numpy as np
-import respinach
-from respinach.contexts import fourdif
+import spynach
+from spynach.contexts import fourdif
 
 phases, D1 = fourdif(9, 1)
 assert np.allclose(phases, 2 * np.pi * np.arange(9) / 9)
@@ -49,7 +49,7 @@ for k in range(-3, 4):
 ```
 
 The state vector is the stack of the spin state at every rotor phase, spin
-index fastest (`rho.reshape(spc_dim, spn_dim)`), the layout respinach uses for
+index fastest (`rho.reshape(spc_dim, spn_dim)`), the layout Spynach uses for
 every composite space; `parameters["spc_dim"]` and `["spn_dim"]` tell a
 pulse sequence the two dimensions. Everything downstream (`evolution`,
 the reductions, `acquire`) works on the larger vectors unchanged: zero
@@ -72,20 +72,20 @@ initial state over the rotor phase (a powder has every rotor phase at
 `examples/nmr_solids/mas_powder_csa_fplanck.m` with a coarser grid:
 
 ```python
-spin_system_csa = respinach.create({"isotopes": ["1H", "1H"], "magnet": 14.1},
+spin_system_csa = spynach.create({"isotopes": ["1H", "1H"], "magnet": 14.1},
                     {"zeeman": {"eigs": [[-7, -7, -1], [4, 2, 9]], "euler": [[0, 0, 0], [0, 0, 0]]}})
-spin_system_csa = respinach.basis(
+spin_system_csa = spynach.basis(
     spin_system_csa, {"formalism": "sphten-liouv", "approximation": "none", "projections": [[1]]}
 )
 pars = {"spins": ["1H"], "offset": 0.0, "rate": 500.0, "axis": [1, 1, 1], "max_rank": 17,
         "grid": "leb_2ang_rank_17", "sweep": 2e4, "npoints": 512, "zerofill": 4096, "axis_units": "ppm",
-        "rho0": respinach.state(spin_system_csa, "L+", "1H"), "coil": respinach.state(spin_system_csa, "L+", "1H")}
-fid = respinach.singlerot(spin_system_csa, respinach.acquire, pars, "nmr")
+        "rho0": spynach.state(spin_system_csa, "L+", "1H"), "coil": spynach.state(spin_system_csa, "L+", "1H")}
+fid = spynach.singlerot(spin_system_csa, spynach.acquire, pars, "nmr")
 assert fid.shape == (512,) and np.isclose(fid[0], 1.0)
 ```
 
 ```python
-from respinach.plotting import plot_1d
+from spynach.plotting import plot_1d
 
 fid_apod = fid * np.exp(-6 * np.arange(pars["npoints"]) / pars["npoints"])
 spectrum = np.fft.fftshift(np.fft.fft(fid_apod, pars["zerofill"]))
@@ -104,27 +104,27 @@ the anisotropy dephases it. Spinning far above the anisotropy averages it
 to nothing and leaves the isotropic shift:
 
 ```python
-spin_system_single = respinach.create(
+spin_system_single = spynach.create(
     {"isotopes": ["1H"], "magnet": 14.1}, {"zeeman": {"eigs": [[4, 2, 9]], "euler": [[0.3, 0.9, 1.2]]}}
 )
-spin_system_single = respinach.basis(
+spin_system_single = spynach.basis(
     spin_system_single, {"formalism": "sphten-liouv", "approximation": "none", "projections": [[1]]}
 )
 p1 = {
     **pars,
-    "rho0": respinach.state(spin_system_single, "L+", "1H"),
-    "coil": respinach.state(spin_system_single, "L+", "1H"),
+    "rho0": spynach.state(spin_system_single, "L+", "1H"),
+    "coil": spynach.state(spin_system_single, "L+", "1H"),
     "npoints": 161,
 }
-fid_one = respinach.singlerot(spin_system_single, respinach.acquire, p1, "nmr")
+fid_one = spynach.singlerot(spin_system_single, spynach.acquire, p1, "nmr")
 period = int(round(p1["sweep"] / p1["rate"]))                      # dwell times per rotor period
 echoes = fid_one[::period]
 assert np.allclose(np.abs(echoes), abs(fid_one[0]), rtol=1e-6)      # exact rotor echoes
 iso = spin_system_single.basefrqs[0] * 5e-6
 assert np.isclose(np.angle(echoes[1] / echoes[0]), np.angle(np.exp(-1j * iso / p1["rate"])), atol=1e-6)
 assert abs(fid_one[period // 2]) < 0.9 * abs(fid_one[0])             # dephased in between
-fast = respinach.singlerot(
-    spin_system_single, respinach.acquire, {**p1, "rate": 5e5, "max_rank": 5, "npoints": 64}, "nmr"
+fast = spynach.singlerot(
+    spin_system_single, spynach.acquire, {**p1, "rate": 5e5, "max_rank": 5, "npoints": 64}, "nmr"
 )
 t = np.arange(64) / p1["sweep"]
 assert np.allclose(fast, fast[0] * np.exp(-1j * iso * t), atol=2e-3 * abs(fast[0]))
@@ -145,14 +145,14 @@ experiment:
 
 ```python
 static = {**p1, "rate": 0.0, "max_rank": 0, "grid": "single_crystal", "npoints": 32}
-fid_static = respinach.singlerot(spin_system_single, respinach.acquire, static, "nmr")
+fid_static = spynach.singlerot(spin_system_single, spynach.acquire, static, "nmr")
 rotor_phi, rotor_theta = np.arctan2(1, 1), np.arccos(1 / np.sqrt(3))
-fid_crystal = respinach.crystal(
-    spin_system_single, respinach.acquire, {**static, "orientation": [rotor_phi, rotor_theta, 0]}, "nmr"
+fid_crystal = spynach.crystal(
+    spin_system_single, spynach.acquire, {**static, "orientation": [rotor_phi, rotor_theta, 0]}, "nmr"
 )
 assert np.allclose(fid_static, fid_crystal, rtol=1e-9)
-off_axis = respinach.singlerot(
-    spin_system_single, respinach.acquire, {**p1, "axis": [0.5, 0.2, 1.0], "max_rank": 7, "npoints": 64}, "nmr"
+off_axis = spynach.singlerot(
+    spin_system_single, spynach.acquire, {**p1, "axis": [0.5, 0.2, 1.0], "max_rank": 7, "npoints": 64}, "nmr"
 )
 assert off_axis.shape == (64,)
 ```
@@ -165,7 +165,7 @@ assert off_axis.shape == (64,)
   Hamiltonians there), `parameters["needs"]`, extra rotating frames and
   orientation-dependent initial states;
 - the polyadic (unopened Kronecker product) representation of the
-  Fokker-Planck generator: respinach builds it as an explicit sparse matrix,
+  Fokker-Planck generator: Spynach builds it as an explicit sparse matrix,
   as `singlerot.m` does.
 
 ## Checking results against Spinach

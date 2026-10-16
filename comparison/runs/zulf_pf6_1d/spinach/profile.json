@@ -9,14 +9,14 @@
     },
     {
       "function": "run_comparison",
-      "file": "/Users/alexej/Documents/PROG/respinach/comparison/matlab/run_comparison.m",
+      "file": "/Users/alexej/Documents/PROG/spynach/comparison/matlab/run_comparison.m",
       "calls": 1,
       "total_s": 51.839509916558136,
       "self_s": 0.087935916878521425
     },
     {
       "function": "zulf_pf6_1d_spinach",
-      "file": "/Users/alexej/Documents/PROG/respinach/comparison/cases/zulf_pf6_1d/zulf_pf6_1d_spinach.m",
+      "file": "/Users/alexej/Documents/PROG/spynach/comparison/cases/zulf_pf6_1d/zulf_pf6_1d_spinach.m",
       "calls": 1,
       "total_s": 51.751573999679614,
       "self_s": 0.0651665001569981
@@ -30,21 +30,21 @@
     },
     {
       "function": "evolution",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/evolution.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/evolution.m",
       "calls": 2,
       "total_s": 46.996049613222631,
       "self_s": 0.010265833358054977
     },
     {
       "function": "evolution>(parfor body)",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/evolution.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/evolution.m",
       "calls": 8,
       "total_s": 46.62169811232075,
       "self_s": 43.275127895924875
     },
     {
       "function": "propagator",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/propagator.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/propagator.m",
       "calls": 1,
       "total_s": 3.34176234138429,
       "self_s": 3.150763882590804
@@ -65,56 +65,56 @@
     },
     {
       "function": "basis",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/basis.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/basis.m",
       "calls": 1,
       "total_s": 2.007048921502038,
       "self_s": 0.0060704583479580521
     },
     {
       "function": "unihash",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/utilities/unihash.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/utilities/unihash.m",
       "calls": 1,
       "total_s": 1.9527827130379669,
       "self_s": 0.0013485833365822764
     },
     {
       "function": "create",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/create.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/create.m",
       "calls": 1,
       "total_s": 1.2643105863793036,
       "self_s": 0.15628516704318796
     },
     {
       "function": "existentials",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/integrity/existentials.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/integrity/existentials.m",
       "calls": 1,
       "total_s": 0.80307471026809651,
       "self_s": 0.8000817519275526
     },
     {
       "function": "operator",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/operator.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/operator.m",
       "calls": 49,
       "total_s": 0.74357575179141866,
       "self_s": 0.04918591678516504
     },
     {
       "function": "hamiltonian",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/hamiltonian.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/hamiltonian.m",
       "calls": 1,
       "total_s": 0.5018562512090694,
       "self_s": 0.027308458399124769
     },
     {
       "function": "state",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/state.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/state.m",
       "calls": 21,
       "total_s": 0.3942958342832687,
       "self_s": 0.0036358333420927202
     },
     {
       "function": "reduce",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/reduce.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/reduce.m",
       "calls": 2,
       "total_s": 0.21581612551994303,
       "self_s": 0.0043295416770973705
@@ -128,14 +128,14 @@
     },
     {
       "function": "clean_up",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/utilities/clean_up.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/utilities/clean_up.m",
       "calls": 19,
       "total_s": 0.19042362545876759,
       "self_s": 0.18841450045392721
     },
     {
       "function": "path_trace",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/utilities/path_trace.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/utilities/path_trace.m",
       "calls": 2,
       "total_s": 0.17854808376349041,
       "self_s": 0.0082696666865898771
@@ -191,7 +191,7 @@
     },
     {
       "function": "cacheman",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/cache/cacheman.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/cache/cacheman.m",
       "calls": 1,
       "total_s": 0.099308041905919076,
       "self_s": 0.0037902083424646849
@@ -205,7 +205,7 @@
     },
     {
       "function": "scomponents",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/utilities/scomponents.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/utilities/scomponents.m",
       "calls": 2,
       "total_s": 0.080284250193420392,
       "self_s": 0.053608458462486547
@@ -226,7 +226,7 @@
     },
     {
       "function": "summary_couplings",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/summaries/summary_couplings.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/summaries/summary_couplings.m",
       "calls": 1,
       "total_s": 0.0712757085050504,
       "self_s": 0.012396958363200032
@@ -240,7 +240,7 @@
     },
     {
       "function": "report",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/utilities/report.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/utilities/report.m",
       "calls": 385,
       "total_s": 0.06393020848735366,
       "self_s": 0.053273916795013913
@@ -254,7 +254,7 @@
     },
     {
       "function": "hamiltonian>(parfor body)",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/hamiltonian.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/hamiltonian.m",
       "calls": 51,
       "total_s": 0.054780125131975992,
       "self_s": 0.007757291685355501
@@ -268,7 +268,7 @@
     },
     {
       "function": "plot_1d",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/plotting/plot_1d.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/plotting/plot_1d.m",
       "calls": 1,
       "total_s": 0.048661708450568865,
       "self_s": 0.0096316666898712336
@@ -284,14 +284,14 @@
   "by_self": [
     {
       "function": "evolution>(parfor body)",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/evolution.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/evolution.m",
       "calls": 8,
       "total_s": 46.62169811232075,
       "self_s": 43.275127895924875
     },
     {
       "function": "propagator",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/propagator.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/propagator.m",
       "calls": 1,
       "total_s": 3.34176234138429,
       "self_s": 3.150763882590804
@@ -305,21 +305,21 @@
     },
     {
       "function": "existentials",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/integrity/existentials.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/integrity/existentials.m",
       "calls": 1,
       "total_s": 0.80307471026809651,
       "self_s": 0.8000817519275526
     },
     {
       "function": "clean_up",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/utilities/clean_up.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/utilities/clean_up.m",
       "calls": 19,
       "total_s": 0.19042362545876759,
       "self_s": 0.18841450045392721
     },
     {
       "function": "create",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/create.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/create.m",
       "calls": 1,
       "total_s": 1.2643105863793036,
       "self_s": 0.15628516704318796
@@ -333,7 +333,7 @@
     },
     {
       "function": "run_comparison",
-      "file": "/Users/alexej/Documents/PROG/respinach/comparison/matlab/run_comparison.m",
+      "file": "/Users/alexej/Documents/PROG/spynach/comparison/matlab/run_comparison.m",
       "calls": 1,
       "total_s": 51.839509916558136,
       "self_s": 0.087935916878521425
@@ -354,7 +354,7 @@
     },
     {
       "function": "zulf_pf6_1d_spinach",
-      "file": "/Users/alexej/Documents/PROG/respinach/comparison/cases/zulf_pf6_1d/zulf_pf6_1d_spinach.m",
+      "file": "/Users/alexej/Documents/PROG/spynach/comparison/cases/zulf_pf6_1d/zulf_pf6_1d_spinach.m",
       "calls": 1,
       "total_s": 51.751573999679614,
       "self_s": 0.0651665001569981
@@ -368,21 +368,21 @@
     },
     {
       "function": "scomponents",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/utilities/scomponents.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/utilities/scomponents.m",
       "calls": 2,
       "total_s": 0.080284250193420392,
       "self_s": 0.053608458462486547
     },
     {
       "function": "report",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/utilities/report.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/utilities/report.m",
       "calls": 385,
       "total_s": 0.06393020848735366,
       "self_s": 0.053273916795013913
     },
     {
       "function": "operator",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/operator.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/operator.m",
       "calls": 49,
       "total_s": 0.74357575179141866,
       "self_s": 0.04918591678516504
@@ -396,14 +396,14 @@
     },
     {
       "function": "hamiltonian",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/hamiltonian.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/hamiltonian.m",
       "calls": 1,
       "total_s": 0.5018562512090694,
       "self_s": 0.027308458399124769
     },
     {
       "function": "sparse2csr",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/utilities/sparse2csr.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/utilities/sparse2csr.m",
       "calls": 2,
       "total_s": 0.026633416730831753,
       "self_s": 0.026613791730784472
@@ -431,7 +431,7 @@
     },
     {
       "function": "apodisation",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/utilities/apodisation.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/utilities/apodisation.m",
       "calls": 1,
       "total_s": 0.025415333394563821,
       "self_s": 0.024170458391564675
@@ -466,7 +466,7 @@
     },
     {
       "function": "step>reordered_taylor",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/step.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/step.m",
       "calls": 4,
       "total_s": 0.014853500035784971,
       "self_s": 0.014853500035784971
@@ -487,7 +487,7 @@
     },
     {
       "function": "unihash>(parfor body)",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/utilities/unihash.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/utilities/unihash.m",
       "calls": 167,
       "total_s": 0.044089500106220189,
       "self_s": 0.013258333365275234
@@ -501,7 +501,7 @@
     },
     {
       "function": "summary_couplings",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/summaries/summary_couplings.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/summaries/summary_couplings.m",
       "calls": 1,
       "total_s": 0.0712757085050504,
       "self_s": 0.012396958363200032
@@ -522,7 +522,7 @@
     },
     {
       "function": "evolution",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/evolution.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/evolution.m",
       "calls": 2,
       "total_s": 46.996049613222631,
       "self_s": 0.010265833358054977
@@ -557,7 +557,7 @@
     },
     {
       "function": "plot_1d",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/plotting/plot_1d.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/plotting/plot_1d.m",
       "calls": 1,
       "total_s": 0.048661708450568865,
       "self_s": 0.0096316666898712336

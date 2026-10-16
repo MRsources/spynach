@@ -17,8 +17,8 @@ import time
 
 import numpy as np
 
-import respinach
-from respinach.molecules import strychnine as strychnine_molecule
+import spynach
+from spynach.molecules import strychnine as strychnine_molecule
 
 
 def strychnine(relaxation: bool = False) -> tuple[dict, dict]:
@@ -48,24 +48,24 @@ def timed(label: str, fn, profile: bool):
 
 def main(profile: bool) -> None:
     sys_, inter = strychnine(relaxation=True)
-    spin_system = respinach.create(sys_, inter)
+    spin_system = spynach.create(sys_, inter)
     bas = {"formalism": "sphten-liouv", "approximation": "IK-2", "connectivity": "scalar_couplings", "prox_level": 3}
-    spin_system = timed("basis IK-2 prox 3", lambda: respinach.basis(spin_system, bas), profile)
+    spin_system = timed("basis IK-2 prox 3", lambda: spynach.basis(spin_system, bas), profile)
     print(f"{'states':40s} {spin_system.basis.nstates:8d}")
-    nmr = respinach.assume(spin_system, "nmr")
-    timed("hamiltonian", lambda: respinach.hamiltonian(nmr), profile)
-    timed("relaxation (Redfield, kite, IME)", lambda: respinach.relaxation(spin_system), profile)
+    nmr = spynach.assume(spin_system, "nmr")
+    timed("hamiltonian", lambda: spynach.hamiltonian(nmr), profile)
+    timed("relaxation (Redfield, kite, IME)", lambda: spynach.relaxation(spin_system), profile)
     pars = {
         "spins": ["1H"],
         "offset": 1200,
         "sweep": 2500,
         "npoints": 256,
-        "rho0": respinach.state(spin_system, "L+", "1H"),
-        "coil": respinach.state(spin_system, "L+", "1H"),
+        "rho0": spynach.state(spin_system, "L+", "1H"),
+        "coil": spynach.state(spin_system, "L+", "1H"),
     }
-    timed("liquid/acquire 256 points", lambda: respinach.liquid(spin_system, respinach.acquire, pars, "nmr"), profile)
+    timed("liquid/acquire 256 points", lambda: spynach.liquid(spin_system, spynach.acquire, pars, "nmr"), profile)
     cosy_pars = {"angle": np.pi / 2, "offset": 1200, "sweep": 2500, "npoints": [32, 64], "spins": ["1H"]}
-    timed("liquid/cosy 32 x 64", lambda: respinach.liquid(spin_system, respinach.cosy, cosy_pars, "nmr"), profile)
+    timed("liquid/cosy 32 x 64", lambda: spynach.liquid(spin_system, spynach.cosy, cosy_pars, "nmr"), profile)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 """Parity of the sphten-liouv setup slice against Spinach fixtures (FR-002).
 
 Each stage of oracle/matlab/dumps/dump_liouv_setup.m is recomputed with
-respinach and compared with the stored MATLAB result. The case definitions
+spynach and compared with the stored MATLAB result. The case definitions
 below must stay identical to the ones in the dump script (0-based spin
 numbers here). Tests skip when the fixtures are not available.
 
@@ -16,9 +16,9 @@ import numpy as np
 import pytest
 import scipy.sparse as sps
 
-import respinach
-from respinach.operators import ist_product_table
-from respinach.oracle import assert_matches, find_case, load_fixture
+import spynach
+from spynach.operators import ist_product_table
+from spynach.oracle import assert_matches, find_case, load_fixture
 
 STYRENE = dict(
     sys={"isotopes": ["1H"] * 8, "magnet": 7.046},
@@ -142,7 +142,7 @@ def fx(case):
 @pytest.fixture
 def spin_system(case):
     spec = CASES[case]
-    return respinach.basis(respinach.create(spec["sys"], spec["inter"]), spec["bas"])
+    return spynach.basis(spynach.create(spec["sys"], spec["inter"]), spec["bas"])
 
 
 def dense(x):
@@ -189,66 +189,64 @@ def test_operators(fx, case, spin_system, operator_type):
     for key, label in OPS.items():
         ref = fx[f"/ops/{key}_{operator_type}"]
         for n in range(spin_system.nspins):
-            actual = respinach.operator(spin_system, [label], [n], operator_type)
+            actual = spynach.operator(spin_system, [label], [n], operator_type)
             assert_matches(actual, ref[0, n], **OPERATOR_TOL, name=f"{label}({n}) {operator_type}")
             assert actual.count_nonzero() == ref[0, n].count_nonzero(), f"{label}({n}) {operator_type} sparsity"
     if spin_system.nspins > 1:
         assert_matches(
-            respinach.operator(spin_system, ["Lz", "L+"], [0, 1], operator_type),
+            spynach.operator(spin_system, ["Lz", "L+"], [0, 1], operator_type),
             fx[f"/ops/LzLp_12_{operator_type}"],
             **OPERATOR_TOL,
         )
     if operator_type == "comm":
-        assert_matches(respinach.operator(spin_system, "Lz", det), fx["/ops/Lz_det_comm"], **OPERATOR_TOL)
+        assert_matches(spynach.operator(spin_system, "Lz", det), fx["/ops/Lz_det_comm"], **OPERATOR_TOL)
     if operator_type == "left":
-        assert_matches(respinach.operator(spin_system, "L+", det, "left"), fx["/ops/Lp_det_left"], **OPERATOR_TOL)
+        assert_matches(spynach.operator(spin_system, "L+", det, "left"), fx["/ops/Lp_det_left"], **OPERATOR_TOL)
 
 
 def test_states(fx, case, spin_system):
     det = CASES[case]["det"]
     for label, key in (("Lz", "Lz"), ("L+", "Lp")):
-        assert_matches(respinach.state(spin_system, label, det), column(fx[f"/states/{key}_exact"]), **OPERATOR_TOL)
+        assert_matches(spynach.state(spin_system, label, det), column(fx[f"/states/{key}_exact"]), **OPERATOR_TOL)
         assert_matches(
-            respinach.state(spin_system, label, det, "chem"), column(fx[f"/states/{key}_chem"]), **OPERATOR_TOL
+            spynach.state(spin_system, label, det, "chem"), column(fx[f"/states/{key}_chem"]), **OPERATOR_TOL
         )
         if f"/states/{key}_cheap" in fx:
             assert_matches(
-                respinach.state(spin_system, label, det, "cheap"), column(fx[f"/states/{key}_cheap"]), **OPERATOR_TOL
+                spynach.state(spin_system, label, det, "cheap"), column(fx[f"/states/{key}_cheap"]), **OPERATOR_TOL
             )
     if spin_system.nspins > 1:
         assert_matches(
-            respinach.state(spin_system, ["Lz", "L+"], [0, 1]), column(fx["/states/LzLp_12_exact"]), **OPERATOR_TOL
+            spynach.state(spin_system, ["Lz", "L+"], [0, 1]), column(fx["/states/LzLp_12_exact"]), **OPERATOR_TOL
         )
 
 
 def test_hamiltonian(fx, case, spin_system):
-    spin_system_nmr = respinach.assume(spin_system, "nmr")
-    H = respinach.hamiltonian(spin_system_nmr)
+    spin_system_nmr = spynach.assume(spin_system, "nmr")
+    H = spynach.hamiltonian(spin_system_nmr)
     assert_matches(H, fx["/ham/H"], **HAMILTONIAN_TOL, name="H")
     assert_matches(
-        respinach.hamiltonian(respinach.assume(spin_system, "nmr", "zeeman")), fx["/ham/H_zeeman"], **HAMILTONIAN_TOL
+        spynach.hamiltonian(spynach.assume(spin_system, "nmr", "zeeman")), fx["/ham/H_zeeman"], **HAMILTONIAN_TOL
     )
     assert_matches(
-        respinach.hamiltonian(respinach.assume(spin_system, "nmr", "couplings")),
+        spynach.hamiltonian(spynach.assume(spin_system, "nmr", "couplings")),
         fx["/ham/H_coupling"],
         **HAMILTONIAN_TOL,
     )
-    assert_matches(respinach.hamiltonian(spin_system_nmr, "left"), fx["/ham/H_left"], **HAMILTONIAN_TOL, name="H_left")
-    assert_matches(
-        respinach.hamiltonian(spin_system_nmr, "right"), fx["/ham/H_right"], **HAMILTONIAN_TOL, name="H_right"
-    )
+    assert_matches(spynach.hamiltonian(spin_system_nmr, "left"), fx["/ham/H_left"], **HAMILTONIAN_TOL, name="H_left")
+    assert_matches(spynach.hamiltonian(spin_system_nmr, "right"), fx["/ham/H_right"], **HAMILTONIAN_TOL, name="H_right")
     pars = {"spins": [CASES[case]["det"]], "offset": [CASES[case]["offset"]]}
-    assert_matches(respinach.frqoffset(spin_system, H, pars), fx["/ham/H_off"], **HAMILTONIAN_TOL, name="H_off")
+    assert_matches(spynach.frqoffset(spin_system, H, pars), fx["/ham/H_off"], **HAMILTONIAN_TOL, name="H_off")
 
 
 def test_kinetics(fx, spin_system):
-    assert_matches(respinach.kinetics(spin_system), fx["/kin/K"], **EXACT, name="K")
+    assert_matches(spynach.kinetics(spin_system), fx["/kin/K"], **EXACT, name="K")
 
 
 def test_filters(fx, case, spin_system):
     det = CASES[case]["det"]
     v = column(fx["/filters/input"])
-    assert_matches(respinach.correlation(spin_system, v, [1, 2]), column(fx["/filters/corr_12"]), **EXACT)
-    assert_matches(respinach.correlation(spin_system, v, 1, det), column(fx["/filters/corr_1_det"]), **EXACT)
-    assert_matches(respinach.coherence(spin_system, v, [(det, 1)]), column(fx["/filters/coh_det_p1"]), **EXACT)
-    assert_matches(respinach.coherence(spin_system, v, [("all", 0)]), column(fx["/filters/coh_all_0"]), **EXACT)
+    assert_matches(spynach.correlation(spin_system, v, [1, 2]), column(fx["/filters/corr_12"]), **EXACT)
+    assert_matches(spynach.correlation(spin_system, v, 1, det), column(fx["/filters/corr_1_det"]), **EXACT)
+    assert_matches(spynach.coherence(spin_system, v, [(det, 1)]), column(fx["/filters/coh_det_p1"]), **EXACT)
+    assert_matches(spynach.coherence(spin_system, v, [("all", 0)]), column(fx["/filters/coh_all_0"]), **EXACT)

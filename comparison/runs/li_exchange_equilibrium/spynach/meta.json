@@ -1,0 +1,26 @@
+{
+  "side": "spynach",
+  "case": "li_exchange_equilibrium",
+  "created_utc": "2026-10-14T17:59:29Z",
+  "spynach_root": "/workspace",
+  "spynach_commit": "b8f2e2f288b34d134bda48a4c02ae4c60df6f448",
+  "spynach_describe": "b8f2e2f-dirty",
+  "spynach_dirty": true,
+  "spynach_version": "0.0.1",
+  "python_version": "3.11.2",
+  "numpy_version": "2.4.6",
+  "scipy_version": "1.17.1",
+  "platform": "Linux-7.0.14-orbstack-00380-ga7e0a2dc9535-aarch64-with-glibc2.36",
+  "hostname": "claude-box",
+  "cores": 12,
+  "blas": {
+    "numpy": "scipy-openblas",
+    "scipy": "scipy-openblas"
+  },
+  "thread_env": {
+    "OPENBLAS_NUM_THREADS": "1"
+  },
+  "gpu": false,
+  "gpu_device": "",
+  "options": {}
+}

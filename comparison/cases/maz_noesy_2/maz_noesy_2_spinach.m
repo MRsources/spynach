@@ -1,6 +1,6 @@
 % Comparison case: methylaziridine NOESY with scalar relaxation of the
 % first and second kind, examples/relaxation_theory/maz_noesy_2.m with
-% timed stages. Stage labels must match maz_noesy_2_respinach.py. Syntax:
+% timed stages. Stage labels must match maz_noesy_2_spynach.py. Syntax:
 %
 %     [data,figs]=maz_noesy_2_spinach(timer,options)
 %

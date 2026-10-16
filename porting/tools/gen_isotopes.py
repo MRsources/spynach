@@ -1,4 +1,4 @@
-"""Generate src/respinach/_isotope_data.py from Spinach's kernel/spin.m.
+"""Generate src/spynach/_isotope_data.py from Spinach's kernel/spin.m.
 
 Usage: python porting/tools/gen_isotopes.py /spinach
 
@@ -46,7 +46,7 @@ def main(spinach_root: str) -> None:
     ]
     lines += [f"    {name!r}: ({int(mult)}, {gamma.strip()})," for name, mult, gamma in entries]
     lines += ["}", "", f"NO_DATA: frozenset[str] = frozenset({sorted(missing)!r})", ""]
-    out = Path(__file__).resolve().parents[2] / "src" / "respinach" / "_isotope_data.py"
+    out = Path(__file__).resolve().parents[2] / "src" / "spynach" / "_isotope_data.py"
     out.write_text("\n".join(lines), encoding="utf-8")
     print(f"wrote {len(entries)} isotopes and {len(missing)} no-data names to {out}")
 

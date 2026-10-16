@@ -9,28 +9,28 @@
     },
     {
       "function": "run_comparison",
-      "file": "/Users/alexej/Documents/PROG/respinach/comparison/matlab/run_comparison.m",
+      "file": "/Users/alexej/Documents/PROG/spynach/comparison/matlab/run_comparison.m",
       "calls": 1,
       "total_s": 2.5792954134068684,
       "self_s": 0.009548333784004992
     },
     {
       "function": "li_exchange_equilibrium_spinach",
-      "file": "/Users/alexej/Documents/PROG/respinach/comparison/cases/li_exchange_equilibrium/li_exchange_equilibrium_spinach.m",
+      "file": "/Users/alexej/Documents/PROG/spynach/comparison/cases/li_exchange_equilibrium/li_exchange_equilibrium_spinach.m",
       "calls": 1,
       "total_s": 2.5697470796228634,
       "self_s": 0.099858254713210748
     },
     {
       "function": "create",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/create.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/create.m",
       "calls": 1,
       "total_s": 0.70328311652760356,
       "self_s": 0.073199920121630679
     },
     {
       "function": "relaxation",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/relaxation.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/relaxation.m",
       "calls": 1,
       "total_s": 0.58733448605494232,
       "self_s": 0.0027893751316556692
@@ -44,7 +44,7 @@
     },
     {
       "function": "hamiltonian",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/hamiltonian.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/hamiltonian.m",
       "calls": 3,
       "total_s": 0.45069160460553304,
       "self_s": 0.099264629685192673
@@ -58,14 +58,14 @@
     },
     {
       "function": "existentials",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/integrity/existentials.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/integrity/existentials.m",
       "calls": 1,
       "total_s": 0.42449227003561685,
       "self_s": 0.42312356163768183
     },
     {
       "function": "redfield_integral_async",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/includes/redfield_integral_async.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/includes/redfield_integral_async.m",
       "calls": 1,
       "total_s": 0.34754122473693672,
       "self_s": 0.040809668592842852
@@ -86,7 +86,7 @@
     },
     {
       "function": "trajan",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/trajan.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/trajan.m",
       "calls": 3,
       "total_s": 0.26010547061005523,
       "self_s": 0.046230918848720437
@@ -114,7 +114,7 @@
     },
     {
       "function": "klegend",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/plotting/klegend.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/plotting/klegend.m",
       "calls": 3,
       "total_s": 0.1713841330891622,
       "self_s": 0.001440791734670599
@@ -135,14 +135,14 @@
     },
     {
       "function": "basis",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/basis.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/basis.m",
       "calls": 1,
       "total_s": 0.15370017392116342,
       "self_s": 0.0045653752154811988
     },
     {
       "function": "operator",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/operator.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/operator.m",
       "calls": 3,
       "total_s": 0.10534167163868978,
       "self_s": 0.01192483389617377
@@ -170,7 +170,7 @@
     },
     {
       "function": "cacheman",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/cache/cacheman.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/cache/cacheman.m",
       "calls": 1,
       "total_s": 0.095913462860354279,
       "self_s": 0.0028556251347826994
@@ -184,21 +184,21 @@
     },
     {
       "function": "unihash",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/utilities/unihash.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/utilities/unihash.m",
       "calls": 1,
       "total_s": 0.087998545820111324,
       "self_s": 0.00057870836064778663
     },
     {
       "function": "state",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/state.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/state.m",
       "calls": 5,
       "total_s": 0.08747846246223058,
       "self_s": 0.0052351669137613993
     },
     {
       "function": "evolution",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/evolution.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/evolution.m",
       "calls": 2,
       "total_s": 0.083904962293564866,
       "self_s": 0.0079442087082921414
@@ -247,21 +247,21 @@
     },
     {
       "function": "evolution>(parfor body)",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/evolution.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/evolution.m",
       "calls": 8,
       "total_s": 0.052423502474337663,
       "self_s": 0.039862710214813975
     },
     {
       "function": "report",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/utilities/report.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/utilities/report.m",
       "calls": 360,
       "total_s": 0.051031794075317063,
       "self_s": 0.039584918535035818
     },
     {
       "function": "li_exchange_equilibrium_spinach>trajan_data",
-      "file": "/Users/alexej/Documents/PROG/respinach/comparison/cases/li_exchange_equilibrium/li_exchange_equilibrium_spinach.m",
+      "file": "/Users/alexej/Documents/PROG/spynach/comparison/cases/li_exchange_equilibrium/li_exchange_equilibrium_spinach.m",
       "calls": 3,
       "total_s": 0.048379210616784407,
       "self_s": 0.04410996041528
@@ -284,7 +284,7 @@
   "by_self": [
     {
       "function": "existentials",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/integrity/existentials.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/integrity/existentials.m",
       "calls": 1,
       "total_s": 0.42449227003561685,
       "self_s": 0.42312356163768183
@@ -312,56 +312,56 @@
     },
     {
       "function": "li_exchange_equilibrium_spinach",
-      "file": "/Users/alexej/Documents/PROG/respinach/comparison/cases/li_exchange_equilibrium/li_exchange_equilibrium_spinach.m",
+      "file": "/Users/alexej/Documents/PROG/spynach/comparison/cases/li_exchange_equilibrium/li_exchange_equilibrium_spinach.m",
       "calls": 1,
       "total_s": 2.5697470796228634,
       "self_s": 0.099858254713210748
     },
     {
       "function": "hamiltonian",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/hamiltonian.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/hamiltonian.m",
       "calls": 3,
       "total_s": 0.45069160460553304,
       "self_s": 0.099264629685192673
     },
     {
       "function": "create",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/create.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/create.m",
       "calls": 1,
       "total_s": 0.70328311652760356,
       "self_s": 0.073199920121630679
     },
     {
       "function": "trajan",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/trajan.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/trajan.m",
       "calls": 3,
       "total_s": 0.26010547061005523,
       "self_s": 0.046230918848720437
     },
     {
       "function": "li_exchange_equilibrium_spinach>trajan_data",
-      "file": "/Users/alexej/Documents/PROG/respinach/comparison/cases/li_exchange_equilibrium/li_exchange_equilibrium_spinach.m",
+      "file": "/Users/alexej/Documents/PROG/spynach/comparison/cases/li_exchange_equilibrium/li_exchange_equilibrium_spinach.m",
       "calls": 3,
       "total_s": 0.048379210616784407,
       "self_s": 0.04410996041528
     },
     {
       "function": "redfield_integral_async",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/includes/redfield_integral_async.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/includes/redfield_integral_async.m",
       "calls": 1,
       "total_s": 0.34754122473693672,
       "self_s": 0.040809668592842852
     },
     {
       "function": "evolution>(parfor body)",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/evolution.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/evolution.m",
       "calls": 8,
       "total_s": 0.052423502474337663,
       "self_s": 0.039862710214813975
     },
     {
       "function": "report",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/utilities/report.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/utilities/report.m",
       "calls": 360,
       "total_s": 0.051031794075317063,
       "self_s": 0.039584918535035818
@@ -424,7 +424,7 @@
     },
     {
       "function": "superop",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/operators/superop.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/operators/superop.m",
       "calls": 6,
       "total_s": 0.039885876882574084,
       "self_s": 0.017672000834101025
@@ -480,7 +480,7 @@
     },
     {
       "function": "clean_up",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/utilities/clean_up.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/utilities/clean_up.m",
       "calls": 27,
       "total_s": 0.014155792334806117,
       "self_s": 0.013078292283949177
@@ -515,7 +515,7 @@
     },
     {
       "function": "operator",
-      "file": "/Users/alexej/Documents/PROG/respinach-spinach/kernel/operator.m",
+      "file": "/Users/alexej/Documents/PROG/spynach-spinach/kernel/operator.m",
       "calls": 3,
       "total_s": 0.10534167163868978,
       "self_s": 0.01192483389617377

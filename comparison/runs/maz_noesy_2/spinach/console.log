@@ -1,6 +1,6 @@
-== maz_noesy_2 (Spinach /Users/alexej/Documents/PROG/respinach-spinach) -> /Users/alexej/Documents/PROG/respinach/comparison/runs/maz_noesy_2/spinach
+== maz_noesy_2 (Spinach /Users/alexej/Documents/PROG/spynach-spinach) -> /Users/alexej/Documents/PROG/spynach/comparison/runs/maz_noesy_2/spinach
 Running startup checks...
-[...> run_comparison > maz_noesy_2_spinach > create ]  scratch location: /Users/alexej/Documents/PROG/respinach-spinach/scratch
+[...> run_comparison > maz_noesy_2_spinach > create ]  scratch location: /Users/alexej/Documents/PROG/spynach-spinach/scratch
 [...parison > maz_noesy_2_spinach > create > banner ]   
 [...parison > maz_noesy_2_spinach > create > banner ]  ============================================
 [...parison > maz_noesy_2_spinach > create > banner ]  =                                          =
@@ -1662,9 +1662,9 @@ processing                            0.0 s
 [... run_comparison > maz_noesy_2_spinach > plot_2d ]  plotting...
 plot                                  0.1 s
 total                               813.5 s
-== maz_noesy_2 (Spinach /Users/alexej/Documents/PROG/respinach-spinach) -> /Users/alexej/Documents/PROG/respinach/comparison/runs/maz_noesy_2/spinach
+== maz_noesy_2 (Spinach /Users/alexej/Documents/PROG/spynach-spinach) -> /Users/alexej/Documents/PROG/spynach/comparison/runs/maz_noesy_2/spinach
 Running startup checks...
-[...> run_comparison > maz_noesy_2_spinach > create ]  scratch location: /Users/alexej/Documents/PROG/respinach-spinach/scratch
+[...> run_comparison > maz_noesy_2_spinach > create ]  scratch location: /Users/alexej/Documents/PROG/spynach-spinach/scratch
 [...parison > maz_noesy_2_spinach > create > banner ]   
 [...parison > maz_noesy_2_spinach > create > banner ]  ============================================
 [...parison > maz_noesy_2_spinach > create > banner ]  =                                          =

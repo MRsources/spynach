@@ -1,6 +1,6 @@
-== zulf_pf6_1d (Spinach /Users/alexej/Documents/PROG/respinach-spinach) -> /Users/alexej/Documents/PROG/respinach/comparison/runs/zulf_pf6_1d/spinach
+== zulf_pf6_1d (Spinach /Users/alexej/Documents/PROG/spynach-spinach) -> /Users/alexej/Documents/PROG/spynach/comparison/runs/zulf_pf6_1d/spinach
 Running startup checks...
-[...> run_comparison > zulf_pf6_1d_spinach > create ]  scratch location: /Users/alexej/Documents/PROG/respinach-spinach/scratch
+[...> run_comparison > zulf_pf6_1d_spinach > create ]  scratch location: /Users/alexej/Documents/PROG/spynach-spinach/scratch
 [...parison > zulf_pf6_1d_spinach > create > banner ]   
 [...parison > zulf_pf6_1d_spinach > create > banner ]  ============================================
 [...parison > zulf_pf6_1d_spinach > create > banner ]  =                                          =
@@ -400,9 +400,9 @@ processing                            0.2 s
 [...rison > zulf_pf6_1d_spinach > plot_1d > axis_1d ]  16384-point axis from -3000 to 2999.6338 Hz
 plot                                  3.2 s
 total                                69.0 s
-== zulf_pf6_1d (Spinach /Users/alexej/Documents/PROG/respinach-spinach) -> /Users/alexej/Documents/PROG/respinach/comparison/runs/zulf_pf6_1d/spinach
+== zulf_pf6_1d (Spinach /Users/alexej/Documents/PROG/spynach-spinach) -> /Users/alexej/Documents/PROG/spynach/comparison/runs/zulf_pf6_1d/spinach
 Running startup checks...
-[...> run_comparison > zulf_pf6_1d_spinach > create ]  scratch location: /Users/alexej/Documents/PROG/respinach-spinach/scratch
+[...> run_comparison > zulf_pf6_1d_spinach > create ]  scratch location: /Users/alexej/Documents/PROG/spynach-spinach/scratch
 [...parison > zulf_pf6_1d_spinach > create > banner ]   
 [...parison > zulf_pf6_1d_spinach > create > banner ]  ============================================
 [...parison > zulf_pf6_1d_spinach > create > banner ]  =                                          =
@@ -802,9 +802,9 @@ processing                            0.1 s
 [...rison > zulf_pf6_1d_spinach > plot_1d > axis_1d ]  16384-point axis from -3000 to 2999.6338 Hz
 plot                                  0.1 s
 total                                45.9 s
-== zulf_pf6_1d (Spinach /Users/alexej/Documents/PROG/respinach-spinach) -> /Users/alexej/Documents/PROG/respinach/comparison/runs/zulf_pf6_1d/spinach
+== zulf_pf6_1d (Spinach /Users/alexej/Documents/PROG/spynach-spinach) -> /Users/alexej/Documents/PROG/spynach/comparison/runs/zulf_pf6_1d/spinach
 Running startup checks...
-[...> run_comparison > zulf_pf6_1d_spinach > create ]  scratch location: /Users/alexej/Documents/PROG/respinach-spinach/scratch
+[...> run_comparison > zulf_pf6_1d_spinach > create ]  scratch location: /Users/alexej/Documents/PROG/spynach-spinach/scratch
 [...parison > zulf_pf6_1d_spinach > create > banner ]   
 [...parison > zulf_pf6_1d_spinach > create > banner ]  ============================================
 [...parison > zulf_pf6_1d_spinach > create > banner ]  =                                          =

@@ -1,0 +1,24 @@
+{
+  "side": "spynach",
+  "case": "zulf_pf6_1d",
+  "created_utc": "2026-10-14T12:34:58Z",
+  "spynach_root": "/Users/alexej/Documents/PROG/spynach",
+  "spynach_commit": "097b823313459abb57a2c727c52abfcfe013a4cf",
+  "spynach_describe": "097b823-dirty",
+  "spynach_dirty": true,
+  "spynach_version": "0.0.1",
+  "python_version": "3.12.5",
+  "numpy_version": "2.5.4",
+  "scipy_version": "1.18.1",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "hostname": "MacBook-Pro-8.local",
+  "cores": 12,
+  "blas": {
+    "numpy": "accelerate",
+    "scipy": "Accelerate"
+  },
+  "thread_env": {},
+  "gpu": false,
+  "gpu_device": "",
+  "options": {}
+}

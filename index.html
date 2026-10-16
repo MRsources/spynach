@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>respinach</title>
+<title>Spynach</title>
 <meta name="description" content="A Python reimplementation of the Spinach spin dynamics kernel, verified stage by stage against the MATLAB original.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -103,21 +103,21 @@ footer { border-top: 1px solid var(--line); padding-block: 1.6rem; font-size: 0.
 <div class="wrap">
 
 <nav class="top" aria-label="Site">
-  <a class="brand" href="#">respinach</a>
+  <a class="brand" href="#">Spynach</a>
   <a href="#quick-start">Quick start</a>
   <a href="#docs">Documentation</a>
   <a href="#reports">Parity and timing</a>
-  <a href="https://github.com/ajerschow/respinach">GitHub</a>
+  <a href="https://github.com/ajerschow/spynach">GitHub</a>
   <a href="https://spindynamics.org">Spinach</a>
 </nav>
 
 <div class="hero">
   <div>
-    <h1>respinach</h1>
+    <h1>Spynach</h1>
     <p class="lede">A Python reimplementation of the Spinach spin dynamics kernel, verified stage by stage against the MATLAB original.</p>
     <div class="actions">
       <a class="btn primary" href="#quick-start">Quick start</a>
-      <a class="btn" href="https://github.com/ajerschow/respinach/blob/main/docs/hilbert-space.md">Read the first guide</a>
+      <a class="btn" href="https://github.com/ajerschow/spynach/blob/main/docs/hilbert-space.md">Read the first guide</a>
     </div>
   </div>
   <figure>
@@ -142,8 +142,8 @@ footer { border-top: 1px solid var(--line); padding-block: 1.6rem; font-size: 0.
   <header><span class="eyebrow">Approach</span><h2>How the port is done</h2></header>
   <div>
     <ul class="plain">
-      <li><b>An oracle harness.</b> MATLAB dump scripts write the intermediate results of a Spinach calculation to HDF5 fixtures; parity tests load them and compare the Python results at each stage (<a href="https://github.com/ajerschow/respinach/blob/main/oracle/README.md">oracle/README.md</a>).</li>
-      <li><b>Stage by stage.</b> Spin system, basis, operators, Hamiltonian, propagation, relaxation, contexts, pulse sequences: each lands with its fixtures, tests and documentation before the next starts (<a href="https://github.com/ajerschow/respinach/blob/main/porting/ROADMAP.md">roadmap</a>).</li>
+      <li><b>An oracle harness.</b> MATLAB dump scripts write the intermediate results of a Spinach calculation to HDF5 fixtures; parity tests load them and compare the Python results at each stage (<a href="https://github.com/ajerschow/spynach/blob/main/oracle/README.md">oracle/README.md</a>).</li>
+      <li><b>Stage by stage.</b> Spin system, basis, operators, Hamiltonian, propagation, relaxation, contexts, pulse sequences: each lands with its fixtures, tests and documentation before the next starts (<a href="https://github.com/ajerschow/spynach/blob/main/porting/ROADMAP.md">roadmap</a>).</li>
       <li><b>Two formalisms behind one basis abstraction.</b> Dense Zeeman-Hilbert space for small systems, the spherical-tensor Liouville space with state-space restriction (IK-0, IK-1, IK-2) for large liquid-state systems.</li>
       <li><b>Nothing silently ignored.</b> Any Spinach option that is not yet ported raises an error rather than being dropped.</li>
       <li><b>Executable documentation.</b> Every guide's code blocks run in the test suite and are rendered into notebooks with their outputs.</li>
@@ -154,8 +154,8 @@ footer { border-top: 1px solid var(--line); padding-block: 1.6rem; font-size: 0.
 <section id="spinach">
   <header><span class="eyebrow">Spinach</span><h2>Relationship to the original</h2></header>
   <div>
-    <p>respinach derives from <a href="https://spindynamics.org">Spinach</a> 2.13, the spin dynamics package of Ilya Kuprov and co-workers, released under the MIT licence. The translation keeps the Spinach attribution and notice in <a href="https://github.com/ajerschow/respinach/blob/main/LICENSE">LICENSE</a>, and keeps Spinach's function names, parameter structures and tolerances so that an existing Spinach script maps onto respinach line by line.</p>
-    <p>The deliberate differences are small: spin indices are 0-based, product and sum operators are told apart by the type of the first argument, spin system objects are immutable, and time series are 1-D arrays. The guide <a href="https://github.com/ajerschow/respinach/blob/main/docs/coming-from-spinach.md">Coming from Spinach</a> lists, feature by feature, what is the same, what differs and what is not yet ported.</p>
+    <p>Spynach derives from <a href="https://spindynamics.org">Spinach</a> 2.13, the spin dynamics package of Ilya Kuprov and co-workers, released under the MIT licence. The translation keeps the Spinach attribution and notice in <a href="https://github.com/ajerschow/spynach/blob/main/LICENSE">LICENSE</a>, and keeps Spinach's function names, parameter structures and tolerances so that an existing Spinach script maps onto Spynach line by line.</p>
+    <p>The deliberate differences are small: spin indices are 0-based, product and sum operators are told apart by the type of the first argument, spin system objects are immutable, and time series are 1-D arrays. The guide <a href="https://github.com/ajerschow/spynach/blob/main/docs/coming-from-spinach.md">Coming from Spinach</a> lists, feature by feature, what is the same, what differs and what is not yet ported.</p>
     <p>The translation from MATLAB to Python was carried out largely by an AI coding agent working under the direction of Alexej Jerschow, who set the goals and reviewed the results; correctness rests on the test suite against Spinach reference data.</p>
   </div>
 </section>
@@ -184,7 +184,7 @@ footer { border-top: 1px solid var(--line); padding-block: 1.6rem; font-size: 0.
           <li>GPU execution (the entry points are marked)</li>
           <li>ESR, DNP, imaging and optimal control modules</li>
         </ul>
-        <p style="margin-top:0.8rem">The function-by-function table is in the <a href="https://github.com/ajerschow/respinach/blob/main/README.md#status">README</a>.</p>
+        <p style="margin-top:0.8rem">The function-by-function table is in the <a href="https://github.com/ajerschow/spynach/blob/main/README.md#status">README</a>.</p>
       </div>
     </div>
   </div>
@@ -194,24 +194,24 @@ footer { border-top: 1px solid var(--line); padding-block: 1.6rem; font-size: 0.
   <header><span class="eyebrow">Quick start</span><h2>Install and run</h2></header>
   <div>
     <p>Python 3.11 or newer. Install from the repository, or clone it and install in editable mode with the <code>docs</code> extra to open the notebooks.</p>
-<pre><code>pip install "respinach @ git+https://github.com/ajerschow/respinach.git"
+<pre><code>pip install "spynach @ git+https://github.com/ajerschow/spynach.git"
 
 # or, for the notebooks and tests
-git clone https://github.com/ajerschow/respinach.git
-cd respinach &amp;&amp; pip install -e ".[docs,test]"</code></pre>
+git clone https://github.com/ajerschow/spynach.git
+cd spynach &amp;&amp; pip install -e ".[docs,test]"</code></pre>
     <p>A two-spin system, 14.1 T, pulse-acquire on the protons:</p>
 <pre><code>import numpy as np
-import respinach
+import spynach
 
-spin_system = respinach.create(
+spin_system = spynach.create(
     {"isotopes": ["1H", "1H"], "magnet": 14.1},
     {"zeeman": {"scalar": [1.00, 1.20]}, "coupling": {"scalar": [[0, 12.0], [0, 0]]}},
 )
-spin_system = respinach.basis(spin_system, {"formalism": "zeeman-hilb", "approximation": "none"})
+spin_system = spynach.basis(spin_system, {"formalism": "zeeman-hilb", "approximation": "none"})
 pars = {"spins": ["1H"], "offset": 660, "sweep": 500, "npoints": 1024,
-        "rho0": respinach.state(spin_system, "L+", "1H"),
-        "coil": respinach.state(spin_system, "L+", "1H")}
-fid = respinach.liquid(spin_system, respinach.acquire, pars, "nmr")
+        "rho0": spynach.state(spin_system, "L+", "1H"),
+        "coil": spynach.state(spin_system, "L+", "1H")}
+fid = spynach.liquid(spin_system, spynach.acquire, pars, "nmr")
 spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))</code></pre>
     <p>On machines whose NumPy uses OpenBLAS, set <code>OPENBLAS_NUM_THREADS</code> to the number of cores you actually have; dense LAPACK calls slow down badly when the library sees more cores than the process may use.</p>
   </div>
@@ -225,33 +225,33 @@ spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))</code></pre>
     <table>
       <thead><tr><th>Guide</th><th>Covers</th><th>Open</th></tr></thead>
       <tbody>
-        <tr><td>Hilbert space</td><td>liquid-state NMR in Hilbert space: setup, the simulation pipeline, pulse sequences, tolerances, parity with Spinach</td><td class="links"><a href="https://github.com/ajerschow/respinach/blob/main/docs/hilbert-space.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/respinach/blob/main/docs/notebooks/hilbert-space.ipynb">notebook</a></td></tr>
-        <tr><td>Liouville space</td><td>the spherical-tensor formalism: basis descriptor, state-space restriction, filters, chemical subsystems</td><td class="links"><a href="https://github.com/ajerschow/respinach/blob/main/docs/liouville-space.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/respinach/blob/main/docs/notebooks/liouville-space.ipynb">notebook</a></td></tr>
-        <tr><td>Solid state</td><td>anisotropic interactions: tensors, dipolar couplings from coordinates, quadrupolar couplings, crystal and powder contexts, grids</td><td class="links"><a href="https://github.com/ajerschow/respinach/blob/main/docs/solid-state.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/respinach/blob/main/docs/notebooks/solid-state.ipynb">notebook</a></td></tr>
-        <tr><td>Relaxation</td><td>Redfield theory for rotational diffusion, T1/T2 and damping models, thermal equilibrium, transient NOE</td><td class="links"><a href="https://github.com/ajerschow/respinach/blob/main/docs/relaxation.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/respinach/blob/main/docs/notebooks/relaxation.ipynb">notebook</a></td></tr>
-        <tr><td>Magic angle spinning</td><td>the Fokker-Planck treatment of sample rotation: rotor phase grid, the singlerot context, sidebands, rotor echoes</td><td class="links"><a href="https://github.com/ajerschow/respinach/blob/main/docs/magic-angle-spinning.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/respinach/blob/main/docs/notebooks/magic-angle-spinning.ipynb">notebook</a></td></tr>
-        <tr><td>Pulse sequences</td><td>writing sequences, apodisation and 2D plots, decoupling and homospoil, COSY, NOESY, HSQC with isotopomer dilution</td><td class="links"><a href="https://github.com/ajerschow/respinach/blob/main/docs/pulse-sequences.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/respinach/blob/main/docs/notebooks/pulse-sequences.ipynb">notebook</a></td></tr>
-        <tr><td>Coming from Spinach</td><td>what carries over from Spinach and what differs: spin systems, basis, operators, Hamiltonians, parameters, modalities, processing</td><td class="links"><a href="https://github.com/ajerschow/respinach/blob/main/docs/coming-from-spinach.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/respinach/blob/main/docs/notebooks/coming-from-spinach.ipynb">notebook</a></td></tr>
+        <tr><td>Hilbert space</td><td>liquid-state NMR in Hilbert space: setup, the simulation pipeline, pulse sequences, tolerances, parity with Spinach</td><td class="links"><a href="https://github.com/ajerschow/spynach/blob/main/docs/hilbert-space.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/hilbert-space.ipynb">notebook</a></td></tr>
+        <tr><td>Liouville space</td><td>the spherical-tensor formalism: basis descriptor, state-space restriction, filters, chemical subsystems</td><td class="links"><a href="https://github.com/ajerschow/spynach/blob/main/docs/liouville-space.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/liouville-space.ipynb">notebook</a></td></tr>
+        <tr><td>Solid state</td><td>anisotropic interactions: tensors, dipolar couplings from coordinates, quadrupolar couplings, crystal and powder contexts, grids</td><td class="links"><a href="https://github.com/ajerschow/spynach/blob/main/docs/solid-state.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/solid-state.ipynb">notebook</a></td></tr>
+        <tr><td>Relaxation</td><td>Redfield theory for rotational diffusion, T1/T2 and damping models, thermal equilibrium, transient NOE</td><td class="links"><a href="https://github.com/ajerschow/spynach/blob/main/docs/relaxation.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/relaxation.ipynb">notebook</a></td></tr>
+        <tr><td>Magic angle spinning</td><td>the Fokker-Planck treatment of sample rotation: rotor phase grid, the singlerot context, sidebands, rotor echoes</td><td class="links"><a href="https://github.com/ajerschow/spynach/blob/main/docs/magic-angle-spinning.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/magic-angle-spinning.ipynb">notebook</a></td></tr>
+        <tr><td>Pulse sequences</td><td>writing sequences, apodisation and 2D plots, decoupling and homospoil, COSY, NOESY, HSQC with isotopomer dilution</td><td class="links"><a href="https://github.com/ajerschow/spynach/blob/main/docs/pulse-sequences.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/pulse-sequences.ipynb">notebook</a></td></tr>
+        <tr><td>Coming from Spinach</td><td>what carries over from Spinach and what differs: spin systems, basis, operators, Hamiltonians, parameters, modalities, processing</td><td class="links"><a href="https://github.com/ajerschow/spynach/blob/main/docs/coming-from-spinach.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/coming-from-spinach.ipynb">notebook</a></td></tr>
       </tbody>
     </table>
     </div>
-    <p>Full-size translations of Spinach example scripts live in <a href="https://github.com/ajerschow/respinach/tree/main/examples">examples/</a>; the <a href="https://github.com/ajerschow/respinach/blob/main/docs/README.md">documentation index</a> explains how the guides, notebooks and examples fit together.</p>
+    <p>Full-size translations of Spinach example scripts live in <a href="https://github.com/ajerschow/spynach/tree/main/examples">examples/</a>; the <a href="https://github.com/ajerschow/spynach/blob/main/docs/README.md">documentation index</a> explains how the guides, notebooks and examples fit together.</p>
   </div>
 </section>
 
 <section id="reports">
   <header><span class="eyebrow">Verification</span><h2>Parity and timing</h2></header>
   <div>
-    <p>The parity suites compare respinach with Spinach 2.13 fixtures at every stage of a calculation. Of the 510 tests, 295 are fixture comparisons over 55 fixture sets: Liouville-space setup (132), Liouville-space propagation (54), Hilbert-space pulse-acquire (40), anisotropic interactions (25), relaxation (20), magic angle spinning (16) and pulse sequences (8). FIDs of ported sequences agree to about 1e-10 relative, the level of Spinach's own rounding of Hamiltonian elements.</p>
-    <p>Two full-size calculations are run on both sides under a profiler, on the same machine, and summarised in an HTML report with the stage timings, the normwise difference of every saved array, the figures and the profiler tops. The stage timings below are wall clock for each implementation as shipped: Spinach with its parallel pool and multithreaded BLAS, respinach as a single process with multithreaded BLAS inside dense calls.</p>
+    <p>The parity suites compare Spynach with Spinach 2.13 fixtures at every stage of a calculation. Of the 510 tests, 295 are fixture comparisons over 55 fixture sets: Liouville-space setup (132), Liouville-space propagation (54), Hilbert-space pulse-acquire (40), anisotropic interactions (25), relaxation (20), magic angle spinning (16) and pulse sequences (8). FIDs of ported sequences agree to about 1e-10 relative, the level of Spinach's own rounding of Hamiltonian elements.</p>
+    <p>Two full-size calculations are run on both sides under a profiler, on the same machine, and summarised in an HTML report with the stage timings, the normwise difference of every saved array, the figures and the profiler tops. The stage timings below are wall clock for each implementation as shipped: Spinach with its parallel pool and multithreaded BLAS, Spynach as a single process with multithreaded BLAS inside dense calls.</p>
     <div class="cards">
       <div class="card">
         <h3>noesy_strychnine</h3>
         <p>22 protons, IK-2 basis (12 316 states), Redfield relaxation, 500 ms NOESY, 512 x 512 points.</p>
         <dl>
           <dt>FID agreement</dt><dd>2.2e-12 relative</dd>
-          <dt>liquid/noesy stage</dt><dd>93.3 s respinach, 83.0 s Spinach</dd>
-          <dt>whole case</dt><dd>93.6 s respinach, 110.9 s Spinach</dd>
+          <dt>liquid/noesy stage</dt><dd>93.3 s Spynach, 83.0 s Spinach</dd>
+          <dt>whole case</dt><dd>93.6 s Spynach, 110.9 s Spinach</dd>
         </dl>
         <a href="comparison/runs/noesy_strychnine/report.html">Open the report</a>
       </div>
@@ -260,8 +260,8 @@ spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))</code></pre>
         <p>31P and six 19F at 2.7 µT, complete basis (16 384 states), lab frame, selective pulse and 16 384-point acquisition.</p>
         <dl>
           <dt>FID agreement</dt><dd>1.5e-12 relative</dd>
-          <dt>acquisition stage</dt><dd>46.9 s respinach, 40.0 s Spinach</dd>
-          <dt>whole case</dt><dd>47.1 s respinach, 69.0 s Spinach</dd>
+          <dt>acquisition stage</dt><dd>46.9 s Spynach, 40.0 s Spinach</dd>
+          <dt>whole case</dt><dd>47.1 s Spynach, 69.0 s Spinach</dd>
         </dl>
         <a href="comparison/runs/zulf_pf6_1d/report.html">Open the report</a>
       </div>
@@ -280,22 +280,22 @@ spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))</code></pre>
         <p>Methylaziridine, 7 protons + 14N with DFT shielding tensors and the 14N quadrupole: Redfield theory with scalar relaxation of the first and second kind, IK-2 basis (19 314 states), 2 s NOESY.</p>
         <dl>
           <dt>FID agreement</dt><dd>1.2e-10 relative</dd>
-          <dt>liquid/noesy stage</dt><dd>1702 s respinach, 841 s Spinach</dd>
+          <dt>liquid/noesy stage</dt><dd>1702 s Spynach, 841 s Spinach</dd>
           <dt>where the time goes</dt><dd>the SRFK integral: 26 squarings of a 38 628-dimensional sparse matrix</dd>
         </dl>
         <a href="comparison/runs/maz_noesy_2/report.html">Open the report</a>
       </div>
     </div>
-    <p>Both runs: Apple silicon Mac, 12 cores; MATLAB R2026b with an 11-worker pool; Python 3.12 with NumPy and SciPy on Accelerate. The protocol, including how to add a case, is in <a href="https://github.com/ajerschow/respinach/blob/main/comparison/README.md">comparison/README.md</a>.</p>
+    <p>Both runs: Apple silicon Mac, 12 cores; MATLAB R2026b with an 11-worker pool; Python 3.12 with NumPy and SciPy on Accelerate. The protocol, including how to add a case, is in <a href="https://github.com/ajerschow/spynach/blob/main/comparison/README.md">comparison/README.md</a>.</p>
   </div>
 </section>
 
 <footer>
   <span>MIT licence, with the Spinach notice.</span>
   <span>Alexej Jerschow, New York University.</span>
-  <a href="https://github.com/ajerschow/respinach/blob/main/HANDOFF.md">Design decisions</a>
-  <a href="https://github.com/ajerschow/respinach/blob/main/porting/ROADMAP.md">Roadmap</a>
-  <a href="https://github.com/ajerschow/respinach">Source</a>
+  <a href="https://github.com/ajerschow/spynach/blob/main/HANDOFF.md">Design decisions</a>
+  <a href="https://github.com/ajerschow/spynach/blob/main/porting/ROADMAP.md">Roadmap</a>
+  <a href="https://github.com/ajerschow/spynach">Source</a>
 </footer>
 
 </div>

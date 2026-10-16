@@ -5,14 +5,14 @@ from math import comb
 import numpy as np
 import pytest
 
-import respinach
-from respinach.basis import dfpt, prune_subgraphs
+import spynach
+from spynach.basis import dfpt, prune_subgraphs
 
 NONE = {"formalism": "sphten-liouv", "approximation": "none"}
 
 
 def system(isotopes, **inter):
-    return respinach.create({"isotopes": isotopes, "magnet": 14.1}, inter)
+    return spynach.create({"isotopes": isotopes, "magnet": 14.1}, inter)
 
 
 def chain(nspins, J=10.0):
@@ -23,7 +23,7 @@ def chain(nspins, J=10.0):
 
 
 def test_complete_basis_is_sorted_with_unit_state_first():
-    spin_system = respinach.basis(system(["1H", "2H"]), NONE)
+    spin_system = spynach.basis(system(["1H", "2H"]), NONE)
     bas = spin_system.basis
     assert bas.nstates == 4 * 9
     assert bas.basis[0].tolist() == [0, 0]
@@ -36,29 +36,29 @@ def test_complete_basis_is_sorted_with_unit_state_first():
 
 @pytest.mark.parametrize("level", [1, 2, 3, 4])
 def test_ik0_state_count(level):
-    spin_system = respinach.basis(system(["1H"] * 4), {**NONE, "approximation": "IK-0", "inter_level": level})
+    spin_system = spynach.basis(system(["1H"] * 4), {**NONE, "approximation": "IK-0", "inter_level": level})
     assert spin_system.basis.nstates == sum(comb(4, j) * 3**j for j in range(level + 1))
     assert spin_system.basis.tot_cord.max() == level
 
 
 def test_ik1_and_ik2_on_a_chain():
     spin_system = chain(6)
-    spin_system_ik2 = respinach.basis(
+    spin_system_ik2 = spynach.basis(
         spin_system, {**NONE, "approximation": "IK-2", "connectivity": "scalar_couplings", "prox_level": 1}
     )
-    spin_system_ik1 = respinach.basis(
+    spin_system_ik1 = spynach.basis(
         spin_system,
         {**NONE, "approximation": "IK-1", "connectivity": "scalar_couplings", "inter_level": 3, "prox_level": 1},
     )
     # States supported on up to three consecutive spins: 1 + 6*3 + 9*9 + 4*27
     assert spin_system_ik2.basis.nstates == spin_system_ik1.basis.nstates == 208
-    spin_system_ik1_2 = respinach.basis(
+    spin_system_ik1_2 = spynach.basis(
         spin_system,
         {**NONE, "approximation": "IK-1", "connectivity": "scalar_couplings", "inter_level": 2, "prox_level": 1},
     )
     assert spin_system_ik1_2.basis.nstates == 1 + 6 * 3 + 5 * 9
     # Uncoupled spins only get single-spin states under IK-2
-    spin_system_isolated = respinach.basis(
+    spin_system_isolated = spynach.basis(
         system(["1H"] * 3), {**NONE, "approximation": "IK-2", "connectivity": "scalar_couplings", "prox_level": 2}
     )
     assert spin_system_isolated.basis.nstates == 1 + 3 * 3
@@ -67,10 +67,10 @@ def test_ik1_and_ik2_on_a_chain():
 def test_full_tensor_connectivity_sees_traceless_couplings():
     tensor = np.diag([1.0, 1.0, -2.0]).tolist()
     spin_system = system(["1H", "1H"], coupling={"matrix": [[None, tensor], [None, None]]})
-    spin_system_scalar = respinach.basis(
+    spin_system_scalar = spynach.basis(
         spin_system, {**NONE, "approximation": "IK-2", "connectivity": "scalar_couplings", "prox_level": 1}
     )
-    spin_system_full = respinach.basis(
+    spin_system_full = spynach.basis(
         spin_system, {**NONE, "approximation": "IK-2", "connectivity": "full_tensors", "prox_level": 1}
     )
     assert spin_system_scalar.basis.nstates == 7 and spin_system_full.basis.nstates == 16
@@ -78,16 +78,16 @@ def test_full_tensor_connectivity_sees_traceless_couplings():
 
 def test_filters():
     spin_system = system(["1H", "13C", "1H"])
-    spin_system_plus = respinach.basis(spin_system, {**NONE, "projections": [[1]]})
+    spin_system_plus = spynach.basis(spin_system, {**NONE, "projections": [[1]]})
     assert spin_system_plus.basis.tot_proj[0] == 0 and set(spin_system_plus.basis.tot_proj[1:]) == {1}
-    spin_system_longitudinal = respinach.basis(spin_system, {**NONE, "longitudinal": [["13C"]]})
+    spin_system_longitudinal = spynach.basis(spin_system, {**NONE, "longitudinal": [["13C"]]})
     assert set(spin_system_longitudinal.basis.basis[:, 1]) == {0, 2} and spin_system_longitudinal.basis.nstates == 32
-    spin_system_by_number = respinach.basis(spin_system, {**NONE, "longitudinal": [[1]]})
+    spin_system_by_number = spynach.basis(spin_system, {**NONE, "longitudinal": [[1]]})
     assert spin_system_by_number.basis.basis.tolist() == spin_system_longitudinal.basis.basis.tolist()
-    spin_system_zq = respinach.basis(spin_system, {**NONE, "zero_quantum": [["1H"]]})
-    _, m = respinach.operators.lin2lm(spin_system_zq.basis.basis[:, [0, 2]])
+    spin_system_zq = spynach.basis(spin_system, {**NONE, "zero_quantum": [["1H"]]})
+    _, m = spynach.operators.lin2lm(spin_system_zq.basis.basis[:, [0, 2]])
     assert np.all(m.sum(axis=1) == 0) and spin_system_zq.basis.nstates == 6 * 4
-    spin_system_manual = respinach.basis(
+    spin_system_manual = spynach.basis(
         spin_system, {**NONE, "approximation": "IK-0", "inter_level": 1, "manual": [[True, False, True]]}
     )
     assert spin_system_manual.basis.nstates == 1 + 3 * 3 + 9
@@ -95,16 +95,16 @@ def test_filters():
 
 def test_chemical_subsystems_share_only_the_unit_state():
     spin_system = system(["1H", "1H"], zeeman={"scalar": [0.0, 3.0]}, chem={"parts": [[0], [1]], "concs": [1, 1]})
-    bas = respinach.basis(spin_system, NONE).basis
+    bas = spynach.basis(spin_system, NONE).basis
     assert bas.basis.tolist() == [[0, 0], [0, 1], [0, 2], [0, 3], [1, 0], [2, 0], [3, 0]]
-    filtered = respinach.basis(spin_system, {**NONE, "projections": [[1], []]}).basis
+    filtered = spynach.basis(spin_system, {**NONE, "projections": [[1], []]}).basis
     assert filtered.basis.tolist() == [[0, 0], [0, 1], [0, 2], [0, 3], [1, 0]]
     with pytest.raises(ValueError, match="outside substance"):
-        respinach.basis(spin_system, {**NONE, "longitudinal": [[1], []]})
+        spynach.basis(spin_system, {**NONE, "longitudinal": [[1], []]})
     with pytest.raises(ValueError, match="crosses chemical substance"):
-        respinach.basis(spin_system, {**NONE, "manual": [[True, True]]})
+        spynach.basis(spin_system, {**NONE, "manual": [[True, True]]})
     with pytest.raises(ValueError, match="only available for sphten-liouv"):
-        respinach.basis(spin_system, {"formalism": "zeeman-hilb", "approximation": "none"})
+        spynach.basis(spin_system, {"formalism": "zeeman-hilb", "approximation": "none"})
 
 
 def test_dfpt_and_prune():
@@ -162,4 +162,4 @@ def test_dfpt_and_prune():
 )
 def test_refusals(bas, exc, message):
     with pytest.raises(exc, match=message):
-        respinach.basis(system(["1H", "1H", "1H"]), bas)
+        spynach.basis(system(["1H", "1H", "1H"]), bas)

@@ -7,12 +7,12 @@
 %     run('<repo>/comparison/matlab/run_comparison.m')
 %
 % or from a shell with comparison/run_spinach.sh (MATLAB batch mode).
-% Then run the respinach side (comparison/run_respinach.py) and build the
+% Then run the spynach side (comparison/run_spynach.py) and build the
 % report (comparison/report.py); see comparison/README.md.
 
 %% Settings
-repo_dir='/Users/alexej/Documents/PROG/respinach';             % respinach checkout holding comparison/cases
-spinach_dir='/Users/alexej/Documents/PROG/respinach-spinach';  % Spinach checkout
+repo_dir='/Users/alexej/Documents/PROG/spynach';             % spynach checkout holding comparison/cases
+spinach_dir='/Users/alexej/Documents/PROG/spynach-spinach';  % Spinach checkout
 cases={'noesy_strychnine','zulf_pf6_1d','maz_noesy_2','li_exchange_equilibrium'};                 % case directories to run
 gpu=false;                                                  % true: sys.enable={'gpu'} in every case, results in runs/<case>-gpu[-<tag>]/
 tag='';                                                     % run name suffix: runs/<case>[-gpu]-<tag>/; '' for runs/<case>[-gpu]/

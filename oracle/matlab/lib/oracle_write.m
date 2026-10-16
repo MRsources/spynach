@@ -1,5 +1,5 @@
 % Writes a numeric array, a sparse matrix, or a cell array thereof into
-% an HDF5 fixture file using the layout read by respinach.oracle. Syntax:
+% an HDF5 fixture file using the layout read by spynach.oracle. Syntax:
 %
 %                  oracle_write(file_name,var_name,value)
 %

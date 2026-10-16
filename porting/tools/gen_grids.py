@@ -1,6 +1,6 @@
 """Convert Spinach's spherical averaging grids (kernel/grids/*.mat) to NumPy archives.
 
-    python porting/tools/gen_grids.py /spinach/kernel/grids src/respinach/grids
+    python porting/tools/gen_grids.py /spinach/kernel/grids src/spynach/grids
 
 Each grid becomes <name>.npz with float64 arrays alphas, betas, gammas (rad)
 and weights (summing to one). The grids are Spinach's (MIT licence); the

@@ -2,7 +2,7 @@
 % user_ml/Li_exchange_equilibrium.m (Florin Teleanu, 2026) with timed
 % stages. The four subplots of the script are saved as four figures and
 % the trajectory analysis of trajan is also returned as arrays. Stage
-% labels must match li_exchange_equilibrium_respinach.py. Syntax:
+% labels must match li_exchange_equilibrium_spynach.py. Syntax:
 %
 %     [data,figs]=li_exchange_equilibrium_spinach(timer,options)
 %

@@ -8,7 +8,7 @@ as a target device is decided.
 
 ## Where Spinach uses the GPU (`sys.enable={'gpu'}`)
 
-| Spinach | what runs on the device | respinach location |
+| Spinach | what runs on the device | Spynach location |
 |---|---|---|
 | `propagator.m` | above 500 states: the Taylor loop with sparse-sparse products and `clean_up` between terms, then the squarings; the result is gathered | `propagation.propagator` |
 | `step.m` | the Taylor action of `L` (or the 2/3-point quadrature generators) on the state vector or stack | `propagation.step` / `_reordered_taylor` |
@@ -20,11 +20,11 @@ as a target device is decided.
 
 Spinach never puts basis construction, `superop`, `hamiltonian`,
 `relaxation` or `kinetics` on the GPU: they are index arithmetic with
-small dense kernels, and respinach keeps the same split.
+small dense kernels, and Spynach keeps the same split.
 
 ## What is in place
 
-- `respinach.backend` is the single adapter: `get_backend()` returns an object
+- `spynach.backend` is the single adapter: `get_backend()` returns an object
   with `xp` (array module), `issparse`, `csr`, `eye`, `dense`, `expm`,
   `nnz`, `norm1`, `to_device`, `to_host`. Only `NumpyBackend` exists; the
   CPU transfers are no-ops. `backend.use('cupy')` is reserved.
@@ -33,7 +33,7 @@ small dense kernels, and respinach keeps the same split.
   state to the device, host return), `krylov`, `evolution`, `_chop`,
   `_add`, `_norm1`.
 - Every line where device placement will matter is marked `# GPU:` with
-  the Spinach behaviour it mirrors (`grep -rn "GPU:" src/respinach`).
+  the Spinach behaviour it mirrors (`grep -rn "GPU:" src/spynach`).
 - `sys['enable'] = ['gpu']` is refused with a message pointing here, so
   user scripts that set it in Spinach fail loudly rather than silently
   running on the CPU.

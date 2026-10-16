@@ -14,7 +14,7 @@ only; see `porting/FIXTURE_REQUESTS.md` for the request workflow.
   and only produces the new cases. A changed dump script means deleting
   its old cases first (they are read-only: `chmod -R u+w` then remove).
 - Fixtures live read-only at `/fixtures/<spinach-tag>/<case>/` (override the
-  root with `$RESPINACH_FIXTURES`).
+  root with `$SPYNACH_FIXTURES`).
 
 ## Layout
 
@@ -25,7 +25,7 @@ oracle/matlab/dumps/*.m            one dump script per vertical slice
 oracle/matlab/run_fixtures.m       start script: sets paths, runs all dumps (settings at top)
 oracle/run_fixtures.sh             runs run_fixtures.m in MATLAB batch mode
 oracle/matlab/shadow/              path-shadowing instrumentation (isworkernode.m: serial evolution())
-src/respinach/oracle/                 Python loader (fixture.py) and comparison (compare.py)
+src/spynach/oracle/                 Python loader (fixture.py) and comparison (compare.py)
 ```
 
 Each case directory holds `data.h5` and `meta.json`.
@@ -60,7 +60,7 @@ as `null`.
 ## Python usage
 
 ```python
-from respinach.oracle import find_case, load_fixture, assert_matches
+from spynach.oracle import find_case, load_fixture, assert_matches
 
 fx = load_fixture(find_case("hilb_pa_ab_2spin"))
 H_ref = fx["/ham/H_off"]  # scipy sparse
