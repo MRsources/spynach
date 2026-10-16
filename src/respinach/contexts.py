@@ -61,6 +61,8 @@ def crystal(
     if angles.size != 3 or not np.all(np.isfinite(angles)):
         raise ValueError("parameters['orientation'] must be three finite Euler angles.")
     spin_system = assume(spin_system, assumptions)
+    # Spinach's names: I is the isotropic Hamiltonian, Q the anisotropic irreducible components
+    # that orientation() contracts with the Wigner matrices of the Euler angles
     I, Q = hamiltonian(spin_system, aniso=True)
     I = frqoffset(spin_system, I, parameters)
     H = _hermitise(I + orientation(Q, angles))

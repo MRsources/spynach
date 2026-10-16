@@ -237,6 +237,16 @@ def _redfield(spin_system: SpinSystem) -> Matrix:
     R: Matrix = sps.csr_array((dim, dim), dtype=complex)
     basis = spin_system.basis.basis
     species_states = [basis[:, list(part)].any(axis=1) for part in spin_system.chem.parts]
+    # Spinach's loop structure and names. Q[rank - 1][k][m] is the anisotropic Hamiltonian
+    # component that multiplies the Wigner matrix element D^rank(k, m); k and m (and p, q for
+    # the second component) are 0-based positions in the component list, +rank first.
+    # Rotational diffusion correlates component (k, m) with (p, q) through the weights and
+    # decay rates of _corrfun; every nonzero weight contributes
+    #     R -= weight * A * int_0^T exp(-iB t) C exp(-iD t) dt
+    # with A = Q[k][m], B = L0 (the isotropic Liouvillian, rounded to the integration
+    # tolerance), C = Q[p][q]^H and D = B shifted by the decay rate, so that the matrix
+    # exponential carries the decay of the correlation function; T is where that decay
+    # reaches tols.rlx_integration. Each term is restricted to the states of one substance.
     for rank, Q_rank in enumerate(Q, start=1):
         size = 2 * rank + 1
         for k in range(size):

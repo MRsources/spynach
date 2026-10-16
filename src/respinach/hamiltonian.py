@@ -30,8 +30,12 @@ SQRT23 = np.sqrt(2 / 3)
 SQRT18 = np.sqrt(1 / 8)
 RANK1, RANK2 = slice(0, 3), slice(3, 8)  # columns of the 8-element coefficient rows: [+1 0 -1 | +2 +1 0 -1 -2]
 
-# Two-spin product operators of each bilinear coupling strength and their coefficients
-# (ist_coeff index, value) in the rank-1 [+1, 0, -1] and rank-2 [+2, ..., -2] components (hamiltonian.m)
+# Two-spin product operators of each bilinear coupling strength (hamiltonian.m). The inner
+# dictionaries map a position in the 8-element irreducible component row to the coefficient
+# of that operator in that component: positions 0, 1, 2 are the rank-1 components
+# T(1,+1), T(1,0), T(1,-1) and positions 3 to 7 the rank-2 components T(2,+2) ... T(2,-2)
+# (the RANK1 and RANK2 slices above). For example Lz Lz enters only T(2,0) with sqrt(2/3),
+# and L+ L- enters T(1,0) with -sqrt(1/8) and T(2,0) with -sqrt(2/3)/4.
 _PAIR_TERMS: dict[str, dict[tuple[str, str], dict[int, float]]] = {
     "strong": {
         ("Lz", "Lz"): {5: SQRT23},
