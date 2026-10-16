@@ -42,14 +42,14 @@ verified against Spinach 2.13 fixtures (`tests/slice/test_seq_parity.py`).
 import numpy as np
 import respinach
 
-ss = respinach.create(
+spin_system = respinach.create(
     {"isotopes": ["1H", "1H"], "magnet": 14.1},
     {"zeeman": {"scalar": [1.00, 1.20]}, "coupling": {"scalar": [[0, 12.0], [0, 0]]}},
 )
-ss = respinach.basis(ss, {"formalism": "zeeman-hilb", "approximation": "none"})
+spin_system = respinach.basis(spin_system, {"formalism": "zeeman-hilb", "approximation": "none"})
 pars = {"spins": ["1H"], "offset": 660, "sweep": 500, "npoints": 1024,
-        "rho0": respinach.state(ss, "L+", "1H"), "coil": respinach.state(ss, "L+", "1H")}
-fid = respinach.liquid(ss, respinach.acquire, pars, "nmr")
+        "rho0": respinach.state(spin_system, "L+", "1H"), "coil": respinach.state(spin_system, "L+", "1H")}
+fid = respinach.liquid(spin_system, respinach.acquire, pars, "nmr")
 spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))
 ```
 
@@ -78,7 +78,7 @@ ignored.
 
 ## Differences from Spinach
 
-- **Spin indices are 0-based** (`operator(ss, ["Lz", "L+"], [0, 1])` is
+- **Spin indices are 0-based** (`operator(spin_system, ["Lz", "L+"], [0, 1])` is
   Spinach's `operator(spin_system, {'Lz','L+'}, {1,2})`). Isotope names and
   `'all'`/`'nuclei'`/`'electrons'` work as in Spinach.
 - **Product vs. sum operators** are distinguished by the type of the first

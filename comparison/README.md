@@ -171,7 +171,7 @@ example = load_example("nmr_liquids/<case>")  # reuse the translation in example
 
 
 def run(timer, npoints=512, zerofill=2048):
-    ...  # with timer("basis"): ss = respinach.basis(ss, bas)
+    ...  # with timer("basis"): spin_system = respinach.basis(spin_system, bas)
     return {"fid_cos": ..., "fid_sin": ..., "spectrum": ...}, {"noesy": fig}
 ```
 

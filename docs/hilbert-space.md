@@ -66,8 +66,8 @@ inter = {
     "coupling": {"scalar": [[0, 12.0],
                             [0, 0]]},
 }
-ss = respinach.create(sys, inter)
-ss = respinach.basis(ss, {"formalism": "zeeman-hilb", "approximation": "none"})
+spin_system = respinach.create(sys, inter)
+spin_system = respinach.basis(spin_system, {"formalism": "zeeman-hilb", "approximation": "none"})
 
 # Experiment: transverse proton magnetisation, detected on the same channel
 parameters = {
@@ -75,10 +75,10 @@ parameters = {
     "offset": 660,        # transmitter offset, Hz
     "sweep": 500,         # spectral width, Hz (dwell time 1/sweep)
     "npoints": 1024,      # complex points in the FID
-    "rho0": respinach.state(ss, "L+", "1H"),
-    "coil": respinach.state(ss, "L+", "1H"),
+    "rho0": respinach.state(spin_system, "L+", "1H"),
+    "coil": respinach.state(spin_system, "L+", "1H"),
 }
-fid = respinach.liquid(ss, respinach.acquire, parameters, "nmr")
+fid = respinach.liquid(spin_system, respinach.acquire, parameters, "nmr")
 
 # Spectrum: apodise, zero-fill, Fourier transform
 zerofill = 4096
@@ -97,7 +97,7 @@ frequency of the channel isotope:
 ```python
 from respinach.plotting import axis_1d
 
-ppm_axis, label = axis_1d(ss, {**parameters, "zerofill": zerofill, "axis_units": "ppm"})
+ppm_axis, label = axis_1d(spin_system, {**parameters, "zerofill": zerofill, "axis_units": "ppm"})
 assert label == "1H chemical shift / ppm"
 
 # The AB quartet sits between the two chemical shifts
@@ -112,7 +112,7 @@ intensities, drag to zoom in, double-click to zoom out.
 ```python
 from respinach.plotting import plot_1d
 
-fig = plot_1d(ss, spectrum.real, parameters, title="AB quartet at 14.1 T")
+fig = plot_1d(spin_system, spectrum.real, parameters, title="AB quartet at 14.1 T")
 fig.update_xaxes(range=[1.4, 0.8])   # start zoomed in on the quartet
 fig
 ```
@@ -166,7 +166,7 @@ spin belongs to exactly one part, couplings never cross parts, and the
 default is a single part holding all spins at unit concentration. The
 exchange matrix must conserve matter (columns sum to zero) and, since
 exchange moves spin states between molecules, the parts must list the same
-isotopes in the same order. The information is kept in `ss.chem`; the
+isotopes in the same order. The information is kept in `spin_system.chem`; the
 kinetics superoperator and exchanging systems need the Liouville-space
 formalism, which is not ported yet.
 
@@ -184,15 +184,15 @@ The result is a frozen `SpinSystem`. Internally everything is in angular
 frequency units (rad/s) in the laboratory frame:
 
 ```python
-ss = respinach.create(
+spin_system = respinach.create(
     {"isotopes": ["1H", "13C"], "magnet": 14.1},
     {"zeeman": {"scalar": [2.00, 30.0]}, "coupling": {"scalar": [[0, 145.0], [0, 0]]}},
 )
-assert ss.nspins == 2
-assert list(ss.mults) == [2, 2]              # multiplicities, 2S+1
-carrier_mhz = ss.basefrqs / (2 * np.pi) / 1e6  # -gamma*B0, rad/s -> MHz
+assert spin_system.nspins == 2
+assert list(spin_system.mults) == [2, 2]              # multiplicities, 2S+1
+carrier_mhz = spin_system.basefrqs / (2 * np.pi) / 1e6  # -gamma*B0, rad/s -> MHz
 assert round(abs(carrier_mhz[0])) == 600
-assert ss.coupling_matrix[1][0] is None        # absent couplings are None
+assert spin_system.coupling_matrix[1][0] is None        # absent couplings are None
 ```
 
 Isotope data (multiplicity and magnetogyric ratio) come from Spinach's
@@ -201,8 +201,8 @@ Isotope data (multiplicity and magnetogyric ratio) come from Spinach's
 ### 2. `basis`: choose the formalism
 
 ```python
-ss = respinach.basis(ss, {"formalism": "zeeman-hilb", "approximation": "none"})
-assert ss.basis.basis.shape == (4, 2)    # dim x nspins Zeeman level table
+spin_system = respinach.basis(spin_system, {"formalism": "zeeman-hilb", "approximation": "none"})
+assert spin_system.basis.basis.shape == (4, 2)    # dim x nspins Zeeman level table
 ```
 
 `zeeman-hilb` works with the full Hilbert space of dimension
@@ -216,9 +216,9 @@ Operators are built from a label and a spin selection. **Spin indices are
 0-based.** There are three forms:
 
 ```python
-Lz_H = respinach.operator(ss, "Lz", "1H")          # sum over all 1H spins
-Lz_01 = respinach.operator(ss, "Lz", [0, 1])       # sum over spins 0 and 1
-LzSp = respinach.operator(ss, ["Lz", "L+"], [0, 1]) # product Lz(0) L+(1)
+Lz_H = respinach.operator(spin_system, "Lz", "1H")          # sum over all 1H spins
+Lz_01 = respinach.operator(spin_system, "Lz", [0, 1])       # sum over spins 0 and 1
+LzSp = respinach.operator(spin_system, ["Lz", "L+"], [0, 1]) # product Lz(0) L+(1)
 
 assert Lz_H.shape == (4, 4)
 ```
@@ -239,8 +239,8 @@ in the sum form can also be `"all"`, `"nuclei"`, or `"electrons"`.
 matrix, used as an (unnormalised) density matrix:
 
 ```python
-rho = respinach.state(ss, "L+", "1H")
-assert (rho != respinach.operator(ss, "L+", "1H")).nnz == 0
+rho = respinach.state(spin_system, "L+", "1H")
+assert (rho != respinach.operator(spin_system, "L+", "1H")).nnz == 0
 ```
 
 ### 4. `assume` and `hamiltonian`: the Hamiltonian
@@ -256,9 +256,9 @@ assumption set is the usual high-field liquid-state approximation:
 `hamiltonian` then returns the isotropic Hamiltonian in rad/s:
 
 ```python
-H = respinach.hamiltonian(respinach.assume(ss, "nmr"))
-H_zeeman = respinach.hamiltonian(respinach.assume(ss, "nmr", "zeeman"))      # drop couplings
-H_coupling = respinach.hamiltonian(respinach.assume(ss, "nmr", "couplings")) # drop Zeeman terms
+H = respinach.hamiltonian(respinach.assume(spin_system, "nmr"))
+H_zeeman = respinach.hamiltonian(respinach.assume(spin_system, "nmr", "zeeman"))      # drop couplings
+H_coupling = respinach.hamiltonian(respinach.assume(spin_system, "nmr", "couplings")) # drop Zeeman terms
 
 assert np.allclose(H, H_zeeman + H_coupling)
 assert np.allclose(H, H.conj().T)
@@ -277,7 +277,7 @@ The rotating frame of `"nmr"` puts each isotope's carrier at zero frequency.
 signals are:
 
 ```python
-H_off = respinach.frqoffset(ss, H, {"spins": ["1H"], "offset": 1200})
+H_off = respinach.frqoffset(spin_system, H, {"spins": ["1H"], "offset": 1200})
 ```
 
 `liquid` applies this for you.
@@ -286,12 +286,12 @@ H_off = respinach.frqoffset(ss, H, {"spins": ["1H"], "offset": 1200})
 
 ```python
 dt = 1 / 500
-P = respinach.propagator(ss, H_off, dt)       # expm(-1j * H_off * dt)
+P = respinach.propagator(spin_system, H_off, dt)       # expm(-1j * H_off * dt)
 assert np.allclose(P @ P.conj().T, np.eye(4))
 
-rho0 = respinach.state(ss, "L+", "1H")
-coil = respinach.state(ss, "L+", "1H")
-fid_hc = respinach.evolution(ss, H_off, rho0, dt, 1023, "observable", coil=coil)
+rho0 = respinach.state(spin_system, "L+", "1H")
+coil = respinach.state(spin_system, "L+", "1H")
+fid_hc = respinach.evolution(spin_system, H_off, rho0, dt, 1023, "observable", coil=coil)
 assert fid_hc.shape == (1024,)                 # nsteps + 1 points, from t = 0
 assert np.isclose(fid_hc[0], respinach.hdot(coil, rho0))
 ```
@@ -304,8 +304,8 @@ rounding to `tols.prop_chop`, which keeps sparse propagators sparse.
 
 ### 7. `liquid` and `acquire`: the high-level route
 
-`liquid(ss, sequence, parameters, "nmr")` runs `assume`, `hamiltonian`, and
-`frqoffset`, and then calls `sequence(ss, parameters, H, R, K)`. R and K are
+`liquid(spin_system, sequence, parameters, "nmr")` runs `assume`, `hamiltonian`, and
+`frqoffset`, and then calls `sequence(spin_system, parameters, H, R, K)`. R and K are
 the relaxation and chemical kinetics superoperators; neither is ported yet,
 so both are zero matrices, which is what Spinach gives when a system
 specifies neither.
@@ -316,7 +316,7 @@ detects `parameters["coil"]`. It reproduces the step-by-step route above:
 
 ```python
 fid_liquid = respinach.liquid(
-    ss, respinach.acquire,
+    spin_system, respinach.acquire,
     {"spins": ["1H"], "offset": 1200, "sweep": 500, "npoints": 1024, "rho0": rho0, "coil": coil},
     "nmr",
 )
@@ -342,14 +342,14 @@ def pulse_acquire(spin_system, parameters, H, R, K):
     )
 
 pars = {"spins": ["1H"], "offset": 1200, "sweep": 500, "npoints": 1024,
-        "rho0": respinach.state(ss, "Lz", "1H"), "coil": respinach.state(ss, "L+", "1H")}
-fid_pulse = respinach.liquid(ss, pulse_acquire, pars, "nmr")
+        "rho0": respinach.state(spin_system, "Lz", "1H"), "coil": respinach.state(spin_system, "L+", "1H")}
+fid_pulse = respinach.liquid(spin_system, pulse_acquire, pars, "nmr")
 
 # The pulse turns Lz into Lx = (L+ + L-)/2; only the L+ half is detected
 assert np.allclose(fid_pulse, 0.5 * fid_liquid)
 ```
 
-`propagator(ss, A, angle)` with a Hermitian operator `A` returns
+`propagator(spin_system, A, angle)` with a Hermitian operator `A` returns
 `expm(-1j * angle * A)`, so a spin operator and a rotation angle give an
 ideal pulse.
 
@@ -386,7 +386,7 @@ window = np.exp(-np.arange(1024) / 256)
 spectra = [np.fft.fftshift(np.fft.fft(f * window, 4096)).real for f in (fid_liquid, fid_pulse)]
 pars_hc = {"spins": ["1H"], "offset": 1200, "sweep": 500, "axis_units": "Hz"}
 
-hz, _ = axis_1d(ss, {**pars_hc, "zerofill": 4096})
+hz, _ = axis_1d(spin_system, {**pars_hc, "zerofill": 4096})
 low, high = hz[hz < 1200][np.argmax(spectra[0][hz < 1200])], hz[hz > 1200][np.argmax(spectra[0][hz > 1200])]
 assert abs(high - low - 145) < 0.5                          # 1J(CH) doublet
 assert np.isclose(spectra[1].max(), 0.5 * spectra[0].max())
@@ -395,13 +395,13 @@ assert np.isclose(spectra[1].max(), 0.5 * spectra[0].max())
 ```python
 from respinach.plotting import plot_1d
 
-plot_1d(ss, spectra, pars_hc, names=["acquire from L+", "90° pulse from Lz"],
+plot_1d(spin_system, spectra, pars_hc, names=["acquire from L+", "90° pulse from Lz"],
         title="1H spectrum of a 1H-13C pair")
 ```
 
 ## Tolerances
 
-`ss.tols` holds Spinach's numerical thresholds with their "safe default"
+`spin_system.tols` holds Spinach's numerical thresholds with their "safe default"
 values. Override any of them at creation:
 
 ```python

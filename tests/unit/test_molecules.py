@@ -25,11 +25,11 @@ def test_strychnine_protons():
 def test_strychnine_basis_size():
     sys_, inter = strychnine(["1H"])
     sys_.update(magnet=5.9, tols={"prox_cutoff": 4.0})
-    ss = respinach.basis(
+    spin_system = respinach.basis(
         respinach.create(sys_, inter),
         {"formalism": "sphten-liouv", "approximation": "IK-2", "connectivity": "scalar_couplings", "prox_level": 3},
     )
-    assert ss.basis.nstates == 12316  # noesy_strychnine.m basis, as recorded in README.md
+    assert spin_system.basis.nstates == 12316  # noesy_strychnine.m basis, as recorded in README.md
 
 
 def test_strychnine_heteronuclei_refused():

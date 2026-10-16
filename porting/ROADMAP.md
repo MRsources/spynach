@@ -49,10 +49,10 @@ untestable until coordinates are ported. Next: step 4.
 
 - `ist_product_table(mult)` from `irr_sph_ten`, cached; unit-tested against
   the hard-coded spin-1/2 tables in `ist_product_table.m`.
-- `operator(ss, ops, spins, operator_type='comm')` dispatching on
+- `operator(spin_system, ops, spins, operator_type='comm')` dispatching on
   formalism; the sphten branch is the vectorised `superop` of design-notes
   §5.3(4). `left`, `right`, `comm`, `acomm`.
-- `state(ss, ops, spins, method='exact')` with `exact`, `cheap`, `chem`.
+- `state(spin_system, ops, spins, method='exact')` with `exact`, `cheap`, `chem`.
 - Cross-formalism tests without fixtures: for complete bases,
   `Pᴴ (kron(I,H) − kron(Hᵀ,I)) P / dim` equals the sphten commutation
   superoperator, with `P` from the `sphten2zeeman` construction; `exact`
@@ -60,13 +60,13 @@ untestable until coordinates are ported. Next: step 4.
 
 ### 3d. `hamiltonian()`, `frqoffset()`, `kinetics()`, filters
 
-- `hamiltonian(ss, operator_type='comm')` returns the isotropic
+- `hamiltonian(spin_system, operator_type='comm')` returns the isotropic
   commutation superoperator in Liouville space (same term logic, new
   `operator_type` plumbing, term table keeps slots for `Q`). `frqoffset`
   unchanged apart from dispatch.
-- `kinetics(ss)` from `chem.rates` (design-notes §5.1); unit test: column
+- `kinetics(spin_system)` from `chem.rates` (design-notes §5.1); unit test: column
   sums of `K` vanish (Spinach's `test_kinetics_generator_suite.m`).
-- `correlation(ss, rho, orders, spins)` and `coherence(ss, rho, spec)`.
+- `correlation(spin_system, rho, orders, spins)` and `coherence(spin_system, rho, spec)`.
 - `liquid()` still refuses `sphten-liouv` until step 4 (it would need
   `evolution`); say so in the error message.
 

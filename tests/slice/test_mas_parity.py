@@ -102,7 +102,7 @@ def test_fokker_planck_generator(fx, case, spin_system):
     assert np.isclose(rotor[1], np.pi / 2 - np.arctan2(axis[2], np.hypot(axis[0], axis[1])))
     seen = {}
 
-    def grab(ss, parameters, G, R, K):
+    def grab(spin_system, parameters, G, R, K):
         if "G" not in seen:
             seen["G"] = G
         return 0.0
@@ -118,7 +118,7 @@ def test_states_and_fid(fx, case, spin_system):
     pars["coil"] = respinach.state(spin_system, "L+", det)
     seen = {}
 
-    def grab(ss, parameters, G, R, K):
+    def grab(spin_system, parameters, G, R, K):
         seen.setdefault("rho0", parameters["rho0"])
         seen.setdefault("coil", parameters["coil"])
         return 0.0

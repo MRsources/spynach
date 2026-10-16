@@ -27,7 +27,7 @@ namespace.
 A sequence is a function `sequence(spin_system, parameters, H, R, K)`
 that a context calls with the Hamiltonian, relaxation and kinetics
 generators it built. Inside, Spinach's idiom carries over line by line:
-`L = H + 1j * R + 1j * K`; ideal pulses are `step(ss, operator, rho,
+`L = H + 1j * R + 1j * K`; ideal pulses are `step(spin_system, operator, rho,
 angle)`; free evolution is `evolution(...)`; an indirect dimension is the
 `'trajectory'` output, a stack of state vectors that the rest of the
 sequence propagates all at once, so that the final `'observable'` call
@@ -45,17 +45,19 @@ derome = respinach.create({"isotopes": ["1H"] * 3, "magnet": 16.1},
 derome = respinach.basis(derome, {"formalism": "sphten-liouv", "approximation": "none"})
 
 
-def my_cosy(ss, parameters, H, R, K):
+def my_cosy(spin_system, parameters, H, R, K):
     L = H + 1j * R + 1j * K
-    rho = respinach.state(ss, "Lz", "1H", "cheap")
-    coil = respinach.state(ss, "L+", "1H", "cheap")
-    Lx = respinach.operator(ss, "Lx", "1H")
-    rho = respinach.step(ss, Lx, rho, np.pi / 2)
-    stack = respinach.evolution(ss, L, rho, 1 / parameters["sweep"], parameters["npoints"][0] - 1, "trajectory")
-    stack = respinach.coherence(ss, stack.T, [("1H", 1)]).T          # select the +1 pathway in t1
-    stack = respinach.step(ss, Lx, stack, parameters["angle"])
+    rho = respinach.state(spin_system, "Lz", "1H", "cheap")
+    coil = respinach.state(spin_system, "L+", "1H", "cheap")
+    Lx = respinach.operator(spin_system, "Lx", "1H")
+    rho = respinach.step(spin_system, Lx, rho, np.pi / 2)
+    stack = respinach.evolution(
+        spin_system, L, rho, 1 / parameters["sweep"], parameters["npoints"][0] - 1, "trajectory"
+    )
+    stack = respinach.coherence(spin_system, stack.T, [("1H", 1)]).T          # select the +1 pathway in t1
+    stack = respinach.step(spin_system, Lx, stack, parameters["angle"])
     return respinach.evolution(
-        ss, L, stack, 1 / parameters["sweep"], parameters["npoints"][1] - 1, "observable", coil=coil,
+        spin_system, L, stack, 1 / parameters["sweep"], parameters["npoints"][1] - 1, "observable", coil=coil,
     )
 
 
@@ -102,13 +104,13 @@ COSY.
 
 ## Decoupling, homospoil, dead time
 
-`decouple(ss, L, rho, spins)` is Spinach's analytical decoupling: every
+`decouple(spin_system, L, rho, spins)` is Spinach's analytical decoupling: every
 basis state that involves the named spins is removed from the dynamics by
 zeroing its rows and columns of `L` and its entries of `rho`.
 `acquire` applies it through `parameters["decouple"]`, so a heteronuclear
 doublet collapses to a singlet; `parameters["dead_time"]` evolves the
 state before acquisition and `parameters["homodec_oper"]`/`["homodec_pwr"]`
-add a homodecoupling term. `homospoil(ss, rho, "destroy")` kills every
+add a homodecoupling term. `homospoil(spin_system, rho, "destroy")` kills every
 coherence (a gradient pulse), `"keep"` retains zero-quantum ones:
 
 ```python
@@ -175,7 +177,7 @@ heteronuclear evolution with a refocusing pulse on the decoupled channels
 decoupled acquisition. `parameters["spins"]` lists the indirect
 heteronucleus first, then the detected nucleus; `J` sets the INEPT
 delays. Natural-abundance 13C spectra are sums over isotopomers:
-`dilute(ss, "13C")` returns one subsystem per 13C with every other 13C
+`dilute(spin_system, "13C")` returns one subsystem per 13C with every other 13C
 removed (`kill_spin`), each of which is simulated separately:
 
 ```python

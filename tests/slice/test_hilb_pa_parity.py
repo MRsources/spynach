@@ -77,8 +77,7 @@ def fx(case):
 @pytest.fixture
 def spin_system(case):
     spec = CASES[case]
-    ss = respinach.create({**spec["sys"], "magnet": MAGNET}, spec["inter"])
-    return respinach.basis(ss, BAS)
+    return respinach.basis(respinach.create({**spec["sys"], "magnet": MAGNET}, spec["inter"]), BAS)
 
 
 def test_case_definitions_match_fixture(fx, case):

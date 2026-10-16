@@ -63,20 +63,20 @@ def test_spherical_tensors(mult):
 
 
 def test_operator_forms_and_zero_based_indices():
-    ss = hilb_system(["1H", "13C", "1H"])
-    single = [dense(respinach.operator(ss, ["Lz"], [n])) for n in range(3)]
-    assert_matches(respinach.operator(ss, "Lz", "1H"), single[0] + single[2], **TIGHT)
-    assert_matches(respinach.operator(ss, "Lz", [0, 2]), single[0] + single[2], **TIGHT)
-    assert_matches(respinach.operator(ss, "Lz", "all"), sum(single), **TIGHT)
-    lx = dense(respinach.operator(ss, ["Lx"], [1]))
-    lp, lm = dense(respinach.operator(ss, ["L+"], [1])), dense(respinach.operator(ss, ["L-"], [1]))
+    spin_system = hilb_system(["1H", "13C", "1H"])
+    single = [dense(respinach.operator(spin_system, ["Lz"], [n])) for n in range(3)]
+    assert_matches(respinach.operator(spin_system, "Lz", "1H"), single[0] + single[2], **TIGHT)
+    assert_matches(respinach.operator(spin_system, "Lz", [0, 2]), single[0] + single[2], **TIGHT)
+    assert_matches(respinach.operator(spin_system, "Lz", "all"), sum(single), **TIGHT)
+    lx = dense(respinach.operator(spin_system, ["Lx"], [1]))
+    lp, lm = dense(respinach.operator(spin_system, ["L+"], [1])), dense(respinach.operator(spin_system, ["L-"], [1]))
     assert_matches(lx, (lp + lm) / 2, **TIGHT)
-    assert_matches(respinach.operator(ss, ["Lz", "Lx"], [0, 1]), single[0] @ lx, **TIGHT)
-    assert_matches(respinach.operator(ss, ["T1,0"], [2]), single[2], **TIGHT)
+    assert_matches(respinach.operator(spin_system, ["Lz", "Lx"], [0, 1]), single[0] @ lx, **TIGHT)
+    assert_matches(respinach.operator(spin_system, ["T1,0"], [2]), single[2], **TIGHT)
     with pytest.raises(ValueError, match="between 0 and 2"):
-        respinach.operator(ss, ["Lz"], [3])
+        respinach.operator(spin_system, ["Lz"], [3])
     with pytest.raises(ValueError, match="repetitions"):
-        respinach.operator(ss, ["Lz", "Lx"], [0, 0])
+        respinach.operator(spin_system, ["Lz", "Lx"], [0, 0])
 
 
 def test_matlab_round_is_half_away_from_zero():
@@ -98,11 +98,11 @@ def test_clean_up_rounding_and_storage():
 
 def test_single_spin_fid_is_analytic():
     """Spin-1/2 under H = w*Lz: <L+|rho(t)> = exp(-1j*w*t) for rho0 = L+."""
-    ss = hilb_system(["1H"])
+    spin_system = hilb_system(["1H"])
     w, dt, nsteps = 2 * np.pi * 125.0, 1e-3, 64
-    H = w * respinach.operator(ss, "Lz", "1H")
-    rho = respinach.state(ss, "L+", "1H")
-    fid = respinach.evolution(ss, H, rho, dt, nsteps, "observable", coil=rho)
+    H = w * respinach.operator(spin_system, "Lz", "1H")
+    rho = respinach.state(spin_system, "L+", "1H")
+    fid = respinach.evolution(spin_system, H, rho, dt, nsteps, "observable", coil=rho)
     assert_matches(fid, np.exp(-1j * w * dt * np.arange(nsteps + 1)), rtol=1e-12, atol=0)
 
 
@@ -124,10 +124,10 @@ def test_taylor_propagator_large_dimension(norm_target, prop_chop, rtol):
     w, V = np.linalg.eigh(H)
     dt = norm_target / np.abs(w).max()
     exact = (V * np.exp(-1j * w * dt)) @ V.conj().T
-    ss = respinach.basis(
+    spin_system = respinach.basis(
         respinach.create({"isotopes": ["1H"], "magnet": 14.1, "tols": {"prop_chop": prop_chop}}, {}), HILB
     )
-    P = respinach.propagator(ss, sps.csr_array(H), dt)
+    P = respinach.propagator(spin_system, sps.csr_array(H), dt)
     assert_matches(P, exact, rtol=rtol, atol=0, name=f"Taylor P, ||H dt||={norm_target}, prop_chop={prop_chop}")
 
 
@@ -136,30 +136,30 @@ def test_unported_inputs_are_refused():
         respinach.create({"isotopes": ["1H"], "magnet": 14.1}, {"coordinates": [[0, 0, 0]], "pbc": [[10, 0, 0]]})
     with pytest.raises(NotImplementedError, match="enable"):
         respinach.create({"isotopes": ["1H"], "magnet": 14.1, "enable": ["gpu"]}, {})
-    ss = respinach.create({"isotopes": ["1H"], "magnet": 14.1}, {})
+    spin_system = respinach.create({"isotopes": ["1H"], "magnet": 14.1}, {})
     with pytest.raises(NotImplementedError, match="zeeman-liouv"):
-        respinach.basis(ss, {"formalism": "zeeman-liouv", "approximation": "none"})
-    liouv = respinach.basis(ss, {"formalism": "sphten-liouv", "approximation": "none"})
+        respinach.basis(spin_system, {"formalism": "zeeman-liouv", "approximation": "none"})
+    liouv = respinach.basis(spin_system, {"formalism": "sphten-liouv", "approximation": "none"})
     with pytest.raises(NotImplementedError, match="total"):
         respinach.evolution(liouv, np.zeros((4, 4)), np.ones(4), 1.0, 1, "total", coil=np.ones(4))
     with pytest.raises(NotImplementedError, match="qnmr"):
-        respinach.assume(ss, "qnmr")
-    hs = respinach.basis(ss, HILB)
+        respinach.assume(spin_system, "qnmr")
+    spin_system_hilb = respinach.basis(spin_system, HILB)
     with pytest.raises(NotImplementedError, match="final"):
-        respinach.evolution(hs, np.zeros((2, 2)), np.eye(2), 1.0, 1, "final", coil=np.eye(2))
+        respinach.evolution(spin_system_hilb, np.zeros((2, 2)), np.eye(2), 1.0, 1, "final", coil=np.eye(2))
 
 
 def test_chemistry_defaults_and_exchange():
-    ss = respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1}, {})
-    assert ss.chem.parts == ((0, 1),)
-    assert ss.chem.rates is None and list(ss.chem.concs) == [1.0]
+    spin_system = respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1}, {})
+    assert spin_system.chem.parts == ((0, 1),)
+    assert spin_system.chem.rates is None and list(spin_system.chem.concs) == [1.0]
     rates = [[-2e3, 2e3], [2e3, -2e3]]
-    ss = respinach.create(
+    spin_system = respinach.create(
         {"isotopes": ["1H", "1H"], "magnet": 14.1},
         {"zeeman": {"scalar": [0.0, 3.0]}, "chem": {"parts": [[1], [0]], "rates": rates, "concs": [1, 1]}},
     )
-    assert ss.chem.parts == ((1,), (0,))  # parts keep their order, spins inside are sorted
-    np.testing.assert_array_equal(ss.chem.rates, rates)
+    assert spin_system.chem.parts == ((1,), (0,))  # parts keep their order, spins inside are sorted
+    np.testing.assert_array_equal(spin_system.chem.rates, rates)
 
 
 @pytest.mark.parametrize(

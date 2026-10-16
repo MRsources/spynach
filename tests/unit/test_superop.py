@@ -16,12 +16,12 @@ def system(isotopes, **inter):
     return respinach.create({"isotopes": isotopes, "magnet": 14.1}, inter)
 
 
-def basis_operators(ss):
+def basis_operators(spin_system):
     """Normalised product operators of every basis state of a sphten-liouv system."""
     ops = []
-    for row in ss.basis.basis:
+    for row in spin_system.basis.basis:
         t = np.array([[1.0 + 0j]])
-        for mult, index in zip(ss.mults, row):
+        for mult, index in zip(spin_system.mults, row):
             rank, proj = lin2lm(int(index))
             t = np.kron(t, irr_sph_ten(int(mult), rank)[rank - proj].toarray())
         ops.append(t / np.sqrt(np.vdot(t, t).real))
@@ -68,20 +68,20 @@ def test_product_tables_are_structure_coefficients(mult):
 @pytest.mark.parametrize("ops, spins", [(["Lz", "L+"], [0, 1]), ("Lx", "2H"), (["T2,1"], [1]), ("Ly", "all")])
 @pytest.mark.parametrize("operator_type", ["left", "right", "comm", "acomm"])
 def test_superoperators_in_a_complete_basis(ops, spins, operator_type):
-    ss = system(["1H", "2H"])
-    hs, ls = respinach.basis(ss, HILB), respinach.basis(ss, LIOUV)
-    B = basis_operators(ls)
-    Q = respinach.operator(hs, ops, spins).toarray()
-    A = respinach.operator(ls, ops, spins, operator_type)
+    spin_system = system(["1H", "2H"])
+    spin_system_hilb, spin_system_liouv = respinach.basis(spin_system, HILB), respinach.basis(spin_system, LIOUV)
+    B = basis_operators(spin_system_liouv)
+    Q = respinach.operator(spin_system_hilb, ops, spins).toarray()
+    A = respinach.operator(spin_system_liouv, ops, spins, operator_type)
     assert A.shape == (36, 36)
     assert_matches(A, reference_superop(B, Q, operator_type), **TIGHT)
 
 
 def test_restricted_superoperator_is_a_projection():
     """In a truncated basis the superoperator is the complete one restricted to the kept states."""
-    ss = system(["1H", "1H", "13C"], coupling={"scalar": [[0, 5.0, 100.0], [0, 0, 20.0], [0, 0, 0]]})
-    full = respinach.basis(ss, LIOUV)
-    small = respinach.basis(ss, {**LIOUV, "approximation": "IK-0", "inter_level": 2})
+    spin_system = system(["1H", "1H", "13C"], coupling={"scalar": [[0, 5.0, 100.0], [0, 0, 20.0], [0, 0, 0]]})
+    full = respinach.basis(spin_system, LIOUV)
+    small = respinach.basis(spin_system, {**LIOUV, "approximation": "IK-0", "inter_level": 2})
     kept = [np.flatnonzero((full.basis.basis == row).all(axis=1))[0] for row in small.basis.basis]
     for ops, spins in (("Lz", "all"), (["L+", "L-"], [0, 2]), (["Lz", "Lz", "L+"], [0, 1, 2])):
         A_full = respinach.operator(full, ops, spins).toarray()
@@ -92,49 +92,58 @@ def test_restricted_superoperator_is_a_projection():
 
 
 def test_states_in_liouville_space():
-    ss = system(["1H", "13C"], zeeman={"scalar": [1.0, 10.0]})
-    ls = respinach.basis(ss, LIOUV)
-    B = basis_operators(ls)
-    hs = respinach.basis(ss, HILB)
+    spin_system = system(["1H", "13C"], zeeman={"scalar": [1.0, 10.0]})
+    spin_system_liouv = respinach.basis(spin_system, LIOUV)
+    B = basis_operators(spin_system_liouv)
+    spin_system_hilb = respinach.basis(spin_system, HILB)
     dim = 4
     for ops, spins in (("Lz", "1H"), ("L+", "all"), (["Lz", "L-"], [0, 1])):
-        Q = respinach.state(hs, ops, spins).toarray()
-        exact = respinach.state(ls, ops, spins)
+        Q = respinach.state(spin_system_hilb, ops, spins).toarray()
+        exact = respinach.state(spin_system_liouv, ops, spins)
         assert exact.shape == (16,) and exact.dtype == complex
         assert_matches(exact, np.array([np.vdot(b, Q) for b in B]) / np.sqrt(dim), **TIGHT)
-    lz_exact, lz_cheap = respinach.state(ls, "Lz", "1H"), respinach.state(ls, "Lz", "1H", "cheap")
-    row = np.flatnonzero((ls.basis.basis == [2, 0]).all(axis=1))[0]
+    lz_exact, lz_cheap = (
+        respinach.state(spin_system_liouv, "Lz", "1H"),
+        respinach.state(spin_system_liouv, "Lz", "1H", "cheap"),
+    )
+    row = np.flatnonzero((spin_system_liouv.basis.basis == [2, 0]).all(axis=1))[0]
     assert lz_exact[row] == 0.5 and lz_cheap[row] == 1.0
     assert np.count_nonzero(lz_exact) == 1
     assert_matches(
-        respinach.state(ls, ["Lz", "L-"], [0, 1], "cheap"), 4 * respinach.state(ls, ["Lz", "L-"], [0, 1]), **TIGHT
+        respinach.state(spin_system_liouv, ["Lz", "L-"], [0, 1], "cheap"),
+        4 * respinach.state(spin_system_liouv, ["Lz", "L-"], [0, 1]),
+        **TIGHT,
     )
-    assert_matches(respinach.state(ls, "Lz", "all", "chem"), lz_exact + respinach.state(ls, "Lz", "13C"), **TIGHT)
+    assert_matches(
+        respinach.state(spin_system_liouv, "Lz", "all", "chem"),
+        lz_exact + respinach.state(spin_system_liouv, "Lz", "13C"),
+        **TIGHT,
+    )
     with pytest.raises(ValueError, match="not present in the basis"):
-        respinach.state(respinach.basis(ss, {**LIOUV, "projections": [[1]]}), "Lz", "1H", "cheap")
+        respinach.state(respinach.basis(spin_system, {**LIOUV, "projections": [[1]]}), "Lz", "1H", "cheap")
 
 
 def test_chem_state_weights_by_concentration():
-    ss = system(
+    spin_system = system(
         ["1H", "1H"],
         zeeman={"scalar": [0.0, 3.0]},
         chem={"parts": [[0], [1]], "concs": [2.0, 0.5], "rates": [[-1.0, 1.0], [1.0, -1.0]]},
     )
-    ls = respinach.basis(ss, LIOUV)
-    exact, chem = respinach.state(ls, "L+", "1H"), respinach.state(ls, "L+", "1H", "chem")
+    spin_system_liouv = respinach.basis(spin_system, LIOUV)
+    exact, chem = respinach.state(spin_system_liouv, "L+", "1H"), respinach.state(spin_system_liouv, "L+", "1H", "chem")
     expected = exact.copy()
-    expected[ls.basis.basis[:, 0] > 0] *= 2.0
-    expected[ls.basis.basis[:, 1] > 0] *= 0.5
+    expected[spin_system_liouv.basis.basis[:, 0] > 0] *= 2.0
+    expected[spin_system_liouv.basis.basis[:, 1] > 0] *= 0.5
     assert_matches(chem, expected, **TIGHT)
     with pytest.raises(ValueError, match="crosses chemical species"):
-        respinach.state(ls, ["Lz", "Lz"], [0, 1], "chem")
+        respinach.state(spin_system_liouv, ["Lz", "Lz"], [0, 1], "chem")
     # The two-spin state across species is absent from the basis
-    assert not (ls.basis.basis == [2, 2]).all(axis=1).any()
+    assert not (spin_system_liouv.basis.basis == [2, 2]).all(axis=1).any()
 
 
 def test_operator_and_state_refusals():
-    ls = respinach.basis(system(["1H"]), LIOUV)
+    spin_system_liouv = respinach.basis(system(["1H"]), LIOUV)
     with pytest.raises(ValueError, match="operator_type"):
-        respinach.operator(ls, "Lz", "1H", "commutator")
+        respinach.operator(spin_system_liouv, "Lz", "1H", "commutator")
     with pytest.raises(ValueError, match="unknown state generation method"):
-        respinach.state(ls, "Lz", "1H", "fast")
+        respinach.state(spin_system_liouv, "Lz", "1H", "fast")

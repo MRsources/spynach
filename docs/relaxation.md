@@ -46,7 +46,7 @@ system relaxes to. The fields and their meanings are Spinach's:
 | `srfk_mdepth` | nspins x nspins nested list of root mean square modulation depths (Hz), `None` where a coupling is not modulated, for `SRFK` |
 | `srsk_sources` | list of 0-based indices of the fast-relaxing source spins, for `SRSK` |
 
-The settings are kept in `ss.rlx`. `relaxation(ss)` then returns the
+The settings are kept in `spin_system.rlx`. `relaxation(spin_system)` then returns the
 superoperator `R` in Hz; it enters the Liouvillian as `L = H + 1j * R +
 1j * K`, the convention of every Spinach pulse sequence.
 
@@ -124,11 +124,11 @@ shifts:
 
 ```python
 def pair(keep, **extra):
-    ss = respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
+    spin_system = respinach.create({"isotopes": ["1H", "13C"], "magnet": 14.1},
                        {"zeeman": {"scalar": [0.0, 0.0]}, "coordinates": [[0, 0, 0], [0, 0, 1.03]],
                         "relaxation": ["redfield"], "equilibrium": "zero", "rlx_keep": keep,
                         "temperature": 298, "tau_c": [[100e-12]], **extra})
-    return respinach.basis(ss, {"formalism": "sphten-liouv", "approximation": "none"})
+    return respinach.basis(spin_system, {"formalism": "sphten-liouv", "approximation": "none"})
 
 R_lab = dense(respinach.relaxation(pair("labframe", rlx_dfs="keep")))
 R_diag = dense(respinach.relaxation(pair("diagonal")))
@@ -208,8 +208,8 @@ def hn_pair(theories, **extra):
              "coupling": {"scalar": [[0, 50.0], [0, 0]], "eigs": [[None, None], [None, [1e6, 1e6, -2e6]]],
                           "euler": [[None, None], [None, [0, 0, 0]]]},
              "relaxation": theories, "rlx_keep": "secular", "equilibrium": "zero", "tau_c": [[1e-9]], **extra}
-    ss = respinach.create({"isotopes": ["1H", "14N"], "magnet": 11.75}, inter)
-    return respinach.basis(ss, {"formalism": "sphten-liouv", "approximation": "none"})
+    spin_system = respinach.create({"isotopes": ["1H", "14N"], "magnet": 11.75}, inter)
+    return respinach.basis(spin_system, {"formalism": "sphten-liouv", "approximation": "none"})
 
 R_base = dense(respinach.relaxation(hn_pair(["redfield"])))
 R_srsk = dense(respinach.relaxation(hn_pair(["redfield", "SRSK"], srsk_sources=[1])))
@@ -232,7 +232,7 @@ and run as the `maz_noesy_2` comparison case.
 
 ## Thermal equilibrium and thermalisation
 
-`equilibrium(ss)` returns the thermal state at `inter["temperature"]`
+`equilibrium(spin_system)` returns the thermal state at `inter["temperature"]`
 from the lab-frame Hamiltonian; in Liouville space it is `exp(-H beta)`
 applied to the unit state (through `step` with an imaginary time), with
 unit coefficient on the unit state, in Hilbert space the Boltzmann density
@@ -292,7 +292,7 @@ checks against a matrix exponential.
 
 ## Relaxation in the contexts
 
-`liquid`, `crystal` and `powder` build `R` with `relaxation(ss)` (at each
+`liquid`, `crystal` and `powder` build `R` with `relaxation(spin_system)` (at each
 grid orientation in `powder`, so anisotropic rate tensors and the thermal
 equilibrium of anisotropic systems follow the orientation) and hand it to
 the pulse sequence together with `H` and `K`. A system without

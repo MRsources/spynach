@@ -44,8 +44,7 @@ def main(spinach_root: str) -> None:
         "",
         "ISOTOPES: dict[str, tuple[int, float]] = {",
     ]
-    lines += [f"    {name!r}: ({int(mult)}, {gamma.strip()}),"
-              for name, mult, gamma in entries]
+    lines += [f"    {name!r}: ({int(mult)}, {gamma.strip()})," for name, mult, gamma in entries]
     lines += ["}", "", f"NO_DATA: frozenset[str] = frozenset({sorted(missing)!r})", ""]
     out = Path(__file__).resolve().parents[2] / "src" / "respinach" / "_isotope_data.py"
     out.write_text("\n".join(lines), encoding="utf-8")

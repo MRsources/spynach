@@ -14,7 +14,7 @@ per basis state and one column per spin, holding the linear index
 unit operator). Basis states are orthonormal: row ``(i_0, ..., i_N)`` is the
 operator ``kron(T_i0, ..., T_iN)`` divided by its Frobenius norm. Rows are
 the lexicographically sorted set of unique states, so the unit state is
-always first. Chemical subsystems (``ss.chem.parts``) never share a row:
+always first. Chemical subsystems (``spin_system.chem.parts``) never share a row:
 the basis is a direct sum over substances with one common unit state.
 """
 

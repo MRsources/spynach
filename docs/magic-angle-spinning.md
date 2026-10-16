@@ -58,7 +58,7 @@ another sparse matrix.
 
 ## The `singlerot` context
 
-`singlerot(ss, sequence, parameters, assumptions)` needs, beyond the
+`singlerot(spin_system, sequence, parameters, assumptions)` needs, beyond the
 `powder` parameters, `rate` (Hz), `axis` (the rotor direction in the lab
 frame; `[1, 1, 1]` is the magic angle) and `max_rank` (the rotor phase grid
 resolves sidebands up to that order, so it has to exceed the ratio of the

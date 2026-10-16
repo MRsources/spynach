@@ -61,7 +61,7 @@ couplings the same two nested lists exist, in Hz
 `inter["coordinates"]` (Angstrom, one `[x, y, z]` or `None` per spin) adds
 the point dipolar coupling of every pair within one chemical subsystem
 closer than `tols.prox_cutoff` (default 100 Angstrom), and records which
-pairs are proximate (`ss.proxmatrix`) for the `IK-1`/`IK-2` basis sets of
+pairs are proximate (`spin_system.proxmatrix`) for the `IK-1`/`IK-2` basis sets of
 the Liouville guide. Spinach stores *half* the dipolar tensor in both
 `[n][k]` and `[k][n]` and counts the pair twice in the Hamiltonian; respinach
 does the same, so the tensors match element for element:
@@ -99,7 +99,7 @@ anisotropic components below.
 
 ## The orientation-dependent Hamiltonian
 
-`hamiltonian(ss, aniso=True)` returns `(I, Q)`: the isotropic Hamiltonian
+`hamiltonian(spin_system, aniso=True)` returns `(I, Q)`: the isotropic Hamiltonian
 `I` of the earlier guides and the irreducible components `Q`, Spinach's
 second output. `Q[0]` is a 3x3 and `Q[1]` a 5x5 nested list of operators
 (rank 1 and rank 2); the Hamiltonian at the orientation given by Euler
@@ -144,22 +144,23 @@ commutation superoperators in the restricted basis.
 
 ## Single crystals: `crystal`
 
-`crystal(ss, sequence, parameters, assumptions)` is `liquid` with one
+`crystal(spin_system, sequence, parameters, assumptions)` is `liquid` with one
 extra parameter, `parameters["orientation"]`, the three Euler angles of
 the sample; it builds `I + orientation(Q, angles)`, Hermitises it, and
 hands it to the sequence:
 
 ```python
-ss = respinach.basis(csa, {"formalism": "sphten-liouv", "approximation": "none", "projections": [[1]]})
+spin_system = respinach.basis(csa, {"formalism": "sphten-liouv", "approximation": "none", "projections": [[1]]})
 pars = {"spins": ["1H"], "offset": 0.0, "sweep": 15000.0, "npoints": 128, "zerofill": 512,
-        "rho0": respinach.state(ss, "L+", "1H"), "coil": respinach.state(ss, "L+", "1H"), "axis_units": "ppm"}
-fid_crystal = respinach.crystal(ss, respinach.acquire, {**pars, "orientation": [0.3, 0.9, 1.2]}, "nmr")
+        "rho0": respinach.state(spin_system, "L+", "1H"), "coil": respinach.state(spin_system, "L+", "1H"),
+        "axis_units": "ppm"}
+fid_crystal = respinach.crystal(spin_system, respinach.acquire, {**pars, "orientation": [0.3, 0.9, 1.2]}, "nmr")
 assert fid_crystal.shape == (128,)
 ```
 
 ## Powder averages: `powder` and the grids
 
-`powder(ss, sequence, parameters, assumptions)` runs the sequence at every
+`powder(spin_system, sequence, parameters, assumptions)` runs the sequence at every
 orientation of the spherical grid `parameters["grid"]` and returns the
 weighted sum (`parameters["sum_up"] = False` returns the list of
 per-orientation results instead). The grids are Spinach's, shipped with
@@ -173,7 +174,7 @@ sequences that are not invariant under the third angle, icosahedral
 ```python
 grid = respinach.load_grid("rep_2ang_200pts_sph")
 assert set(grid) == {"alphas", "betas", "gammas", "weights"} and np.isclose(grid["weights"].sum(), 1)
-fid_powder = respinach.powder(ss, respinach.acquire, {**pars, "grid": "rep_2ang_200pts_sph"}, "nmr")
+fid_powder = respinach.powder(spin_system, respinach.acquire, {**pars, "grid": "rep_2ang_200pts_sph"}, "nmr")
 assert np.isclose(fid_powder[0], fid_crystal[0])       # at t = 0 every orientation gives the full signal
 ```
 
@@ -185,10 +186,10 @@ than the example's 6400 points so that the guide runs in seconds:
 ```python
 from respinach.plotting import plot_1d
 
-fid_csa = respinach.powder(ss, respinach.acquire, {**pars, "grid": "rep_2ang_1600pts_sph"}, "nmr")
+fid_csa = respinach.powder(spin_system, respinach.acquire, {**pars, "grid": "rep_2ang_1600pts_sph"}, "nmr")
 fid_csa = fid_csa * np.exp(-6 * np.arange(pars["npoints"]) / pars["npoints"])
 spectrum_csa = np.fft.fftshift(np.fft.fft(fid_csa, pars["zerofill"]))
-plot_1d(ss, spectrum_csa.real, {**pars, "invert_axis": True})
+plot_1d(spin_system, spectrum_csa.real, {**pars, "invert_axis": True})
 ```
 
 Orientations run serially; Spinach distributes them over a parallel pool

@@ -30,7 +30,7 @@ def state(
 ) -> sps.csr_array | np.ndarray:
     """State from a human-readable description, same forms as :func:`respinach.operator`.
 
-    ``zeeman-hilb``: the (unnormalised) operator, e.g. ``state(ss, 'L+', '1H')``
+    ``zeeman-hilb``: the (unnormalised) operator, e.g. ``state(spin_system, 'L+', '1H')``
     is the sum of L+ over all protons; ``method`` is ignored.
 
     ``sphten-liouv``: a vector, by one of three methods as in Spinach:

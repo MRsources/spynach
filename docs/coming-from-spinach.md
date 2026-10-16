@@ -138,7 +138,7 @@ plot_1d(spin_system, spectrum.real, parameters, title="Styrene, 1H, 7.046 T")
 | spin numbers | 1-based | **0-based**: Spinach spin 1 is respinach spin 0 |
 | input structures | MATLAB structs: `sys.magnet=14.1;` | dictionaries: `sys = {"magnet": 14.1}` |
 | lists | cell arrays `{'1H','13C'}` | lists `["1H", "13C"]` |
-| spin system object | struct, copied and returned by each function | frozen dataclass, copied and returned by each function |
+| spin system object | `spin_system` struct, copied and returned by each function | `spin_system` frozen dataclass, copied and returned by each function; the guides use the same name |
 | matrix product | `A*B` | `A @ B` (`A * B` is element-wise for NumPy and SciPy arrays) |
 | conjugate transpose | `A'` | `A.conj().T` |
 | sparse matrices | MATLAB sparse | `scipy.sparse.csr_array` |
@@ -242,7 +242,7 @@ for J in (140.0, 145.0, 150.0):
   `inter.chem.rates` carry over with 0-based spin indices in `parts`; the
   validation is Spinach's (every spin in one part, no couplings between
   parts, `rates` square with zero column sums, equal isotope sequences in
-  exchange mode). They are kept in `ss.chem` (`parts`, `concs`, `rates`).
+  exchange mode). They are kept in `spin_system.chem` (`parts`, `concs`, `rates`).
 
 ```matlab
 inter.chem.parts={1,2};
@@ -283,9 +283,9 @@ hc = respinach.basis(hc, bas)
   `approximation='none'`; basis states are Zeeman product states ordered as
   `kron(spin 1, spin 2, ...)`, so matrices are element for element
   identical to Spinach's. In `sphten-liouv` the basis descriptor
-  `ss.basis.basis` is Spinach's `spin_system.bas.basis` (same integer
+  `spin_system.basis.basis` is Spinach's `spin_system.bas.basis` (same integer
   encoding `l*l + l - m`, same lexicographic row order, unit state first),
-  and `ss.basis.tot_proj`/`tot_cord` are `bas.tot_proj`/`bas.tot_cord`.
+  and `spin_system.basis.tot_proj`/`tot_cord` are `bas.tot_proj`/`bas.tot_cord`.
   Spinach 2.13 renamed `bas.level` to `inter_level`, `bas.space_level` to
   `prox_level` and `bas.longitudinals` to `longitudinal`; respinach uses the
   new names and raises the same rename errors for the old ones.
@@ -324,11 +324,11 @@ numbers change:
 
 | Spinach | respinach | result |
 |---|---|---|
-| `operator(spin_system,'Lz','1H')` | `respinach.operator(ss, "Lz", "1H")` | sum of Lz over all 1H |
-| `operator(spin_system,'Lz',[1 3])` | `respinach.operator(ss, "Lz", [0, 2])` | Lz(1) + Lz(3) in Spinach numbering |
-| `operator(spin_system,{'Lz','L+'},{1,2})` | `respinach.operator(ss, ["Lz", "L+"], [0, 1])` | product Lz(1) L+(2) |
-| `operator(spin_system,'Lx','all')` | `respinach.operator(ss, "Lx", "all")` | also `'nuclei'`, `'electrons'` |
-| `state(spin_system,'L+','13C')` | `respinach.state(ss, "L+", "13C")` | density matrix |
+| `operator(spin_system,'Lz','1H')` | `respinach.operator(spin_system, "Lz", "1H")` | sum of Lz over all 1H |
+| `operator(spin_system,'Lz',[1 3])` | `respinach.operator(spin_system, "Lz", [0, 2])` | Lz(1) + Lz(3) in Spinach numbering |
+| `operator(spin_system,{'Lz','L+'},{1,2})` | `respinach.operator(spin_system, ["Lz", "L+"], [0, 1])` | product Lz(1) L+(2) |
+| `operator(spin_system,'Lx','all')` | `respinach.operator(spin_system, "Lx", "all")` | also `'nuclei'`, `'electrons'` |
+| `state(spin_system,'L+','13C')` | `respinach.state(spin_system, "L+", "13C")` | density matrix |
 
 In Spinach a cell array of spin numbers, `{1,2}`, selects the product form.
 In respinach the type of the *first* argument does: a string gives a sum, a
@@ -344,11 +344,11 @@ assert np.allclose((LzSz @ LzSz).toarray(), np.eye(4) / 16)
   matrix elements (Spinach's `Lz` for spin-1/2 is `0.4999999999999999`,
   one ulp below 0.5, and respinach reproduces it); in Hilbert space a state
   is the operator itself, unnormalised.
-- **Same in Liouville space:** `operator(ss, ops, spins, operator_type)`
+- **Same in Liouville space:** `operator(spin_system, ops, spins, operator_type)`
   takes Spinach's `'left'`, `'right'`, `'comm'` (default) and `'acomm'`
   and builds the superoperator in the restricted basis by the same
   structure-coefficient algorithm (`superop.m`), so matrix elements and
-  the basis order match Spinach's. `state(ss, ops, spins, method)` has the
+  the basis order match Spinach's. `state(spin_system, ops, spins, method)` has the
   `'exact'` (default), `'cheap'` and `'chem'` methods with the same
   normalisation: in `sphten-liouv` the `'exact'` coefficient of a spin-1/2
   `Lz` is 1/2, of `L+` it is `-1/sqrt(2)`.
@@ -389,17 +389,17 @@ assert np.allclose(H - H_zeeman, 2 * np.pi * 145.0 * LzSz.toarray())  # weak 1H-
   coupling within an isotope, weak `LzSz` coupling between isotopes);
   rounding of every element to `tols.liouv_zero`; the dense-or-sparse
   choice by `tols.small_matrix` and `tols.dense_matrix`.
-- **Same in Liouville space:** `hamiltonian(ss, operator_type)` with
+- **Same in Liouville space:** `hamiltonian(spin_system, operator_type)` with
   `'left'`, `'right'`, `'comm'` (default) or `'acomm'` returns the
   superoperator built from the same term table; `frqoffset` adds
-  `2*pi*offset*[Lz, .]`; `kinetics(ss)` is the exchange superoperator of
+  `2*pi*offset*[Lz, .]`; `kinetics(spin_system)` is the exchange superoperator of
   `kinetics.m` with the `L = H + 1i*R + 1i*K` convention, `equilibrate`
   solves the kinetic equilibrium as `equilibrate.m`; `trajan` returns the
   amplitudes that `trajan.m` plots (`plot_trajan` draws them) and
   `stateinfo` lists a state's largest coefficients; `correlation`
   and `coherence` zero the same states.
 - **Different:** Spinach's `[H,Q]=hamiltonian(...)` becomes
-  `H, Q = hamiltonian(ss, aniso=True)`; `Q[0]`/`Q[1]` are the rank-1 and
+  `H, Q = hamiltonian(spin_system, aniso=True)`; `Q[0]`/`Q[1]` are the rank-1 and
   rank-2 nested lists (Spinach's `Q{1}`/`Q{2}`), and
   `orientation(Q, angles)` is the same contraction with the same Wigner
   matrices. Spinach sums the Hamiltonian terms in a random order, so its
@@ -461,7 +461,7 @@ ignored by the simulation, as in Spinach.
 | chemical kinetics (`kinetics`) | first-order exchange; `liquid` passes it as `K` and `acquire` propagates under `H + 1i*K` |
 | parallel `evolution` (Kuprov-Edwards split), `parfor` | serial; the same numbers |
 | GPU via `sys.enable={'gpu'}` | CPU only; `'gpu'` is refused with a pointer to `porting/gpu-notes.md`, where the backend plan lives |
-| `sys.enable={'op_cache','ham_cache','prop_cache'}` | operators are always cached on the basis (`ss.basis.op_cache`, bounded, no option needed); Hamiltonians and propagators are not cached |
+| `sys.enable={'op_cache','ham_cache','prop_cache'}` | operators are always cached on the basis (`spin_system.basis.op_cache`, bounded, no option needed); Hamiltonians and propagators are not cached |
 | Liouville-space states | dense 1-D NumPy vectors; stacks are `(nstates, k)` arrays, trajectories `(nstates, nsteps + 1)` as in Spinach |
 
 **Pulse sequences** have Spinach's signature, `sequence(spin_system,

@@ -63,7 +63,7 @@ spherical tensor operators `T(l, m)`, numbered by the linear index
 `T(1,-1)` (proportional to `L+`, `Lz`, `L-`), 4 to 8 the rank-2 tensors of a
 spin-1, and so on. A basis state is a product of one tensor per spin,
 normalised to unit Frobenius norm, and is described by one integer per spin.
-`basis()` stores all of them as the rows of `ss.basis.basis`, sorted
+`basis()` stores all of them as the rows of `spin_system.basis.basis`, sorted
 lexicographically with the all-zero unit state first:
 
 ```python
@@ -211,7 +211,7 @@ Filters are specified per molecule: `projections=[[1], [1]]` keeps the
 
 In Liouville space an operator `Q` acts on the density matrix from the
 left (`Q rho`), from the right (`rho Q`), as a commutator (`[Q, rho]`, what
-Hamiltonians do) or as an anticommutator. `operator(ss, ops, spins,
+Hamiltonians do) or as an anticommutator. `operator(spin_system, ops, spins,
 operator_type)` returns the chosen superoperator as a sparse
 `nstates x nstates` matrix; `operator_type` is `'left'`, `'right'`,
 `'comm'` (the default, as in Spinach) or `'acomm'`. The operator
@@ -240,9 +240,9 @@ basis operators `B_k`:
 ```python
 from respinach.operators import irr_sph_ten, lin2lm
 
-def basis_operator(ss, row):
+def basis_operator(spin_system, row):
     t = np.array([[1.0 + 0j]])
-    for mult, index in zip(ss.mults, row):
+    for mult, index in zip(spin_system.mults, row):
         rank, proj = lin2lm(int(index))
         t = np.kron(t, irr_sph_ten(int(mult), rank)[rank - proj].toarray())
     return t / np.sqrt(np.vdot(t, t).real)
@@ -255,7 +255,7 @@ assert abs(Lz_left.toarray() - reference).max() < 1e-15
 
 ## States
 
-`state(ss, ops, spins, method)` returns a dense complex vector of
+`state(spin_system, ops, spins, method)` returns a dense complex vector of
 coefficients in the orthonormal basis; its first element is the
 coefficient of the unit state. Spinach's three methods are available:
 
@@ -287,7 +287,7 @@ convention, and only ratios of observables matter in practice.
 
 ## The Liouvillian: Hamiltonian and kinetics superoperators
 
-`hamiltonian(ss, operator_type)` uses the same term table as in Hilbert
+`hamiltonian(spin_system, operator_type)` uses the same term table as in Hilbert
 space (`assume` first) and returns, by default, the commutation
 superoperator `[H, .]`, the generator of coherent evolution. The
 rotating-frame offsets of `frqoffset` are added as `2 pi offset [Lz, .]`:
@@ -317,7 +317,7 @@ In a restricted basis the Liouvillian is the projection of the complete
 one onto the kept states; Karabanov et al. (2011) show that the error this
 makes decays as a Gaussian in the correlation order for liquid-state NMR.
 
-`kinetics(ss)` builds the first-order exchange superoperator from
+`kinetics(spin_system)` builds the first-order exchange superoperator from
 `inter["chem"]["rates"]`: every state of one molecule is mapped onto the
 identical state of the other at the given rate, the diagonal rates drain
 the source states, and the unit state is untouched. It enters the
@@ -349,8 +349,8 @@ assert np.allclose(respinach.equilibrate(rates, np.array([0.5, 0.5])), [0.95, 0.
 In this basis the correlation order and the coherence order of every
 state are labels of the descriptor, so selecting coherences (what phase
 cycles do in the spectrometer) is a matter of zeroing coefficients.
-`correlation(ss, rho, orders, spins)` keeps the states whose number of
-correlated spins (among `spins`) is in `orders`; `coherence(ss, rho,
+`correlation(spin_system, rho, orders, spins)` keeps the states whose number of
+correlated spins (among `spins`) is in `orders`; `coherence(spin_system, rho,
 spec)` keeps the states whose total coherence order over each spin set in
 `spec` is in the listed orders. Both accept arrays with the spin state
 space on the last axis, so they work on stacks of state vectors too.
@@ -368,7 +368,7 @@ assert respinach.correlation(hc_nmr, stack, [2]).shape == (2, 16)
 ## Propagation: `step`, `evolution`, and the reductions
 
 A Liouville-space state is a vector, so one time step is a
-matrix-vector product with `expm(-1j * L * dt)`. `step(ss, L, rho, dt)`
+matrix-vector product with `expm(-1j * L * dt)`. `step(spin_system, L, rho, dt)`
 computes it without forming the exponential: a Taylor series of the
 generator acting on the vector, in substeps short enough for the series
 to converge quickly. It takes a single vector or a stack of column
@@ -385,7 +385,7 @@ rho_dt = respinach.step(hc_nmr, L, rho, dt)
 assert np.allclose(rho_dt, sla.expm(-1j * np.asarray(L) * dt) @ rho, rtol=1e-12)
 ```
 
-`evolution(ss, L, rho, dt, nsteps, output, coil=...)` runs a whole free
+`evolution(spin_system, L, rho, dt, nsteps, output, coil=...)` runs a whole free
 evolution period (the detection state `coil` is a keyword argument, needed
 only by the `'observable'` and `'multichannel'` outputs). Before propagating, it reduces the problem exactly for
 the trajectory at hand (`respinach.reduce`):
@@ -436,12 +436,12 @@ assert np.allclose(4 * fid, fid_hilb, rtol=1e-9)
 ```
 
 Two tools of Spinach's look at states and trajectories in this basis.
-`trajan(ss, traj, property)` returns, for every class of basis states
+`trajan(spin_system, traj, property)` returns, for every class of basis states
 (`"correlation_order"`, `"coherence_order"`, `"total_each_spin"`,
 `"local_each_spin"`), the 2-norm of the trajectory restricted to that
 class at every point, with the unit state projected out, plus the legend
 text of the rows; `respinach.plotting.plot_trajan` draws it against a
-time axis. `stateinfo(ss, rho, n)` lists the `n` largest coefficients of
+time axis. `stateinfo(spin_system, rho, n)` lists the `n` largest coefficients of
 a state with the `(l, m)` of every spin, as Spinach reports them:
 
 ```python

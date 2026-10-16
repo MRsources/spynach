@@ -125,7 +125,7 @@ def equilibrium(
     """Thermal equilibrium state at ``inter['temperature']`` (port of ``equilibrium.m``).
 
     ``I`` is the lab-frame Hamiltonian as a *left-side product*
-    superoperator in Liouville space (``hamiltonian(assume(ss, 'labframe'),
+    superoperator in Liouville space (``hamiltonian(assume(spin_system, 'labframe'),
     'left')``) or the Hamiltonian matrix in Hilbert space; with ``Q`` and
     ``euler_angles`` the anisotropic part at that orientation is added.
     Without ``I`` the isotropic lab-frame Hamiltonian is built here. The
