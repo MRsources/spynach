@@ -200,19 +200,20 @@ footer { border-top: 1px solid var(--line); padding-block: 1.6rem; font-size: 0.
 # or, for the notebooks and tests
 git clone https://github.com/ajerschow/spynach.git
 cd spynach &amp;&amp; pip install -e ".[docs,test]"</code></pre>
-    <p>A two-spin system, 14.1 T, pulse-acquire on the protons:</p>
+    <p>Two coupled protons at 14.1 T, pulse-acquire, exponential apodisation, two doublets:</p>
 <pre><code>import numpy as np
 import spynach
 
 spin_system = spynach.create(
     {"isotopes": ["1H", "1H"], "magnet": 14.1},
-    {"zeeman": {"scalar": [1.00, 1.20]}, "coupling": {"scalar": [[0, 12.0], [0, 0]]}},
+    {"zeeman": {"scalar": [1.00, 1.10]}, "coupling": {"scalar": [[0, 12.0], [0, 0]]}},
 )
 spin_system = spynach.basis(spin_system, {"formalism": "zeeman-hilb", "approximation": "none"})
-pars = {"spins": ["1H"], "offset": 660, "sweep": 500, "npoints": 1024,
+pars = {"spins": ["1H"], "offset": 630, "sweep": 200, "npoints": 1024,
         "rho0": spynach.state(spin_system, "L+", "1H"),
         "coil": spynach.state(spin_system, "L+", "1H")}
 fid = spynach.liquid(spin_system, spynach.acquire, pars, "nmr")
+fid = spynach.apodisation(fid, [("exp", 6)])
 spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))</code></pre>
     <p>On machines whose NumPy uses OpenBLAS, set <code>OPENBLAS_NUM_THREADS</code> to the number of cores you actually have; dense LAPACK calls slow down badly when the library sees more cores than the process may use.</p>
     <p>To try the example without installing anything, open it as a notebook that installs Spynach and plots the spectrum:</p>

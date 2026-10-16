@@ -52,8 +52,8 @@ oversubscribes and dense linear algebra can run a thousand times slower.
 
 ## Quick start
 
-A strongly coupled two-proton (AB) system at 14.1 T, simulated with a
-pulse-acquire experiment:
+Two coupled protons at 14.1 T (an AB system with a shift difference of
+five times the coupling), simulated with a pulse-acquire experiment:
 
 ```python
 import numpy as np
@@ -62,7 +62,7 @@ import spynach
 # Spin system: isotopes, field, chemical shifts (ppm), J-couplings (Hz)
 sys = {"isotopes": ["1H", "1H"], "magnet": 14.1}
 inter = {
-    "zeeman": {"scalar": [1.00, 1.20]},
+    "zeeman": {"scalar": [1.00, 1.10]},
     "coupling": {"scalar": [[0, 12.0],
                             [0, 0]]},
 }
@@ -72,17 +72,17 @@ spin_system = spynach.basis(spin_system, {"formalism": "zeeman-hilb", "approxima
 # Experiment: transverse proton magnetisation, detected on the same channel
 parameters = {
     "spins": ["1H"],      # isotope of the working channel
-    "offset": 660,        # transmitter offset, Hz
-    "sweep": 500,         # spectral width, Hz (dwell time 1/sweep)
+    "offset": 630,        # transmitter offset, Hz
+    "sweep": 200,         # spectral width, Hz (dwell time 1/sweep)
     "npoints": 1024,      # complex points in the FID
     "rho0": spynach.state(spin_system, "L+", "1H"),
     "coil": spynach.state(spin_system, "L+", "1H"),
 }
 fid = spynach.liquid(spin_system, spynach.acquire, parameters, "nmr")
 
-# Spectrum: apodise, zero-fill, Fourier transform
+# Spectrum: apodise (halve the first point, exponential window), zero-fill, Fourier transform
 zerofill = 4096
-fid = fid * np.exp(-np.arange(fid.size) / (0.25 * fid.size))
+fid = spynach.apodisation(fid, [("exp", 6)])
 spectrum = np.fft.fftshift(np.fft.fft(fid, zerofill))
 
 assert fid.shape == (1024,)
@@ -100,9 +100,10 @@ from spynach.plotting import axis_1d
 ppm_axis, label = axis_1d(spin_system, {**parameters, "zerofill": zerofill, "axis_units": "ppm"})
 assert label == "1H chemical shift / ppm"
 
-# The AB quartet sits between the two chemical shifts
-strongest = ppm_axis[np.argmax(spectrum.real)]
-assert 0.9 < strongest < 1.3
+# Two doublets, split by J = 12 Hz, centred near the two chemical shifts
+peaks = ppm_axis[spectrum.real > 0.5 * spectrum.real.max()]
+assert 0.98 < peaks.min() < 1.02 and 1.08 < peaks.max() < 1.12
+assert spectrum.real.min() > -0.01 * spectrum.real.max()   # no truncation wiggles
 ```
 
 `plot_1d` draws the spectrum on that axis, decreasing from left to right as
@@ -112,9 +113,7 @@ intensities, drag to zoom in, double-click to zoom out.
 ```python
 from spynach.plotting import plot_1d
 
-fig = plot_1d(spin_system, spectrum.real, parameters, title="AB quartet at 14.1 T")
-fig.update_xaxes(range=[1.4, 0.8])   # start zoomed in on the quartet
-fig
+plot_1d(spin_system, spectrum.real, parameters, title="Two coupled protons at 14.1 T")
 ```
 
 `plot_fid` shows the time domain, real and imaginary parts:
