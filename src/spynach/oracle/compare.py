@@ -10,6 +10,7 @@ the stage and on the working precision, and is decided by the caller.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -55,6 +56,11 @@ def _as_numeric(x: Any) -> np.ndarray | sps.sparray:
     return arr
 
 
+# Called with every Comparison that compare() returns, when set; oracle/parity_summary.py
+# uses it to list the tolerances and measured differences of the whole parity suite.
+RECORDER: Callable[[Comparison], None] | None = None
+
+
 def compare(actual: Any, expected: Any, *, rtol: float, atol: float, name: str = "") -> Comparison:
     """Compare two arrays normwise; NaN or Inf anywhere makes the comparison fail."""
     a, e = _as_numeric(actual), _as_numeric(expected)
@@ -74,7 +80,7 @@ def compare(actual: Any, expected: Any, *, rtol: float, atol: float, name: str =
         err_norm = float(np.linalg.norm(diff)) if diff.size else 0.0
         max_abs = float(np.max(np.abs(diff))) if diff.size else 0.0
     ref_norm = float(np.linalg.norm(ref)) if ref.size else 0.0
-    return Comparison(
+    result = Comparison(
         name=name,
         shape=tuple(e.shape),
         err_norm=err_norm,
@@ -83,6 +89,9 @@ def compare(actual: Any, expected: Any, *, rtol: float, atol: float, name: str =
         rtol=rtol,
         atol=atol,
     )
+    if RECORDER is not None:
+        RECORDER(result)
+    return result
 
 
 def assert_matches(actual: Any, expected: Any, *, rtol: float, atol: float, name: str = "") -> Comparison:

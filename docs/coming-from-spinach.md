@@ -22,7 +22,8 @@ is [`notebooks/coming-from-spinach.ipynb`](notebooks/coming-from-spinach.ipynb) 
 7. [Experiment parameters](#experiment-parameters)
 8. [Calculation modalities](#calculation-modalities)
 9. [Processing and plotting](#processing-and-plotting)
-10. [Messages and errors](#messages-and-errors)
+10. [Checking your own workflow against Spinach](#checking-your-own-workflow-against-spinach)
+11. [Messages and errors](#messages-and-errors)
 
 ## A Spinach script, translated
 
@@ -508,6 +509,42 @@ How `plot_1d` differs from Spinach's:
 
 Spinach's `apodisation` halves the first point of the FID by default;
 apply that step yourself when comparing spectra with Spinach's.
+
+## Checking your own workflow against Spinach
+
+The normwise comparison behind the parity suite is a public function,
+`spynach.oracle.compare`, and it takes any arrays: a result from Spynach and
+the same quantity saved by your Spinach script. Save it in MATLAB with
+`save('reference.mat', 'fid', '-v7')`, load it with `scipy.io.loadmat`, and
+compare with the tolerance that fits the quantity (see
+[Parity with Spinach](parity.md) for the policy: 1e-14 for operators and
+states, 1e-12 for Hamiltonians, 1e-9 for anything through a propagator or
+an FID). Here a `.mat` file written from Python stands in for the one
+from MATLAB:
+
+```python
+import tempfile
+from pathlib import Path
+
+from scipy.io import loadmat, savemat
+
+from spynach.oracle import assert_matches, compare
+
+reference_fid = fid + 1e-12 * fid[0]                    # pretend this came from Spinach
+with tempfile.TemporaryDirectory() as folder:
+    savemat(Path(folder) / "reference.mat", {"fid": reference_fid})   # MATLAB: save('reference.mat', 'fid', '-v7')
+    ref = loadmat(Path(folder) / "reference.mat")
+result = compare(fid, ref["fid"].ravel(), rtol=1e-9, atol=0, name="fid")   # MATLAB saves a 1 x n row
+print(result)
+print(result.passed, result.rel_err)
+```
+
+`assert_matches` takes the same arguments and raises `AssertionError` with
+that one-line report when the comparison fails, for use in your own tests.
+The full-size example scripts in `examples/` do this for whole experiments
+with `--compare FILE.mat`, and [`comparison/README.md`](../comparison/README.md)
+is the protocol for a timed and profiled comparison of both sides with an
+HTML report.
 
 ## Messages and errors
 

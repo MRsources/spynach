@@ -157,16 +157,11 @@ def plot(spin_system, parameters, spectrum, timer: Timer | None = None):
         )
 
 
-def relative_error(actual: np.ndarray, expected: np.ndarray) -> float:
-    """||actual - expected||_F / ||expected||_F, the normwise metric of spynach.oracle.compare."""
-    actual, expected = np.asarray(actual), np.asarray(expected)
-    if actual.shape != expected.shape:
-        raise ValueError(f"shape mismatch: spynach {actual.shape}, Spinach {expected.shape}")
-    return float(np.linalg.norm(actual - expected) / np.linalg.norm(expected))
-
-
 def compare_with_spinach(path: Path, fid: dict, spectrum: np.ndarray) -> None:
+    """Normwise relative error of each saved array against the Spinach run (spynach.oracle.compare)."""
     from scipy.io import loadmat
+
+    from spynach.oracle import compare
 
     ref = loadmat(str(path))
     print(f"comparison with {path}:")
@@ -174,7 +169,7 @@ def compare_with_spinach(path: Path, fid: dict, spectrum: np.ndarray) -> None:
         if name not in ref:
             print(f"  {name:10s} missing from the .mat file")
             continue
-        print(f"  {name:10s} relative error {relative_error(mine, ref[name]):.3e}")
+        print(f"  {name:10s} relative error {compare(mine, ref[name], rtol=1e-9, atol=0, name=name).rel_err:.3e}")
 
 
 def main(argv=None) -> None:

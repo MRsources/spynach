@@ -95,6 +95,14 @@ ignored.
 
 ## Accuracy notes
 
+Every parity comparison is relative with zero absolute tolerance, at 1e-14
+for operators and states, 1e-12 for Hamiltonians and 1e-9 for anything
+through a propagator or an FID; `docs/parity.md`, regenerated from a run
+of the suite by `oracle/parity_summary.py`, lists every fixture case,
+tolerance and measured difference. To check a workflow of your own against
+a Spinach run, see the section
+[Checking your own workflow against Spinach](docs/coming-from-spinach.md#checking-your-own-workflow-against-spinach).
+
 - Spin operators match Spinach to 1 ulp: MATLAB evaluates `2^(-1/2)` one ulp
   below the correctly rounded value, so Spinach's `Lz` is `0.4999999999999999`.
 - Spinach rounds Hamiltonian elements to a 1e-10 rad/s grid (`clean_up`) after

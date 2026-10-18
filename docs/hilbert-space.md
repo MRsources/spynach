@@ -453,8 +453,12 @@ fixtures are produced. Typical agreement:
 The FID differences come from Spinach itself: it sums Hamiltonian terms in a
 random order before rounding each element to a 1e-10 rad/s grid, so
 repeated Spinach runs can differ by one grid step per element, which over
-an acquisition time T gives about 1e-10 x T in the FID. To compare your own
-results with a fixture:
+an acquisition time T gives about 1e-10 x T in the FID. Every case, tolerance
+and measured difference of the whole parity suite is listed in
+[Parity with Spinach](parity.md), regenerated from the test run; for
+checking a workflow of your own against a Spinach run without fixtures, see
+[Checking your own workflow against Spinach](coming-from-spinach.md#checking-your-own-workflow-against-spinach).
+To compare your own results with a fixture:
 
 ```python
 from spynach.oracle import assert_matches, find_case, load_fixture

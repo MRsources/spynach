@@ -39,7 +39,7 @@ FIGURES = DOCS / "figures"
 PLOTLY = "application/vnd.plotly.v1+json"
 
 # Guides that are not tutorials and get no notebook
-SKIP = {"README.md"}
+SKIP = {"README.md", "parity.md"}  # the index and the generated parity table
 
 FENCE = re.compile(r"^```python\n(.*?)^```$", flags=re.S | re.M)
 HEADING = re.compile(r"^(?=#{1,3} )", flags=re.M)
@@ -178,7 +178,7 @@ def execute(notebook: dict, figures: list[str | None] | None = None) -> dict:
     block = 0
     for cell, run in zip(notebook["cells"], node["cells"][1:], strict=True):
         if cell["cell_type"] == "code":
-            outputs = json.loads(json.dumps(run["outputs"]))
+            outputs = _merge_streams(json.loads(json.dumps(run["outputs"])))
             pngs = [_add_png(output) for output in outputs if PLOTLY in output.get("data", {})]
             if figures is not None:
                 _write_figure(figures[block], pngs, block)
@@ -186,6 +186,23 @@ def execute(notebook: dict, figures: list[str | None] | None = None) -> dict:
             cell = {**cell, "execution_count": run["execution_count"] - 1, "outputs": outputs}
         cells.append(cell)
     return {**notebook, "cells": cells}
+
+
+def _merge_streams(outputs: list[dict]) -> list[dict]:
+    """Join consecutive stream outputs of the same name: the kernel splits them at arbitrary points."""
+    merged: list[dict] = []
+    for output in outputs:
+        last = merged[-1] if merged else None
+        if (
+            output["output_type"] == "stream"
+            and last
+            and last["output_type"] == "stream"
+            and last["name"] == output["name"]
+        ):
+            last["text"] = "".join(last["text"]) + "".join(output["text"])
+        else:
+            merged.append(output)
+    return merged
 
 
 def _add_png(output: dict) -> bytes:
@@ -196,7 +213,9 @@ def _add_png(output: dict) -> bytes:
     from spynach.plotting import figure_png
 
     png = figure_png(pio.from_json(json.dumps(output["data"][PLOTLY])))
-    output["data"]["image/png"] = base64.b64encode(png).decode("ascii")
+    # The PNG goes first: viewers that rank types (JupyterLab, VS Code, nbviewer) still pick the
+    # Plotly figure, and a viewer that takes the first type it knows gets the image
+    output["data"] = {"image/png": base64.b64encode(png).decode("ascii"), **output["data"]}
     return png
 
 

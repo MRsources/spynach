@@ -22,6 +22,12 @@ set `OPENBLAS_NUM_THREADS` to the quota first; see the setup section of the
 [ajerschow.github.io/spynach](https://ajerschow.github.io/spynach/)
 links every notebook through nbviewer as well.
 
+[`parity.md`](parity.md) is not a guide but a generated table: every fixture
+case, tolerance and measured difference of the parity suite, written by
+`oracle/parity_summary.py` from a test run together with the summary
+paragraph on the project page; regenerate it after adding fixtures or
+parity tests.
+
 [`colab/quick-start.ipynb`](colab/quick-start.ipynb) is a stand-alone
 notebook for [Google Colab](https://colab.research.google.com/github/ajerschow/spynach/blob/main/docs/colab/quick-start.ipynb):
 it installs Spynach from GitHub and runs the project page's two-spin

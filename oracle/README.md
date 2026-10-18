@@ -70,6 +70,25 @@ assert_matches(my_H, H_ref, rtol=1e-12, atol=0, name="H_off")
 `compare`/`assert_matches` use a normwise test,
 `||a - e||_F <= atol + rtol * ||e||_F`. Tolerances are always explicit.
 
+## Parity summary
+
+`oracle/parity_summary.py` runs the test suite with a plugin that records
+every `spynach.oracle.compare` call (through `compare.RECORDER`) and writes
+`oracle/parity_summary.json`, `docs/parity.md` (the tolerance policy, a table
+per family, and every comparison with its tolerance and measured difference)
+and the summary paragraph between the `parity-summary` markers of
+`index.html`. It refuses to write when a parity test skipped, which means a
+fixture case was missing. Run it after adding fixtures or parity tests:
+
+```
+OPENBLAS_NUM_THREADS=4 PYTHONPATH=src python oracle/parity_summary.py
+```
+
+`tests/oracle/test_parity_summary.py` checks that the three outputs agree
+with the committed JSON (`--check` does the same) and, when the fixtures
+are present, that the JSON still matches the cases on disk and the number
+of parity tests collected.
+
 ## Dump scripts
 
 ### `dump_hilb_pa.m`: zeeman-hilb pulse-acquire

@@ -52,3 +52,15 @@ def test_cell_rejected():
 def test_assert_matches_message():
     with pytest.raises(AssertionError, match="FAIL H"):
         assert_matches(np.ones(2), np.zeros(2), rtol=0, atol=0, name="H")
+
+
+def test_recorder_sees_every_comparison(monkeypatch):
+    import importlib
+
+    module = importlib.import_module("spynach.oracle.compare")  # the module; the package exports the function
+    seen = []
+    monkeypatch.setattr(module, "RECORDER", seen.append)
+    compare(np.ones(3), np.ones(3), rtol=0, atol=0, name="ones")
+    with pytest.raises(AssertionError):
+        assert_matches(np.ones(2), np.zeros(2), rtol=0, atol=0, name="bad")
+    assert [c.name for c in seen] == ["ones", "bad"] and seen[0].passed and not seen[1].passed
