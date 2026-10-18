@@ -190,6 +190,7 @@ J. Magn. Reson. 208, 179 (2011), together with the method papers that the
 Spinach documentation lists for the features used (restricted state
 spaces, relaxation theories, Fokker-Planck contexts).
 
-Scripts contributed by users in `user_ml/` remain the copyright of their
-authors and are redistributed, with their agreement, under the same MIT
-licence (see `user_ml/README.md`).
+Scripts contributed by users in `user_ml/` (Spinach) and `user_py/`
+(Python notebooks and scripts) remain the copyright of their authors
+and are redistributed, with their agreement, under the same MIT licence
+(see the README in each directory).

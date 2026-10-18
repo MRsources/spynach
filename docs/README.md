@@ -38,7 +38,10 @@ the changed outputs.
 
 `examples/` at the repository root mirrors Spinach's `examples/` tree;
 `examples/user_ml/` holds translations of the contributed scripts in
-`user_ml/` (see its README).
+`user_ml/` (see its README). Python code contributed by users, such as
+the 23Na triple-quantum build-up notebook, lives in `user_py/` at the
+repository root (see its README); it is not generated from a guide and
+not run by the tests.
 Each script is a translation of the Spinach example of the same name at
 the Spinach size (the guides above run reduced versions in seconds), and
 is meant for a side-by-side comparison with MATLAB: it writes its FIDs

@@ -106,6 +106,7 @@ footer { border-top: 1px solid var(--line); padding-block: 1.6rem; font-size: 0.
   <a class="brand" href="#">Spynach</a>
   <a href="#quick-start">Quick start</a>
   <a href="#docs">Documentation</a>
+  <a href="#examples">Examples</a>
   <a href="#reports">Parity and timing</a>
   <a href="#acknowledgements">Acknowledgements</a>
   <a href="https://github.com/ajerschow/spynach">GitHub</a>
@@ -241,7 +242,27 @@ spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))</code></pre>
       </tbody>
     </table>
     </div>
-    <p>Full-size translations of Spinach example scripts live in <a href="https://github.com/ajerschow/spynach/tree/main/examples">examples/</a>; the <a href="https://github.com/ajerschow/spynach/blob/main/docs/README.md">documentation index</a> explains how the guides, notebooks and examples fit together.</p>
+    <p>The <a href="https://github.com/ajerschow/spynach/blob/main/docs/README.md">documentation index</a> explains how the guides, notebooks and the <a href="#examples">examples</a> fit together.</p>
+  </div>
+</section>
+
+<section id="examples">
+  <header><span class="eyebrow">Examples</span><h2>Scripts and contributed notebooks</h2></header>
+  <div>
+    <p>The guides run reduced versions of Spinach examples in seconds. The scripts in <a href="https://github.com/ajerschow/spynach/tree/main/examples">examples/</a> are the same calculations at the Spinach size, for side-by-side comparison with MATLAB: each writes its results next to itself and can report the normwise error against a <code>.mat</code> file saved by the Spinach script. Python code contributed by users lives in <a href="https://github.com/ajerschow/spynach/tree/main/user_py">user_py/</a> as notebooks saved with their outputs.</p>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Example</th><th>What it calculates</th><th>Open</th></tr></thead>
+      <tbody>
+        <tr><td>23Na triple-quantum build-up</td><td>contributed notebook: one 23Na spin under quadrupolar Redfield relaxation towards thermal equilibrium (C<sub>q</sub> = 200 kHz, τ<sub>c</sub> = 1 ns, 14.1 T); from the pulsed thermal state, the rank-3 single-quantum tensor, the triple-quantum coherence after a second pulse and the longitudinal recovery over 10 ms, against the biexponential form of Jaccard, Wimperis and Bodenhausen</td><td class="links"><a href="https://nbviewer.org/github/ajerschow/spynach/blob/main/user_py/na23_tqf_buildup.ipynb">notebook</a> · <a href="https://github.com/ajerschow/spynach/blob/main/user_py/na23_tqf_buildup.ipynb">source</a></td></tr>
+        <tr><td>noesy_strychnine</td><td>Spinach's <code>examples/nmr_liquids/noesy_strychnine.m</code>: 22 protons, IK-2 basis, Redfield relaxation, 500 ms NOESY at 512 x 512 points</td><td class="links"><a href="https://github.com/ajerschow/spynach/blob/main/examples/nmr_liquids/noesy_strychnine.py">script</a></td></tr>
+        <tr><td>maz_noesy_2</td><td>Spinach's <code>examples/relaxation_theory/maz_noesy_2.m</code>: methylaziridine with CSA tensors, a 14N quadrupole and scalar relaxation of the first and second kind, 2 s NOESY</td><td class="links"><a href="https://github.com/ajerschow/spynach/blob/main/examples/relaxation_theory/maz_noesy_2.py">script</a></td></tr>
+        <tr><td>li_exchange_equilibrium</td><td>contributed Spinach script (Florin Teleanu): two-site 7Li exchange with quadrupolar and shift tensors, thermal state equilibrated under exchange, thermalised Redfield relaxation, 2 s trajectory analysed with <code>trajan</code> and <code>stateinfo</code></td><td class="links"><a href="https://github.com/ajerschow/spynach/blob/main/examples/user_ml/li_exchange_equilibrium.py">script</a> · <a href="https://github.com/ajerschow/spynach/blob/main/user_ml/Li_exchange_equilibrium.m">original</a></td></tr>
+        <tr><td>zulf_pf6_1d</td><td>contributed Spinach script (Florin Teleanu): PF<sub>6</sub><sup>&minus;</sup> at 2.7 µT, adiabatic-drop state from file, selective pulse, 16 384-point zero- to ultralow-field spectrum</td><td class="links"><a href="https://github.com/ajerschow/spynach/blob/main/examples/user_ml/zulf_pf6_1d.py">script</a> · <a href="https://github.com/ajerschow/spynach/blob/main/user_ml/ZULF_PF6_1D.m">original</a></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>The two full-size NOESY scripts and the two contributed scripts are also the cases of the timed <a href="#reports">parity and timing</a> reports. Contributions to <code>user_py/</code> keep their author's name in the file and in its <a href="https://github.com/ajerschow/spynach/blob/main/user_py/README.md">README</a>.</p>
   </div>
 </section>
 
