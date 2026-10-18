@@ -6,7 +6,7 @@ of Kuprov 2016) and what the `singlerot` context does with it. It builds
 on the [solid-state](solid-state.md) guide, which explains the
 orientation-dependent Hamiltonian and the powder grids, and on the
 [Liouville-space](liouville-space.md) guide. The companion notebook is
-[`notebooks/magic-angle-spinning.ipynb`](notebooks/magic-angle-spinning.ipynb).
+[`notebooks/magic-angle-spinning.ipynb`](notebooks/magic-angle-spinning.ipynb) ([interactive figures on nbviewer](https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/magic-angle-spinning.ipynb)).
 
 Every Python block is executed by `tests/docs/`, in order and in one
 namespace.
@@ -89,6 +89,8 @@ fid_apod = fid * np.exp(-6 * np.arange(pars["npoints"]) / pars["npoints"])
 spectrum = np.fft.fftshift(np.fft.fft(fid_apod, pars["zerofill"]))
 plot_1d(spin_system_csa, spectrum.real, {**pars, "invert_axis": True})
 ```
+
+![MAS spectrum with spinning sidebands](figures/magic-angle-spinning-sidebands.png)
 
 The static powder pattern of the solid-state guide breaks up into a
 centreband at each isotropic shift and spinning sidebands 500 Hz apart.

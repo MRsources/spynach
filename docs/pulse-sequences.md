@@ -6,7 +6,7 @@ analytical decoupling and homospoil gradients, isotopomer dilution, and the
 ported two-dimensional experiments COSY, NOESY and HSQC. It assumes the
 [Liouville-space](liouville-space.md) and [relaxation](relaxation.md)
 guides. The companion notebook is
-[`notebooks/pulse-sequences.ipynb`](notebooks/pulse-sequences.ipynb).
+[`notebooks/pulse-sequences.ipynb`](notebooks/pulse-sequences.ipynb) ([interactive figures on nbviewer](https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/pulse-sequences.ipynb)).
 
 Every Python block is executed by `tests/docs/`, in order and in one
 namespace.
@@ -105,6 +105,8 @@ plot_2d(
 )
 ```
 
+![COSY-90 of the Derome three-spin system](figures/pulse-sequences-cosy.png)
+
 The diagonal carries the three multiplets; the cross peaks connect the
 coupled pairs, with the antiphase fine structure of a phase-sensitive
 COSY.
@@ -179,6 +181,8 @@ plot_2d(
 )
 ```
 
+![NOESY of a two-proton pair](figures/pulse-sequences-noesy.png)
+
 The protons 2.5 Angstrom apart tumble slowly (`omega tau_c` about 7), so
 the cross peaks have the sign of the diagonal, as in large molecules.
 
@@ -225,6 +229,8 @@ plot_2d(
     signs="positive", title="HSQC, two isotopomers",
 )
 ```
+
+![HSQC of two isotopomers](figures/pulse-sequences-hsqc.png)
 
 Two cross peaks, one per CH pair, at the carbon shift in F1 and the
 proton shift in F2; the carbon-carbon coupling never appears because the

@@ -194,64 +194,15 @@ def profile_records(pr: cProfile.Profile, top_n: int) -> dict:
 
 
 def save_figures(figs: dict, out_dir: Path) -> None:
-    """Writes each figure as figure_<name>.html and .png (Kaleido if installed, otherwise a Matplotlib rendering)."""
+    """Writes each figure as figure_<name>.html and .png (spynach.plotting.figure_png: Kaleido, else Matplotlib)."""
+    from spynach.plotting import figure_png
+
     for name, fig in figs.items():
         fig.write_html(out_dir / f"figure_{name}.html")
-        png = out_dir / f"figure_{name}.png"
         try:
-            fig.write_image(png, scale=2)
-        except Exception:
-            try:
-                _png_with_matplotlib(fig, png)
-            except ImportError:
-                print(f"figure_{name}.png skipped: neither Kaleido nor Matplotlib is installed")
-
-
-def _png_with_matplotlib(fig, path: Path) -> None:
-    """Static rendering of a spynach.plotting figure: contour traces (plot_2d) and line traces (plot_1d, plot_fid)."""
-    import re
-
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-
-    strip = lambda text: re.sub(r"<[^>]+>", "", text or "")  # noqa: E731
-    is_2d = any(trace.type == "contour" for trace in fig.data)
-    mpl_fig, ax = plt.subplots(figsize=(7, 7) if is_2d else (9, 4))
-    for trace in fig.data:
-        if trace.type == "contour":
-            start, end, size = trace.contours.start, trace.contours.end, trace.contours.size
-            levels = np.arange(start, end + size / 2, size)
-            scale = trace.colorscale
-            colours = [
-                scale[min(int(round(k * (len(scale) - 1) / max(len(levels) - 1, 1))), len(scale) - 1)][1]
-                for k in range(len(levels))
-            ]
-            ax.contour(
-                np.asarray(trace.x),
-                np.asarray(trace.y),
-                np.asarray(trace.z),
-                levels=levels,
-                colors=colours,
-                linewidths=0.6,
-            )
-        elif trace.type in ("scatter", "scattergl"):
-            ax.plot(np.asarray(trace.x), np.asarray(trace.y), lw=0.8, label=trace.name or None)
-    layout = fig.layout
-    if layout.xaxis.range:
-        ax.set_xlim(*layout.xaxis.range)
-    if layout.yaxis.range:
-        ax.set_ylim(*layout.yaxis.range)
-    ax.set_xlabel(strip(layout.xaxis.title.text))
-    ax.set_ylabel(strip(layout.yaxis.title.text))
-    if layout.title and layout.title.text:
-        ax.set_title(strip(layout.title.text))
-    if not is_2d and len(fig.data) > 1:
-        ax.legend()
-    mpl_fig.tight_layout()
-    mpl_fig.savefig(path, dpi=150)
-    plt.close(mpl_fig)
+            (out_dir / f"figure_{name}.png").write_bytes(figure_png(fig))
+        except ImportError:
+            print(f"figure_{name}.png skipped: neither Kaleido nor Matplotlib is installed")
 
 
 def run_name(case: str, gpu: bool, tag: str | None) -> str:

@@ -6,7 +6,7 @@ that lets Spinach simulate large spin systems. Read
 [Liquid-state NMR in Hilbert space](hilbert-space.md) first; `create`,
 `assume`, the experiment parameters and the processing are the same. The
 companion notebook is
-[`notebooks/liouville-space.ipynb`](notebooks/liouville-space.ipynb).
+[`notebooks/liouville-space.ipynb`](notebooks/liouville-space.ipynb) ([interactive figures on nbviewer](https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/liouville-space.ipynb)).
 
 Ported: the basis set with its restrictions, operators (superoperators),
 states, the Hamiltonian and kinetics superoperators, the analytical
@@ -145,6 +145,8 @@ fig.update_layout(title="IK-2 basis of an 8-spin chain", xaxis_title="spin corre
                   yaxis_title="number of states", width=500, height=350)
 fig
 ```
+
+![States of the IK-2 basis of an 8-spin chain by correlation order](figures/liouville-space-ik2-orders.png)
 
 ## Filters
 
@@ -494,6 +496,8 @@ fid_exch *= np.exp(-6 * np.arange(exch_pars["npoints"]) / exch_pars["npoints"]) 
 spectrum_exch = np.fft.fftshift(np.fft.fft(fid_exch, exch_pars["zerofill"]))
 plot_1d(spin_system_two_sites, spectrum_exch.real, exch_pars)
 ```
+
+![Two-site exchange near coalescence](figures/liouville-space-exchange.png)
 
 The two lines at 0 and 3 ppm, 1800 Hz apart at 14.1 T, exchange at
 2000 Hz: close to coalescence, they merge into one broad line. The same

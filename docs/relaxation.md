@@ -8,7 +8,7 @@ thermalisation methods. Read the [Liouville-space](liouville-space.md) and
 [solid-state](solid-state.md) guides first: relaxation lives in Liouville
 space and is driven by the same anisotropic interaction tensors. The
 companion notebook is
-[`notebooks/relaxation.ipynb`](notebooks/relaxation.ipynb).
+[`notebooks/relaxation.ipynb`](notebooks/relaxation.ipynb) ([interactive figures on nbviewer](https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/relaxation.ipynb)).
 
 Every Python block is executed by `tests/docs/`, in order and in one
 namespace.
@@ -288,6 +288,8 @@ fig.update_layout(title="Transient heteronuclear NOE", xaxis_title="time, s",
                   yaxis_title="Lz / Lz(13C) at equilibrium", width=600, height=380)
 fig
 ```
+
+![Transient heteronuclear NOE](figures/relaxation-noe.png)
 
 The carbon magnetisation rises above its equilibrium value before
 returning to it: the heteronuclear Overhauser effect. The curves follow

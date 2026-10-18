@@ -5,7 +5,7 @@ import pytest
 
 import spynach
 from spynach.isotopes import spin
-from spynach.plotting import axis_1d, ft_axis, plot_1d, plot_fid
+from spynach.plotting import axis_1d, figure_png, ft_axis, plot_1d, plot_fid
 
 
 @pytest.fixture(scope="module")
@@ -172,3 +172,13 @@ def test_time_series_and_trajan_plots():
     fig = plot_trajan(spin_system_liouv, traj, "coherence_order", np.array([0.0, 0.5]))
     assert len(fig.data) == 5 and fig.layout.title.text == "coherence orders"
     assert plot_trajan(spin_system_liouv, traj, "total_each_spin").layout.xaxis.title.text == "trajectory point"
+
+
+def test_figure_png_renders_a_png(spin_system):
+    pytest.importorskip("plotly")
+    pytest.importorskip("matplotlib")
+    spectrum = np.exp(-(np.linspace(-3, 3, 64) ** 2))
+    fig = plot_1d(spin_system, [spectrum, 2 * spectrum], {"spins": ["1H"], "offset": 0, "sweep": 100}, names=["a", "b"])
+    png = figure_png(fig, scale=1)
+    assert png[:8] == b"\x89PNG\r\n\x1a\n"
+    assert len(png) > 1000

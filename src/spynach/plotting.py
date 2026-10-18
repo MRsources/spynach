@@ -7,6 +7,8 @@ interactive Plotly figure and returns it instead of drawing into the current
 MATLAB axes. ``plot_2d`` follows ``plot_2d.m`` (same
 parameters, contour spacing by ``contspacing.m``, and axis conventions) as
 an interactive contour figure. ``plot_fid`` has no Spinach counterpart.
+``figure_png`` renders any of the figures to PNG bytes (Kaleido, or a
+Matplotlib redraw when Kaleido cannot run).
 
 The plotting functions need Plotly (``pip install -e ".[plot]"``); the axis
 functions need only NumPy.
@@ -699,3 +701,104 @@ def plot_trajan(
     top = float(result.max()) if result.size else 1.0
     fig.update_yaxes(range=[-0.05 * top, 1.05 * top])
     return fig
+
+
+def figure_png(fig, *, scale: float = 2) -> bytes:
+    """PNG bytes of a Plotly figure, for GitHub, reports and papers (MATLAB's ``print -dpng``).
+
+    Kaleido renders the figure exactly when it can run (it needs a Chrome
+    build, ``plotly_get_chrome``); otherwise the traces are redrawn with
+    Matplotlib in the figure's colours, with its titles, ranges and legend.
+    The Matplotlib rendering covers what ``spynach.plotting`` draws (lines,
+    bars and the contour figures of ``plot_2d``) and is close to, not
+    identical with, the Plotly figure. ``scale`` multiplies the pixel size.
+    """
+    global _KALEIDO
+    if _KALEIDO is not False:
+        try:
+            import plotly.io as pio
+
+            png = pio.to_image(fig, format="png", scale=scale)
+            _KALEIDO = True
+            return png
+        except Exception:  # Kaleido not installed, or no Chrome for it: the same answer for every figure
+            _KALEIDO = False
+    try:
+        import matplotlib
+    except ImportError as error:
+        raise ImportError(
+            'figure_png needs Kaleido with a Chrome build, or Matplotlib: pip install -e ".[docs]"'
+        ) from error
+    matplotlib.use("Agg")
+    return _png_with_matplotlib(fig, scale)
+
+
+_KALEIDO: bool | None = None  # whether Kaleido rendered a figure in this process; None until tried
+
+
+def _png_with_matplotlib(fig, scale: float) -> bytes:
+    """Static rendering of a Plotly figure's line, bar and contour traces with Matplotlib."""
+    import base64
+    import io
+
+    import matplotlib.pyplot as plt
+
+    def plain(text) -> str:
+        return re.sub(r"<[^>]+>", "", text or "")
+
+    def values(data) -> np.ndarray:
+        # Figures rebuilt from notebook JSON carry arrays in Plotly's binary form
+        if isinstance(data, dict) and "bdata" in data:
+            array = np.frombuffer(base64.b64decode(data["bdata"]), dtype=np.dtype(data["dtype"]))
+            return array.reshape([int(n) for n in str(data["shape"]).split(",")]) if "shape" in data else array
+        return np.asarray(data)
+
+    layout = fig.layout
+    surface = layout.paper_bgcolor or "#ffffff"
+    ink = (layout.font.color if layout.font else None) or "#1c2024"
+    width = (layout.width or 700) / 96
+    height = (layout.height or 450) / 96
+    mpl_fig, ax = plt.subplots(figsize=(width, height))
+    mpl_fig.patch.set_facecolor(surface)
+    ax.set_facecolor(layout.plot_bgcolor or surface)
+    named = 0
+    for trace in fig.data:
+        label = plain(trace.name) if trace.name and trace.showlegend is not False else None
+        named += label is not None
+        if trace.type == "contour":
+            start, end, size = trace.contours.start, trace.contours.end, trace.contours.size
+            levels = np.arange(start, end + size / 2, size)
+            colorscale = trace.colorscale
+            colours = [
+                colorscale[min(int(round(k * (len(colorscale) - 1) / max(len(levels) - 1, 1))), len(colorscale) - 1)][1]
+                for k in range(len(levels))
+            ]
+            ax.contour(values(trace.x), values(trace.y), values(trace.z), levels=levels, colors=colours, linewidths=0.6)
+        elif trace.type in ("scatter", "scattergl"):
+            x, y = values(trace.x).astype(float), values(trace.y).astype(float)
+            if "lines" in (trace.mode or "lines"):
+                ax.plot(x, y, lw=(trace.line.width or 2) * 0.6, color=trace.line.color, label=label)
+            else:
+                ax.plot(x, y, "o", ms=3, color=trace.marker.color, label=label)
+        elif trace.type == "bar":
+            ax.bar(values(trace.x), values(trace.y).astype(float), color=trace.marker.color, label=label)
+    for axis, mpl_axis in ((layout.xaxis, ax.xaxis), (layout.yaxis, ax.yaxis)):
+        if axis.range:
+            (ax.set_xlim if mpl_axis is ax.xaxis else ax.set_ylim)(*axis.range)
+        mpl_axis.label.set_color(axis.title.font.color or ink)
+        ax.tick_params(axis=mpl_axis.axis_name, colors=axis.tickfont.color or ink, labelsize=9)
+        if axis.showgrid:
+            ax.grid(True, axis=mpl_axis.axis_name, color=axis.gridcolor or "#e1e0d9", linewidth=0.6)
+    for spine in ax.spines.values():
+        spine.set_color(layout.xaxis.linecolor or "#c3c2b7")
+    ax.set_xlabel(plain(layout.xaxis.title.text), fontsize=10)
+    ax.set_ylabel(plain(layout.yaxis.title.text), fontsize=10)
+    if layout.title and layout.title.text:
+        ax.set_title(plain(layout.title.text), loc="left", fontsize=11, color=ink)
+    if named > 1 and layout.showlegend is not False:
+        ax.legend(frameon=False, fontsize=9, labelcolor=ink)
+    mpl_fig.tight_layout()
+    buffer = io.BytesIO()
+    mpl_fig.savefig(buffer, format="png", dpi=96 * scale, facecolor=surface)
+    plt.close(mpl_fig)
+    return buffer.getvalue()

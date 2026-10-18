@@ -8,7 +8,7 @@ the spherical-tensor formalism and state-space restriction. Every stage reproduc
 [Checking results against Spinach](#checking-results-against-spinach).
 
 To run the examples interactively, open the companion notebook
-[`notebooks/hilbert-space.ipynb`](notebooks/hilbert-space.ipynb), generated from
+[`notebooks/hilbert-space.ipynb`](notebooks/hilbert-space.ipynb) ([interactive figures on nbviewer](https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/hilbert-space.ipynb)), generated from
 this page. If you know Spinach, read
 [Coming from Spinach](coming-from-spinach.md) next: it lists, topic by
 topic, what carries over unchanged and what is different.
@@ -110,6 +110,8 @@ from spynach.plotting import plot_1d
 plot_1d(spin_system, spectrum.real, parameters, title="Two coupled protons at 14.1 T")
 ```
 
+![Two coupled protons at 14.1 T](figures/hilbert-space-two-protons.png)
+
 `plot_fid` shows the time domain, real and imaginary parts:
 
 ```python
@@ -117,6 +119,8 @@ from spynach.plotting import plot_fid
 
 plot_fid(fid, parameters, title="Apodised free induction decay")
 ```
+
+![Apodised free induction decay](figures/hilbert-space-fid.png)
 
 Blocks that plot are the only ones that need Plotly; they define no names
 that later blocks use. [Plotting results](#plotting-results) has more.
@@ -347,6 +351,7 @@ figures that render in JupyterLab, VS Code, and exported HTML:
 | `plot_fid(fid, parameters)` | one or more FIDs against time | (none) |
 | `axis_1d(spin_system, parameters)` | the frequency axis and its label, no plot | `axis_1d` |
 | `ft_axis(offset, sweep, npoints)` | the Hz axis of an FFT | `ft_axis` |
+| `figure_png(fig)` | PNG bytes of any of these figures (Kaleido, or a Matplotlib redraw) | `print -dpng` |
 
 `plot_1d` reads the same `parameters` as Spinach's: `spins`, `offset`,
 `sweep`, `axis_units` (default `"ppm"`; also `"Hz"`, `"kHz"`, `"MHz"`,
@@ -380,6 +385,8 @@ from spynach.plotting import plot_1d
 plot_1d(spin_system, spectra, pars_hc, names=["acquire from L+", "90° pulse from Lz"],
         title="1H spectrum of a 1H-13C pair")
 ```
+
+![1H spectrum of a 1H-13C pair from the two sequences](figures/hilbert-space-hc-pair.png)
 
 ## Tolerances
 

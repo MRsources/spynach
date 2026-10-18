@@ -8,7 +8,7 @@ orientation-dependent Hamiltonian from irreducible spherical components
 and how the `crystal` and `powder` contexts use it for static solids.
 Read the [Hilbert-space](hilbert-space.md) and
 [Liouville-space](liouville-space.md) guides first. The companion notebook
-is [`notebooks/solid-state.ipynb`](notebooks/solid-state.ipynb).
+is [`notebooks/solid-state.ipynb`](notebooks/solid-state.ipynb) ([interactive figures on nbviewer](https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/solid-state.ipynb)).
 
 Every Python block is executed by `tests/docs/`, in order and in one
 namespace.
@@ -206,6 +206,8 @@ fid_csa = fid_csa * np.exp(-6 * np.arange(pars["npoints"]) / pars["npoints"])
 spectrum_csa = np.fft.fftshift(np.fft.fft(fid_csa, pars["zerofill"]))
 plot_1d(spin_system, spectrum_csa.real, {**pars, "invert_axis": True})
 ```
+
+![Static CSA powder pattern](figures/solid-state-csa-powder.png)
 
 Orientations run serially; Spinach distributes them over a parallel pool
 and computes the same weighted sum, so the numbers agree to rounding

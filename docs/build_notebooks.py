@@ -5,19 +5,27 @@ their Python blocks are executed by tests/docs/. Each guide docs/<name>.md
 becomes docs/notebooks/<name>.ipynb, with every ```python block as a code
 cell and the prose in between as Markdown cells split at section headings.
 Each notebook is then run in a fresh kernel and saved with its outputs, so
-the plots and results are there as soon as it is opened.
+the plots and results are there as soon as it is opened. Every Plotly
+figure is saved with a PNG copy in the same output (GitHub's notebook
+viewer shows the PNG, JupyterLab, VS Code and nbviewer the interactive
+figure) and written to docs/figures/ under the name that the image line
+following the plotting block in the guide gives it, so that the guide
+shows the figure on GitHub; the image line itself is left out of the
+notebook, where the cell above shows the figure.
 
     python docs/build_notebooks.py               # rebuild and run every notebook
     python docs/build_notebooks.py --no-execute  # rebuild without outputs (quick)
     python docs/build_notebooks.py --check       # exit 1 if any is stale or not run
 
-Running needs the "docs" extra (Plotly, nbclient, ipykernel); building and
-checking use only the standard library.
+Running needs the "docs" extra (Plotly, nbclient, ipykernel, and Kaleido or
+Matplotlib for the PNG copies); building and checking use only the
+standard library.
 """
 
 from __future__ import annotations
 
 import argparse
+import base64
 import functools
 import json
 import os
@@ -27,6 +35,8 @@ from pathlib import Path
 
 DOCS = Path(__file__).resolve().parent
 NOTEBOOKS = DOCS / "notebooks"
+FIGURES = DOCS / "figures"
+PLOTLY = "application/vnd.plotly.v1+json"
 
 # Guides that are not tutorials and get no notebook
 SKIP = {"README.md"}
@@ -34,6 +44,8 @@ SKIP = {"README.md"}
 FENCE = re.compile(r"^```python\n(.*?)^```$", flags=re.S | re.M)
 HEADING = re.compile(r"^(?=#{1,3} )", flags=re.M)
 LINK = re.compile(r"\]\((?!https?://|mailto:)([^)]+)\)")
+# An image line right after a plotting block names the figure file the block's output is written to
+LEADING_IMAGE = re.compile(r"\n*!\[[^\]]*\]\(figures/([\w.-]+\.png)\)[ \t]*(?:\n|$)")
 
 INTRO = (
     "*Generated from [`docs/{name}.md`](../{name}.md) by `docs/build_notebooks.py`;"
@@ -73,10 +85,12 @@ def build_notebook(guide: Path) -> dict:
     cells: list[tuple[str, str]] = []
     position = 0
     for match in FENCE.finditer(text):
-        cells.extend(("markdown", part) for part in _split_prose(text[position : match.start()]))
+        cells.extend(
+            ("markdown", part) for part in _split_prose(_without_image(text[position : match.start()], position))
+        )
         cells.append(("code", match.group(1)))
         position = match.end()
-    cells.extend(("markdown", part) for part in _split_prose(text[position:]))
+    cells.extend(("markdown", part) for part in _split_prose(_without_image(text[position:], position)))
 
     # The title cell comes first, then the provenance note
     intro = ("markdown", INTRO.format(name=guide.stem))
@@ -88,6 +102,21 @@ def build_notebook(guide: Path) -> dict:
         "nbformat": 4,
         "nbformat_minor": 5,
     }
+
+
+def _without_image(prose: str, position: int) -> str:
+    """The prose after a code block without the image line that names the block's figure file."""
+    return LEADING_IMAGE.sub("", prose, count=1) if position else prose
+
+
+def figure_files(guide: Path) -> list[str | None]:
+    """For each Python block of the guide, the figure file named by the image line right after it, or None."""
+    text = guide.read_text(encoding="utf-8")
+    names = []
+    for match in FENCE.finditer(text):
+        image = LEADING_IMAGE.match(text, match.end())
+        names.append(image.group(1) if image else None)
+    return names
 
 
 def dumps(notebook: dict) -> str:
@@ -109,11 +138,15 @@ def is_executed(text: str) -> bool:
     return all(c["execution_count"] is not None for c in json.loads(text)["cells"] if c["cell_type"] == "code")
 
 
-def execute(notebook: dict) -> dict:
+def execute(notebook: dict, figures: list[str | None] | None = None) -> dict:
     """Run a notebook top to bottom in a fresh kernel and return it with outputs.
 
     The kernel imports spynach from this checkout's src/, whatever is
     installed, and runs in docs/notebooks/ as it would when opened there.
+    Every Plotly figure output gets a PNG copy in the same output. With
+    ``figures`` (one entry per code cell, from :func:`figure_files`) the PNG
+    of each plotting cell is also written to docs/figures/ under that name;
+    a plotting cell without a name, or a name without a figure, is an error.
     """
     import nbclient
     import nbformat
@@ -142,12 +175,40 @@ def execute(notebook: dict) -> dict:
     # Keep the cells as built and add the outputs, without the setup cell;
     # execution counts then start at 1
     cells = []
+    block = 0
     for cell, run in zip(notebook["cells"], node["cells"][1:], strict=True):
         if cell["cell_type"] == "code":
             outputs = json.loads(json.dumps(run["outputs"]))
+            pngs = [_add_png(output) for output in outputs if PLOTLY in output.get("data", {})]
+            if figures is not None:
+                _write_figure(figures[block], pngs, block)
+            block += 1
             cell = {**cell, "execution_count": run["execution_count"] - 1, "outputs": outputs}
         cells.append(cell)
     return {**notebook, "cells": cells}
+
+
+def _add_png(output: dict) -> bytes:
+    """Add a PNG copy of the Plotly figure to the output's data and return it."""
+    sys.path.insert(0, str(DOCS.parent / "src"))
+    import plotly.io as pio
+
+    from spynach.plotting import figure_png
+
+    png = figure_png(pio.from_json(json.dumps(output["data"][PLOTLY])))
+    output["data"]["image/png"] = base64.b64encode(png).decode("ascii")
+    return png
+
+
+def _write_figure(name: str | None, pngs: list[bytes], block: int) -> None:
+    if name is None and not pngs:
+        return
+    if name is None:
+        raise ValueError(f"Python block {block} plots but no image line after it names its figure file")
+    if len(pngs) != 1:
+        raise ValueError(f"Python block {block} names a figure file but shows {len(pngs)} figures instead of one")
+    FIGURES.mkdir(exist_ok=True)
+    (FIGURES / name).write_bytes(pngs[0])
 
 
 def _split_prose(prose: str) -> list[str]:
@@ -225,9 +286,13 @@ def main() -> int:
             elif not is_executed(current):
                 print(f"not run: {name}")
                 status = 1
+            for figure in filter(None, figure_files(guide)):
+                if not (FIGURES / figure).exists():
+                    print(f"missing: docs/figures/{figure}")
+                    status = 1
             continue
         notebook = build_notebook(guide)
-        text = dumps(notebook if args.no_execute else execute(notebook))
+        text = dumps(notebook if args.no_execute else execute(notebook, figure_files(guide)))
         if text != current:
             path.write_text(text, encoding="utf-8")
             print(f"wrote: {name}")

@@ -2,23 +2,25 @@
 
 | guide | notebook | covers |
 |---|---|---|
-| [Hilbert space](hilbert-space.md) | [hilbert-space.ipynb](notebooks/hilbert-space.ipynb) | liquid-state NMR in Hilbert space (`zeeman-hilb`): setup, the simulation pipeline, pulse sequences, tolerances, parity with Spinach |
-| [Liouville space](liouville-space.md) | [liouville-space.ipynb](notebooks/liouville-space.ipynb) | the spherical-tensor formalism (`sphten-liouv`): basis descriptor, state-space restriction (`IK-0/1/2`), filters, chemical subsystems |
-| [Solid state](solid-state.md) | [solid-state.ipynb](notebooks/solid-state.ipynb) | anisotropic interactions: tensors from eigenvalues and Euler angles, dipolar couplings from coordinates, quadrupolar couplings, the `Q` components and `orientation`, `crystal` and `powder` contexts, grids, assumption sets |
-| [Relaxation](relaxation.md) | [relaxation.ipynb](notebooks/relaxation.ipynb) | Redfield theory for rotational diffusion, T1/T2 and damping models, retention policies, thermal equilibrium and thermalisation, transient NOE |
-| [Magic angle spinning](magic-angle-spinning.md) | [magic-angle-spinning.ipynb](notebooks/magic-angle-spinning.ipynb) | the Fokker-Planck treatment of sample rotation: rotor phase grid and spectral derivative, the `singlerot` context, sidebands, rotor echoes |
-| [Pulse sequences](pulse-sequences.md) | [pulse-sequences.ipynb](notebooks/pulse-sequences.ipynb) | writing sequences, `apodisation` and `plot_2d`, decoupling and homospoil, COSY, NOESY, HSQC with isotopomer dilution |
-| [Coming from Spinach](coming-from-spinach.md) | [coming-from-spinach.ipynb](notebooks/coming-from-spinach.ipynb) | what carries over from Spinach and what differs: spin systems, basis, operators, Hamiltonians, parameters, calculation modalities, processing |
+| [Hilbert space](hilbert-space.md) | [hilbert-space.ipynb](notebooks/hilbert-space.ipynb) · [nbviewer](https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/hilbert-space.ipynb) | liquid-state NMR in Hilbert space (`zeeman-hilb`): setup, the simulation pipeline, pulse sequences, tolerances, parity with Spinach |
+| [Liouville space](liouville-space.md) | [liouville-space.ipynb](notebooks/liouville-space.ipynb) · [nbviewer](https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/liouville-space.ipynb) | the spherical-tensor formalism (`sphten-liouv`): basis descriptor, state-space restriction (`IK-0/1/2`), filters, chemical subsystems |
+| [Solid state](solid-state.md) | [solid-state.ipynb](notebooks/solid-state.ipynb) · [nbviewer](https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/solid-state.ipynb) | anisotropic interactions: tensors from eigenvalues and Euler angles, dipolar couplings from coordinates, quadrupolar couplings, the `Q` components and `orientation`, `crystal` and `powder` contexts, grids, assumption sets |
+| [Relaxation](relaxation.md) | [relaxation.ipynb](notebooks/relaxation.ipynb) · [nbviewer](https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/relaxation.ipynb) | Redfield theory for rotational diffusion, T1/T2 and damping models, retention policies, thermal equilibrium and thermalisation, transient NOE |
+| [Magic angle spinning](magic-angle-spinning.md) | [magic-angle-spinning.ipynb](notebooks/magic-angle-spinning.ipynb) · [nbviewer](https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/magic-angle-spinning.ipynb) | the Fokker-Planck treatment of sample rotation: rotor phase grid and spectral derivative, the `singlerot` context, sidebands, rotor echoes |
+| [Pulse sequences](pulse-sequences.md) | [pulse-sequences.ipynb](notebooks/pulse-sequences.ipynb) · [nbviewer](https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/pulse-sequences.ipynb) | writing sequences, `apodisation` and `plot_2d`, decoupling and homospoil, COSY, NOESY, HSQC with isotopomer dilution |
+| [Coming from Spinach](coming-from-spinach.md) | [coming-from-spinach.ipynb](notebooks/coming-from-spinach.ipynb) · [nbviewer](https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/coming-from-spinach.ipynb) | what carries over from Spinach and what differs: spin systems, basis, operators, Hamiltonians, parameters, calculation modalities, processing |
 
-The notebooks are saved with their outputs, plots included. Open them
+The notebooks are saved with their outputs, plots included. On GitHub the
+guides show each figure as a static image from `docs/figures/` and the
+notebooks show the static copy saved with every figure; the nbviewer links
+show the interactive figures. Open the notebooks
 with `jupyter lab docs/notebooks/` after `pip install -e ".[docs]"`, or in
 VS Code with the Python and Jupyter extensions; the plots are interactive
 in both. (In a container whose CPU quota is below its visible core count,
 set `OPENBLAS_NUM_THREADS` to the quota first; see the setup section of the
-[Hilbert space guide](hilbert-space.md#setup).) (GitHub's notebook viewer
-does not show Plotly figures; nbviewer does, and the project page
+[Hilbert space guide](hilbert-space.md#setup).) The project page
 [ajerschow.github.io/spynach](https://ajerschow.github.io/spynach/)
-links every notebook through it.)
+links every notebook through nbviewer as well.
 
 [`colab/quick-start.ipynb`](colab/quick-start.ipynb) is a stand-alone
 notebook for [Google Colab](https://colab.research.google.com/github/ajerschow/spynach/blob/main/docs/colab/quick-start.ipynb):
@@ -72,15 +74,21 @@ option, or behaviour change is not done until the guides describe it.
    and show what they claim with a `print` or a plot. Verification
    belongs in `tests/`, not in the guides, so they carry no `assert`
    statements.
-2. **Notebooks are generated.** `python docs/build_notebooks.py` writes
-   `docs/notebooks/<name>.ipynb` for every guide, runs it in a fresh kernel,
-   and saves it with its outputs. Never edit a notebook by hand; the tests
-   fail if one is stale, was saved without outputs, or has no guide.
+2. **Notebooks and figures are generated.** `python docs/build_notebooks.py`
+   writes `docs/notebooks/<name>.ipynb` for every guide, runs it in a fresh
+   kernel, and saves it with its outputs; each Plotly figure is saved with a
+   PNG copy (what GitHub shows) and written to `docs/figures/`. Never edit
+   a notebook or a file in `docs/figures/` by hand; the tests fail if a
+   notebook is stale, was saved without outputs, or has no guide, and if a
+   figure file is missing.
 3. **Plots** go in their own blocks, use `spynach.plotting` (or Plotly
    directly), end with the figure as the last expression so the notebook
    shows it, and define no names that later blocks need: without Plotly
-   installed, the tests skip them. Show the results a section computes:
-   spectra, FIDs, and comparisons between them.
+   installed, the tests skip them. Each plotting block is followed by an
+   image line `![caption](figures/<guide>-<what>.png)` that names the file
+   the builder writes for it; the guide shows the image on GitHub and the
+   notebook drops the line, since the cell above shows the figure. Show the
+   results a section computes: spectra, FIDs, and comparisons between them.
 4. **Keep examples fast** (a few seconds per guide). If a faithful
    translation of a Spinach example is slow, reduce its size and say what
    was changed and how to restore it.

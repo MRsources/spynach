@@ -72,6 +72,7 @@ figure img { width: 100%; height: auto; display: block; border-radius: 6px; }
 figcaption { font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem; font-family: var(--mono); }
 section { padding-block: 2.2rem; border-top: 1px solid var(--line); display: grid; grid-template-columns: 12rem minmax(0, 1fr); gap: 1rem 2.5rem; }
 section > header { display: grid; gap: 0.4rem; align-content: start; }
+section > header h2 { overflow-wrap: break-word; hyphens: auto; }
 section > div { min-width: 0; display: grid; gap: 1rem; }
 ul.plain { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.6rem; max-width: 46rem; }
 ul.plain li { padding-left: 1.1rem; position: relative; }
@@ -132,6 +133,7 @@ footer { border-top: 1px solid var(--line); padding-block: 1.6rem; font-size: 0.
   <header><span class="eyebrow">Goals</span><h2>What the project is for</h2></header>
   <div>
     <ul class="plain">
+      <li><b>Python conveniences, no MATLAB licence.</b> Spynach is a pip-installable package that slots into the scientific Python stack: combine it with NumPy, SciPy, fitting and machine-learning libraries or your own code, run it on any machine with nothing to buy or activate, or open the <a href="https://colab.research.google.com/github/ajerschow/spynach/blob/main/docs/colab/quick-start.ipynb">quick-start notebook</a> in the browser, where it installs itself in a click.</li>
       <li><b>A readable, maintainable kernel.</b> The Spinach algorithms in plain Python with NumPy and SciPy, with the same names and conventions wherever that is possible.</li>
       <li><b>Verified, not eyeballed.</b> Every ported stage is compared with reference data computed by Spinach itself, with tolerances that are stated and explained.</li>
       <li><b>Ready for accelerators.</b> The hot loops go through one backend adapter so that a GPU array library can be plugged in; that step is deferred until a target device is chosen.</li>
@@ -227,7 +229,7 @@ spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))</code></pre>
 <section id="docs">
   <header><span class="eyebrow">Documentation</span><h2>Guides and notebooks</h2></header>
   <div>
-    <p>Each guide is a Markdown document whose code runs in the test suite, and a Jupyter notebook generated from it with its outputs and interactive plots. The notebook links open in nbviewer, which renders the Plotly figures; GitHub's own notebook viewer does not.</p>
+    <p>Each guide is a Markdown document whose code runs in the test suite, and a Jupyter notebook generated from it with its outputs and interactive plots. The notebook links open in nbviewer, which renders the Plotly figures interactively; GitHub's own viewer shows the static copies saved with them.</p>
     <div class="scroll">
     <table>
       <thead><tr><th>Guide</th><th>Covers</th><th>Open</th></tr></thead>
@@ -318,11 +320,9 @@ spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))</code></pre>
 </section>
 
 <section id="acknowledgements">
-  <header><span class="eyebrow">Thanks</span><h2>Acknowledgements</h2></header>
+  <header><span class="eyebrow">Credits</span><h2>With thanks</h2></header>
   <div>
-    <ul class="plain">
-      <li>Grateful to Claude for the amazing work, and to Ilya for encouragement and for suggesting the catchy name!</li>
-    </ul>
+    <p>Grateful to Claude for the amazing work, and to Ilya for encouragement and for suggesting the catchy name!</p>
   </div>
 </section>
 

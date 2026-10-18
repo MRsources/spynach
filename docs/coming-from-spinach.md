@@ -9,7 +9,7 @@ function in full.
 
 Every Python block on this page is executed by `tests/docs/`. MATLAB blocks
 are Spinach code, shown for comparison and not run. The companion notebook
-is [`notebooks/coming-from-spinach.ipynb`](notebooks/coming-from-spinach.ipynb).
+is [`notebooks/coming-from-spinach.ipynb`](notebooks/coming-from-spinach.ipynb) ([interactive figures on nbviewer](https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/coming-from-spinach.ipynb)).
 
 ## Contents
 
@@ -128,6 +128,8 @@ from spynach.plotting import plot_1d
 
 plot_1d(spin_system, spectrum.real, parameters, title="Styrene, 1H, 7.046 T")
 ```
+
+![Styrene 1H spectrum at 7.046 T](figures/coming-from-spinach-styrene.png)
 
 ## General differences
 
@@ -491,7 +493,9 @@ How `plot_1d` differs from Spinach's:
 - It returns a Plotly figure instead of drawing into the current MATLAB
   axes. Display it as the last expression of a notebook cell, change it
   with Plotly's methods (`fig.update_xaxes(range=[7, 6])` for `xlim`), and
-  save it with `fig.write_html(...)`. There is no `kfigure`, `hold on`, or
+  save it with `fig.write_html(...)`; `figure_png(fig)` gives PNG bytes in
+  place of MATLAB's `print -dpng` (Kaleido when it can run, otherwise a
+  Matplotlib redraw). There is no `kfigure`, `hold on`, or
   `varargin` of line options; to overlay spectra, pass them together as a
   list, with `names=[...]` for the legend.
 - `zerofill` defaults to the length of the spectrum (Spinach: to
