@@ -1,5 +1,7 @@
 """spynach: a Python reimplementation of the Spinach spin dynamics kernel."""
 
+__version__ = "0.1.0"  # keep equal to [project].version in pyproject.toml (tests/unit/test_version.py)
+
 from spynach.assume import assume
 from spynach.basis import basis
 from spynach.contexts import crystal, liquid, load_grid, powder, singlerot

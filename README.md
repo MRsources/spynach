@@ -135,6 +135,17 @@ reinstall. Point VS Code's interpreter at `.venv-mac/bin/python`.
 the same environment (with the `compare` extra), so that both sides of a
 report are timed on the same machine.
 
+Releases are tagged `vX.Y.Z` and listed in [`CHANGELOG.md`](CHANGELOG.md);
+`spynach.__version__` gives the installed version, and
+`pip install "spynach @ git+https://github.com/ajerschow/spynach.git@v0.1.0"`
+installs a tagged one. To release: set the version in `pyproject.toml`,
+`src/spynach/__init__.py` and `CITATION.cff` (a test keeps them equal), add
+the `CHANGELOG.md` entry, refresh `uv.lock`, run the checks above plus
+`python docs/build_notebooks.py --check` and
+`python oracle/parity_summary.py --check`, commit, tag with
+`git tag -a vX.Y.Z -m "Spynach X.Y.Z"`, push with `--follow-tags`, and draft
+the GitHub release from the tag with the changelog entry as its notes.
+
 Code style is enforced by [ruff](https://docs.astral.sh/ruff/) (`pip install
 -e ".[dev]"`), configured in `pyproject.toml`: 120-character lines, import
 sorting, pyupgrade and bugbear checks. Before committing, run

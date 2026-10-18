@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use Spynach, please cite it together with Spinach (see README.md)."
+title: "Spynach: a Python reimplementation of the Spinach spin dynamics kernel"
+type: software
+authors:
+  - family-names: Jerschow
+    given-names: Alexej
+    affiliation: New York University
+version: 0.1.0
+date-released: 2026-10-18
+license: MIT
+repository-code: https://github.com/ajerschow/spynach
+url: https://ajerschow.github.io/spynach/
+keywords:
+  - NMR
+  - spin dynamics
+  - Spinach
+  - simulation
