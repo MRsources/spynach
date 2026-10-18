@@ -13,7 +13,7 @@ provides a MATLAB equivalent. They are not run by the test suite.
 To run a notebook, install the `docs` extra (`pip install -e ".[docs]"`)
 and open it with `jupyter lab user_py/`; the notebooks are saved with
 their outputs, so the plots show without running them. On Binder, if a
-Plotly figure does not show up, set
+Plotly figure does not show up, run `!pip install plotly` and set
 `plotly.io.renderers.default = "plotly_mimetype+notebook"` in a cell
 before the plot (each notebook repeats this tip). In a container
 whose CPU quota is below its visible core count, set
