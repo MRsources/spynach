@@ -8,6 +8,9 @@
 | [Relaxation](relaxation.md) | [relaxation.ipynb](notebooks/relaxation.ipynb) · [nbviewer](https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/relaxation.ipynb) | Redfield theory for rotational diffusion, T1/T2 and damping models, retention policies, thermal equilibrium and thermalisation, transient NOE |
 | [Magic angle spinning](magic-angle-spinning.md) | [magic-angle-spinning.ipynb](notebooks/magic-angle-spinning.ipynb) · [nbviewer](https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/magic-angle-spinning.ipynb) | the Fokker-Planck treatment of sample rotation: rotor phase grid and spectral derivative, the `singlerot` context, sidebands, rotor echoes |
 | [Pulse sequences](pulse-sequences.md) | [pulse-sequences.ipynb](notebooks/pulse-sequences.ipynb) · [nbviewer](https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/pulse-sequences.ipynb) | writing sequences, `apodisation` and `plot_2d`, decoupling and homospoil, COSY, NOESY, HSQC with isotopomer dilution |
+| [Coherence transfer pathways](ctps.md) | [ctps.ipynb](notebooks/ctps.ipynb) · [nbviewer](https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/ctps.ipynb) | the separate `ctps` module: pathway enumeration, phase cycling, gradients, diffusion, non-ideal pulses, cogwheel cycle search, the pathway explorer |
+| [Coherence transfer pathways: worked examples](ctps-examples.md) | [ctps-examples.ipynb](notebooks/ctps-examples.ipynb) · [nbviewer](https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/ctps-examples.ipynb) | a cookbook for `ctps`: double-quantum filter, imperfect spin echo, stimulated echo, NOESY-sized enumeration, HSQC, MQMAS nested versus cogwheel, multi-echo trains, cogwheel plus gradients, MRS crushers; then every check of the module's tests as a runnable example |
+| [Beyond the port](beyond-the-port.md) | [beyond-the-port.ipynb](notebooks/beyond-the-port.ipynb) · [nbviewer](https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/beyond-the-port.ipynb) | features with no Spinach counterpart, each with an example: `ctps`, non-ideal pulses and cogwheel search, interactive figures and `figure_png`, `compare` and the parity page, executable documentation |
 | [Coming from Spinach](coming-from-spinach.md) | [coming-from-spinach.ipynb](notebooks/coming-from-spinach.ipynb) · [nbviewer](https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/coming-from-spinach.ipynb) | what carries over from Spinach and what differs: spin systems, basis, operators, Hamiltonians, parameters, calculation modalities, processing |
 
 The notebooks are saved with their outputs, plots included. On GitHub the
@@ -36,8 +39,9 @@ generated from a guide and is saved without outputs, since Colab runs it);
 keep its example in step with the quick start on `index.html` and in the
 README.
 
-To experiment, copy a notebook into `scratch/` at the repository root
-(ignored by git) and work on the copy; it uses the same `spynach` code. The
+To experiment, copy a notebook into `playground/` at the repository root
+(ignored by git except for its README) and work on the copy; it uses the
+same `spynach` code. The
 notebooks in `docs/notebooks/` are rebuilt from the guides, so edits to them
 are overwritten; if you run one there, `git restore docs/notebooks/` discards
 the changed outputs.

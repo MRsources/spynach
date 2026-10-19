@@ -2,6 +2,13 @@
 
 Releases are tagged `vX.Y.Z` on GitHub; the version is `spynach.__version__`.
 
+## Unreleased
+
+- `ctps`, a separate module beside Spynach: coherence transfer pathway
+  selection (port of CCCP.m and CCCP++) with the J. Chem. Phys. 113, 979
+  (2000) pulse model, a cogwheel search, an interactive pathway explorer and
+  a guide; removable by deleting its paths (`src/ctps/README.md`).
+
 ## 0.1.0 - 2026-10-18
 
 First tagged release. Everything listed is verified against Spinach 2.13

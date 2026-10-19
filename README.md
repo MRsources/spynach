@@ -93,6 +93,30 @@ ignored.
 - **`evolution()` runs serially**; Spinach's Kuprov-Edwards parallel split
   computes the same observable.
 
+## Beyond the port
+
+Add-ons originating here, with no Spinach counterpart, each with an example in the guide
+[Beyond the port](docs/beyond-the-port.md):
+
+- **`ctps`**, a separate module (`import ctps`, no dependency on `spynach`) that
+  ports CCCP.m and CCCP++, the coherence transfer pathway programs: every
+  pathway a sequence allows, weighted by phase cycle, gradients, diffusion and
+  pulses, with an interactive pathway explorer ([docs/ctps.md](docs/ctps.md),
+  `src/ctps/README.md` for how to remove it without touching Spynach).
+- **Non-ideal pulses** (perfect 180°, imperfect 180°, small flip angle) after
+  J. Chem. Phys. 113, 979 (2000), and a **cogwheel cycle search** by exact
+  integer arithmetic (`find_cycle`, `coverage`, `hcl_cycle`) plus the DOTCOPS
+  crusher objective (`crusher_scheme`), in `ctps`.
+- **Interactive Plotly figures** from `spynach.plotting`, `plot_fid`,
+  `plot_time_series` and `plot_trajan` with no Spinach equivalent, and
+  `figure_png` for static copies.
+- **Verification tooling**: `spynach.oracle.compare` for checking any result
+  against a Spinach run, the generated parity page `docs/parity.md`, and the
+  timed, profiled comparison protocol in `comparison/`.
+- **Executable documentation**: guides whose code runs in the tests, notebooks
+  generated with outputs, a Colab quick start, and contributed notebooks in
+  `user_py/`.
+
 ## Accuracy notes
 
 Every parity comparison is relative with zero absolute tolerance, at 1e-14
@@ -168,7 +192,7 @@ Pages from the root of `main` (Settings > Pages > Deploy from a branch >
 It is hand-maintained: when a guide or a comparison case is added, add
 its row or card there. Reports are linked relatively, so they are served
 by Pages; guides and notebooks link to GitHub and nbviewer. Its hero
-figure is `assets/Spinoza.jpeg`. `assets/liouvillian-strychnine*.png`
+figure is `assets/Spynoza.jpg`. `assets/liouvillian-strychnine*.png`
 are sparsity patterns of the strychnine NOESY Liouvillian rendered by
 `scripts/landing-figure.py` (needs Pillow and Matplotlib, which the
 `compare` extra brings in), kept as alternatives; the script embeds the

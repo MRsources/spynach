@@ -23,7 +23,8 @@ is [`notebooks/coming-from-spinach.ipynb`](notebooks/coming-from-spinach.ipynb) 
 8. [Calculation modalities](#calculation-modalities)
 9. [Processing and plotting](#processing-and-plotting)
 10. [Checking your own workflow against Spinach](#checking-your-own-workflow-against-spinach)
-11. [Messages and errors](#messages-and-errors)
+11. [Beyond the port](#beyond-the-port)
+12. [Messages and errors](#messages-and-errors)
 
 ## A Spinach script, translated
 
@@ -545,6 +546,15 @@ The full-size example scripts in `examples/` do this for whole experiments
 with `--compare FILE.mat`, and [`comparison/README.md`](../comparison/README.md)
 is the protocol for a timed and profiled comparison of both sides with an
 HTML report.
+
+## Beyond the port
+
+This guide lists what carries over and what is still missing. What Spynach
+has and Spinach does not is collected, with examples, in
+[Beyond the port](beyond-the-port.md): the coherence-transfer-pathway module
+`ctps` with its non-ideal pulse model and cogwheel search, the interactive
+figures and `figure_png`, `compare` and the parity page, and the executable
+documentation.
 
 ## Messages and errors
 

@@ -5,6 +5,8 @@ __pycache__/
 .pytest_cache/
 .ipynb_checkpoints/
 scratch/
+playground/*
+!playground/README.md
 .venv-mac/
 .DS_Store
 spinach-publications/
@@ -16,3 +18,4 @@ comparison/runs/**/data.npz
 comparison/runs/**/figure_*.html
 comparison/runs/*-quick*/
 build/
+coherence-pathway-selection-publications/

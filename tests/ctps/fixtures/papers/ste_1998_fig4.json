@@ -1,0 +1,38 @@
+{
+  "source": "Jerschow & Müller, J. Magn. Reson. 134, 17 (1998), Fig. 4: stimulated echo with bipolar gradients, no density-matrix damping",
+  "notes": [
+    "Pulses 2 and 5 are 180-degree pulses treated with CCCP.m's empirical model; the 'pulse' column needs that model (pending the CCCP.m source) and is not compared.",
+    "The caption gives the inter-gradient delays 2, 2, 50, 2, 2 ms for gradients 1-6; the delay after gradient 6 is not given. The diffusion factors of pathways 3-8 depend on it (they imply about 0.305 s); only pathways 1-2 are compared on 'diff' until CCCP.m resolves it.",
+    "The caption's 'G_Y3' is a typo for G_X3 (spoiler along x in period 3).",
+    "The table's psi column is arg(s) in degrees, pulse factor sign included; here the phase of pc alone is compared, i.e. psi minus 180 where the pulse factor is negative."
+  ],
+  "gamma": 2.6752218744e8,
+  "p_max": 3,
+  "n_pulses": 7,
+  "allowed_period_1": [-1, 0, 1],
+  "start": [0],
+  "end": [-1],
+  "gradients": {"1": ["z", 0.25], "2": ["z", -0.25], "3": ["x", 0.025], "4": ["z", 0.25], "5": ["z", -0.25], "6": ["y", 0.025]},
+  "gradient_length_s": 0.001,
+  "durations_s": {"1": 0.002, "2": 0.002, "3": 0.05, "4": 0.002, "5": 0.002},
+  "sample": {"z_max": 0.005, "x_max": 0.0025},
+  "diffusion": 7e-10,
+  "cycle": {
+    "phases": [[0, 0, 1, 1, 2, 2, 3, 3], [1, 2, 2, 3, 3, 0, 0, 1], [0], [2, 2, 3, 3], [3, 3, 0, 0], [2], [0]],
+    "receiver": [0, 2, 0, 2, 2, 0, 2, 0],
+    "base": 4
+  },
+  "n_pathways": 50421,
+  "wanted": [[0, -1, 1, 0, 1, -1, 0, -1], [0, 1, -1, 0, -1, 1, 0, -1]],
+  "rows": [
+    {"pathway": [0, -1, 1, 0, 1, -1, 0, -1], "pc": 1.0, "pc_phase_deg": 0, "grad": 1.0, "diff": 0.515, "pulse": -0.4562, "total": 0.2349},
+    {"pathway": [0, 1, -1, 0, -1, 1, 0, -1], "pc": 1.0, "pc_phase_deg": 0, "grad": 1.0, "diff": 0.515, "pulse": -0.4562, "total": 0.2349},
+    {"pathway": [0, -1, 1, 0, 1, -1, -1, -1], "pc": 1.0, "pc_phase_deg": 180, "grad": 0.0233, "diff": 0.5101, "pulse": 0.2053, "total": 0.0024},
+    {"pathway": [0, 1, -1, 0, -1, 1, -1, -1], "pc": 1.0, "pc_phase_deg": 180, "grad": 0.0233, "diff": 0.5101, "pulse": -0.1888, "total": 0.0022},
+    {"pathway": [0, 1, -1, 0, -1, 1, 1, -1], "pc": 1.0, "pc_phase_deg": null, "grad": 0.0233, "diff": 0.5101, "pulse": 0.1754, "total": 0.0021},
+    {"pathway": [0, -1, 1, 1, 1, -1, 0, -1], "pc": 0.7071, "pc_phase_deg": 225, "grad": 0.0233, "diff": 0.5093, "pulse": 0.244, "total": 0.002},
+    {"pathway": [0, 1, -1, -1, -1, 1, 0, -1], "pc": 0.7071, "pc_phase_deg": 135, "grad": 0.0233, "diff": 0.5093, "pulse": 0.244, "total": 0.002},
+    {"pathway": [0, -1, 1, 0, 1, -1, 1, -1], "pc": 1.0, "pc_phase_deg": 180, "grad": 0.0233, "diff": 0.5101, "pulse": 0.1613, "total": 0.0019}
+  ],
+  "diffusion_check": {"D": 2e-10, "delta_s": 0.002, "G": 0.5, "gamma": 2.675e8, "expected_exp_D_gammaGdelta2_delta_over_3": 1.0096}
+}

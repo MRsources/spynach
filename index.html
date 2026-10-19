@@ -105,6 +105,7 @@ footer { border-top: 1px solid var(--line); padding-block: 1.6rem; font-size: 0.
 
 <nav class="top" aria-label="Site">
   <a class="brand" href="#">Spynach</a>
+  <a href="#beyond">Beyond the port</a>
   <a href="#quick-start">Quick start</a>
   <a href="#docs">Documentation</a>
   <a href="#examples">Examples</a>
@@ -124,7 +125,7 @@ footer { border-top: 1px solid var(--line); padding-block: 1.6rem; font-size: 0.
     </div>
   </div>
   <figure>
-    <img src="assets/Spinoza.jpeg" width="1397" height="1202" alt="Portrait of Spinoza rendered as a two-dimensional 1H-13C correlation spectrum: coloured cross peaks on a black background with the 1D projections along the top and right edges">
+    <img src="assets/Spynoza.jpg" width="1397" height="1202" alt="Portrait of Spinoza rendered as a two-dimensional 1H-13C correlation spectrum: coloured cross peaks on a black background with the 1D projections along the top and right edges">
     <figcaption>Any resemblance to living or dead personalities is purely accidental. Fig. credits to Florin Teleanu.</figcaption>
   </figure>
 </div>
@@ -194,6 +195,20 @@ footer { border-top: 1px solid var(--line); padding-block: 1.6rem; font-size: 0.
   </div>
 </section>
 
+<section id="beyond">
+  <header><span class="eyebrow">Beyond the port</span><h2>Add-ons originating here</h2></header>
+  <div>
+    <ul class="plain">
+      <li><b>Coherence transfer pathway selection.</b> <code>ctps</code>, a separate module in the repository (<code>import ctps</code>, no dependency on <code>spynach</code>), ports the CCCP.m and CCCP++ programs: every pathway a sequence allows, weighted by phase cycle, gradients, diffusion and pulses, ranked and drawn in an interactive explorer that steps through the pathways with their factors (<a href="https://github.com/ajerschow/spynach/blob/main/docs/ctps.md">guide</a>, <a href="https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/ctps.ipynb">notebook</a>).</li>
+      <li><b>Non-ideal pulses and cogwheel search.</b> Each pulse is a perfect 180°, an imperfect 180° or a small-flip-angle pulse, with the leakage of every coherence transfer after <i>J. Chem. Phys.</i> 113, 979 (2000); cogwheel cycles are found by exact integer arithmetic, all winding numbers tested at once, and crusher schemes by the DOTCOPS objective.</li>
+      <li><b>Interactive figures.</b> Plotly figures from every plotting function, FID and time-series plots with no Spinach equivalent, and <code>figure_png</code> for static copies.</li>
+      <li><b>Verification tooling.</b> <code>compare</code> checks any result against a Spinach run; the parity page is regenerated from the test suite; the comparison protocol times and profiles both sides into one report.</li>
+      <li><b>Executable documentation.</b> Guides whose code runs in the tests, notebooks generated with outputs, a Colab quick start, contributed notebooks.</li>
+    </ul>
+    <p>All of it, with an example for each entry, is in the guide <a href="https://github.com/ajerschow/spynach/blob/main/docs/beyond-the-port.md">Beyond the port</a>.</p>
+  </div>
+</section>
+
 <section id="quick-start">
   <header><span class="eyebrow">Quick start</span><h2>Install and run</h2></header>
   <div>
@@ -240,6 +255,8 @@ spectrum = np.fft.fftshift(np.fft.fft(fid, 4096))</code></pre>
         <tr><td>Relaxation</td><td>Redfield theory for rotational diffusion, T1/T2 and damping models, thermal equilibrium, transient NOE</td><td class="links"><a href="https://github.com/ajerschow/spynach/blob/main/docs/relaxation.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/relaxation.ipynb">notebook</a></td></tr>
         <tr><td>Magic angle spinning</td><td>the Fokker-Planck treatment of sample rotation: rotor phase grid, the singlerot context, sidebands, rotor echoes</td><td class="links"><a href="https://github.com/ajerschow/spynach/blob/main/docs/magic-angle-spinning.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/magic-angle-spinning.ipynb">notebook</a></td></tr>
         <tr><td>Pulse sequences</td><td>writing sequences, apodisation and 2D plots, decoupling and homospoil, COSY, NOESY, HSQC with isotopomer dilution</td><td class="links"><a href="https://github.com/ajerschow/spynach/blob/main/docs/pulse-sequences.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/pulse-sequences.ipynb">notebook</a></td></tr>
+        <tr><td>Coherence transfer pathways: worked examples</td><td>a cookbook for ctps, from a double-quantum filter to MRS crushers, and every check of the module's tests as a runnable example</td><td class="links"><a href="https://github.com/ajerschow/spynach/blob/main/docs/ctps-examples.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/ctps-examples.ipynb">notebook</a></td></tr>
+        <tr><td>Beyond the port</td><td>features with no Spinach counterpart, each with an example: ctps, non-ideal pulses and cogwheel search, interactive figures, compare and the parity page, executable documentation</td><td class="links"><a href="https://github.com/ajerschow/spynach/blob/main/docs/beyond-the-port.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/beyond-the-port.ipynb">notebook</a></td></tr>
         <tr><td>Coming from Spinach</td><td>what carries over from Spinach and what differs: spin systems, basis, operators, Hamiltonians, parameters, modalities, processing</td><td class="links"><a href="https://github.com/ajerschow/spynach/blob/main/docs/coming-from-spinach.md">guide</a> · <a href="https://nbviewer.org/github/ajerschow/spynach/blob/main/docs/notebooks/coming-from-spinach.ipynb">notebook</a></td></tr>
       </tbody>
     </table>

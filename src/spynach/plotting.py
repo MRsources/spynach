@@ -737,14 +737,21 @@ _KALEIDO: bool | None = None  # whether Kaleido rendered a figure in this proces
 
 
 def _png_with_matplotlib(fig, scale: float) -> bytes:
-    """Static rendering of a Plotly figure's line, bar and contour traces with Matplotlib."""
+    """Static rendering of a Plotly figure with Matplotlib: traces, subplots, shapes and text.
+
+    Subplots are placed from their axis domains inside the figure's margins; rectangle and line
+    shapes and text annotations are drawn on the axes (or the figure) they refer to; sliders and
+    buttons are ignored, so the static copy shows the figure's initial state.
+    """
     import base64
     import io
+    import re as _re
 
     import matplotlib.pyplot as plt
+    from matplotlib.patches import Rectangle
 
     def plain(text) -> str:
-        return re.sub(r"<[^>]+>", "", text or "")
+        return _re.sub(r"<br\s*/?>", "\n", _re.sub(r"<(?!br)[^>]+>", "", text or ""))
 
     def values(data) -> np.ndarray:
         # Figures rebuilt from notebook JSON carry arrays in Plotly's binary form
@@ -756,15 +763,43 @@ def _png_with_matplotlib(fig, scale: float) -> bytes:
     layout = fig.layout
     surface = layout.paper_bgcolor or "#ffffff"
     ink = (layout.font.color if layout.font else None) or "#1c2024"
-    width = (layout.width or 700) / 96
-    height = (layout.height or 450) / 96
-    mpl_fig, ax = plt.subplots(figsize=(width, height))
+    width_px = layout.width or 700
+    height_px = layout.height or 450
+    margin = layout.margin
+    left = (margin.l if margin.l is not None else 80) / width_px
+    right = (margin.r if margin.r is not None else 80) / width_px
+    top = (margin.t if margin.t is not None else 100) / height_px
+    bottom = (margin.b if margin.b is not None else 80) / height_px
+    plot_w, plot_h = 1 - left - right, 1 - top - bottom
+    mpl_fig = plt.figure(figsize=(width_px / 96, height_px / 96))
     mpl_fig.patch.set_facecolor(surface)
-    ax.set_facecolor(layout.plot_bgcolor or surface)
-    named = 0
+
+    def axis_object(name: str):  # "x", "x2", "y3" -> layout.xaxis, layout.xaxis2, layout.yaxis3
+        kind, number = name[0], name[1:]
+        return layout[f"{kind}axis{number}"]
+
+    axes: dict[tuple[str, str], object] = {}
+
+    def axes_for(x_name: str, y_name: str):
+        key = (x_name, y_name)
+        if key not in axes:
+            xd = axis_object(x_name).domain or (0.0, 1.0)
+            yd = axis_object(y_name).domain or (0.0, 1.0)
+            ax = mpl_fig.add_axes(
+                [left + xd[0] * plot_w, bottom + yd[0] * plot_h, (xd[1] - xd[0]) * plot_w, (yd[1] - yd[0]) * plot_h]
+            )
+            ax.set_facecolor(layout.plot_bgcolor or surface)
+            axes[key] = ax
+        return axes[key]
+
+    dashes = {"dot": ":", "dash": "--", "dashdot": "-.", "longdash": "--", "longdashdot": "-."}
+    labelled: dict[object, int] = {}
     for trace in fig.data:
+        ax = axes_for(trace.xaxis or "x", trace.yaxis or "y")
         label = plain(trace.name) if trace.name and trace.showlegend is not False else None
-        named += label is not None
+        if label is not None:
+            labelled[ax] = labelled.get(ax, 0) + 1
+        alpha = trace.opacity if trace.opacity is not None else 1.0
         if trace.type == "contour":
             start, end, size = trace.contours.start, trace.contours.end, trace.contours.size
             levels = np.arange(start, end + size / 2, size)
@@ -776,28 +811,116 @@ def _png_with_matplotlib(fig, scale: float) -> bytes:
             ax.contour(values(trace.x), values(trace.y), values(trace.z), levels=levels, colors=colours, linewidths=0.6)
         elif trace.type in ("scatter", "scattergl"):
             x, y = values(trace.x).astype(float), values(trace.y).astype(float)
-            if "lines" in (trace.mode or "lines"):
-                ax.plot(x, y, lw=(trace.line.width or 2) * 0.6, color=trace.line.color, label=label)
-            else:
-                ax.plot(x, y, "o", ms=3, color=trace.marker.color, label=label)
+            mode = trace.mode or "lines"
+            if "lines" in mode:
+                ax.plot(
+                    x,
+                    y,
+                    lw=(trace.line.width or 2) * 0.6,
+                    color=trace.line.color,
+                    ls=dashes.get(trace.line.dash or "solid", "-"),
+                    alpha=alpha,
+                    label=label,
+                )
+            if "markers" in mode:
+                size = trace.marker.size
+                ms = float(np.max(size)) / 2 if size is not None and np.ndim(size) else (size or 6) / 2
+                ax.plot(
+                    x,
+                    y,
+                    "o",
+                    ms=ms,
+                    color=trace.marker.color or trace.line.color,
+                    alpha=alpha,
+                    label=None if "lines" in mode else label,
+                )
         elif trace.type == "bar":
-            ax.bar(values(trace.x), values(trace.y).astype(float), color=trace.marker.color, label=label)
-    for axis, mpl_axis in ((layout.xaxis, ax.xaxis), (layout.yaxis, ax.yaxis)):
-        if axis.range:
-            (ax.set_xlim if mpl_axis is ax.xaxis else ax.set_ylim)(*axis.range)
-        mpl_axis.label.set_color(axis.title.font.color or ink)
-        ax.tick_params(axis=mpl_axis.axis_name, colors=axis.tickfont.color or ink, labelsize=9)
-        if axis.showgrid:
-            ax.grid(True, axis=mpl_axis.axis_name, color=axis.gridcolor or "#e1e0d9", linewidth=0.6)
-    for spine in ax.spines.values():
-        spine.set_color(layout.xaxis.linecolor or "#c3c2b7")
-    ax.set_xlabel(plain(layout.xaxis.title.text), fontsize=10)
-    ax.set_ylabel(plain(layout.yaxis.title.text), fontsize=10)
+            ax.bar(values(trace.x), values(trace.y).astype(float), color=trace.marker.color, alpha=alpha, label=label)
+
+    def ref_axes(xref, yref):
+        if xref in (None, "paper") or yref in (None, "paper"):
+            return None
+        return axes_for(xref, yref)
+
+    for shape in layout.shapes or ():
+        ax = ref_axes(shape.xref, shape.yref)
+        colour = shape.fillcolor or (shape.line.color if shape.line else None) or ink
+        if ax is None:
+            continue
+        if shape.type == "rect":
+            ax.add_patch(
+                Rectangle(
+                    (shape.x0, shape.y0),
+                    shape.x1 - shape.x0,
+                    shape.y1 - shape.y0,
+                    facecolor=shape.fillcolor or "none",
+                    edgecolor=(shape.line.color if shape.line and shape.line.width else "none"),
+                    alpha=shape.opacity if shape.opacity is not None else 1.0,
+                )
+            )
+        elif shape.type == "line":
+            ax.plot([shape.x0, shape.x1], [shape.y0, shape.y1], color=colour, lw=(shape.line.width or 1) * 0.6)
+    for note in layout.annotations or ():
+        if not note.text:
+            continue
+        size = (note.font.size if note.font and note.font.size else 11) * 0.85
+        colour = (note.font.color if note.font and note.font.color else None) or ink
+        if note.xref == "paper" and note.yref == "paper":
+            x = left + note.x * plot_w if note.x is not None else 0.5
+            y = bottom + note.y * plot_h if note.y is not None else 0.95
+            ha = note.xanchor if note.xanchor in ("left", "center", "right") else "center"
+            va = {"top": "top", "bottom": "bottom", "middle": "center"}.get(note.yanchor or "", "bottom")
+            mpl_fig.text(x, y, plain(note.text), fontsize=size, color=colour, ha=ha, va=va)
+        else:
+            ax = ref_axes(note.xref or "x", note.yref or "y")
+            if ax is not None:
+                ax.text(note.x, note.y, plain(note.text), fontsize=size, color=colour, ha="center", va="center")
+
+    for (x_name, y_name), ax in axes.items():
+        for axis, mpl_axis, setter in (
+            (axis_object(x_name), ax.xaxis, ax.set_xlim),
+            (axis_object(y_name), ax.yaxis, ax.set_ylim),
+        ):
+            if axis.type == "log":
+                (ax.set_xscale if mpl_axis is ax.xaxis else ax.set_yscale)("log")
+                if axis.range:  # Plotly stores log-axis ranges as log10 values
+                    setter(*(10.0 ** np.asarray(axis.range, dtype=float)))
+            elif axis.range:
+                setter(*axis.range)
+            if axis.visible is False:
+                mpl_axis.set_visible(False)
+                for side in ax.spines.values():
+                    side.set_visible(False)
+                continue
+            mpl_axis.label.set_color((axis.title.font.color if axis.title and axis.title.font else None) or ink)
+            ax.tick_params(
+                axis=mpl_axis.axis_name, colors=(axis.tickfont.color if axis.tickfont else None) or ink, labelsize=9
+            )
+            if axis.showgrid is not False:
+                ax.grid(True, axis=mpl_axis.axis_name, color=axis.gridcolor or "#e1e0d9", linewidth=0.6)
+            if axis.showticklabels is False:
+                mpl_axis.set_ticklabels([])
+            if axis.dtick and axis.range:
+                lo, hi = sorted(axis.range)
+                ticks = np.arange(np.ceil(lo / axis.dtick) * axis.dtick, hi + 1e-9, axis.dtick)
+                (ax.set_xticks if mpl_axis is ax.xaxis else ax.set_yticks)(ticks)
+            if axis.title and axis.title.text:
+                (ax.set_xlabel if mpl_axis is ax.xaxis else ax.set_ylabel)(plain(axis.title.text), fontsize=10)
+        for spine in ax.spines.values():
+            spine.set_color(axis_object(x_name).linecolor or "#c3c2b7")
+        if labelled.get(ax, 0) > 1 and layout.showlegend is not False:
+            ax.legend(fontsize=8, labelcolor=ink, loc="best", framealpha=0.7, facecolor=surface, edgecolor="none")
+    # Shared axes (Plotly's ``matches``): copy the limits of the axis they follow
+    for (x_name, y_name), ax in axes.items():
+        for name, setter in ((x_name, ax.set_xlim), (y_name, ax.set_ylim)):
+            target = axis_object(name).matches
+            if target:
+                for (ox, oy), other in axes.items():
+                    if target in (ox, oy):
+                        setter(*(other.get_xlim() if target[0] == "x" else other.get_ylim()))
+                        break
     if layout.title and layout.title.text:
-        ax.set_title(plain(layout.title.text), loc="left", fontsize=11, color=ink)
-    if named > 1 and layout.showlegend is not False:
-        ax.legend(frameon=False, fontsize=9, labelcolor=ink)
-    mpl_fig.tight_layout()
+        mpl_fig.text(left, 1 - top * 0.45, plain(layout.title.text), fontsize=11, color=ink, ha="left", va="center")
     buffer = io.BytesIO()
     mpl_fig.savefig(buffer, format="png", dpi=96 * scale, facecolor=surface)
     plt.close(mpl_fig)

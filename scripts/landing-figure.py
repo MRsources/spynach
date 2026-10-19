@@ -9,7 +9,7 @@ PNG is a luminance mask meant for an inline SVG <mask> in index.html over
 a rectangle filled with the page's accent colour (data URI, so no file
 fetch: CSS mask images are CORS-fetched and fail for pages opened from
 file://); the page follows the light and dark themes with it. The page
-currently shows assets/Spinoza.jpeg instead; the embedding step is then
+currently shows assets/Spynoza.jpg instead; the embedding step is then
 skipped and the renderings stay in assets/ for later selection.
 
     OPENBLAS_NUM_THREADS=4 PYTHONPATH=src python scripts/landing-figure.py
