@@ -428,7 +428,8 @@ def _level_index(z: np.ndarray, levels: np.ndarray) -> np.ndarray:
     ys = np.concatenate(
         [[ys[0] + (ys[0] - ys[1] if len(ys) > 1 else -1)], ys, [ys[-1] + (ys[-1] - ys[-2] if len(ys) > 1 else 1)]]
     )
-    return np.interp(z, xs, ys)
+    # float32 halves the size of the figure in a saved notebook; the level index needs no more precision
+    return np.interp(z, xs, ys).astype(np.float32)
 
 
 def _bin_extremes(

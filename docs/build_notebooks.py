@@ -206,17 +206,23 @@ def _merge_streams(outputs: list[dict]) -> list[dict]:
 
 
 def _add_png(output: dict) -> bytes:
-    """Add a PNG copy of the Plotly figure to the output's data and return it."""
+    """Add a PNG copy of the Plotly figure to the output's data; return a larger PNG for docs/figures/.
+
+    The embedded copy is rendered at screen resolution to keep the notebook small (GitHub's
+    content API, which nbviewer reads through, serves files up to 1 MB); the figure file for the
+    guides is rendered at twice that.
+    """
     sys.path.insert(0, str(DOCS.parent / "src"))
     import plotly.io as pio
 
     from spynach.plotting import figure_png
 
-    png = figure_png(pio.from_json(json.dumps(output["data"][PLOTLY])))
+    figure = pio.from_json(json.dumps(output["data"][PLOTLY]))
+    embedded = figure_png(figure, scale=1)
     # The PNG goes first: viewers that rank types (JupyterLab, VS Code, nbviewer) still pick the
     # Plotly figure, and a viewer that takes the first type it knows gets the image
-    output["data"] = {"image/png": base64.b64encode(png).decode("ascii"), **output["data"]}
-    return png
+    output["data"] = {"image/png": base64.b64encode(embedded).decode("ascii"), **output["data"]}
+    return figure_png(figure, scale=2)
 
 
 def _write_figure(name: str | None, pngs: list[bytes], block: int) -> None:

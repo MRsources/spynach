@@ -81,6 +81,18 @@ def test_figures_are_named_saved_and_static(guide):
         assert all("image/png" in data for data in figures), "a Plotly output has no PNG copy for GitHub"
 
 
+NOTEBOOK_SIZE_LIMIT = 1_000_000  # bytes: GitHub's content API, which nbviewer reads through, stops at 1 MB
+
+
+@pytest.mark.parametrize("guide", GUIDES, ids=lambda p: p.name)
+def test_notebook_stays_below_the_viewer_limit(guide):
+    size = build_notebooks.notebook_path(guide).stat().st_size
+    assert size < NOTEBOOK_SIZE_LIMIT, (
+        f"{guide.stem}.ipynb is {size / 1e6:.2f} MB; nbviewer cannot fetch notebooks above 1 MB. "
+        "Reduce the figures (plot_2d max_points=, fewer traces) or split the guide."
+    )
+
+
 def test_image_lines_stay_out_of_notebooks():
     for guide in GUIDES:
         for cell in build_notebooks.build_notebook(guide)["cells"]:

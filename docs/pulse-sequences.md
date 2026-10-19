@@ -95,6 +95,7 @@ plot_2d(
     spin_system_derome,
     cosy_spectrum.real,
     pars,
+    max_points=128,  # bin to 128 x 128 points: the notebook stays small, the contours look the same
     ncont=20,
     delta=(0.1, 0.5, 0.1, 0.5),
     k=2,
@@ -171,6 +172,7 @@ plot_2d(
     spin_system_pair,
     -noesy_spectrum.real,
     noesy_pars,
+    max_points=128,
     ncont=20,
     delta=(0.05, 0.5, 0.05, 0.5),
     k=2,
@@ -225,8 +227,8 @@ for spin_system_sub in spynach.dilute(spin_system_sugar, "13C"):
     )
     hsqc_spectrum += np.fft.fftshift(np.fft.fft(pos + np.conj(neg), 256, axis=1), axes=1)
 plot_2d(
-    spin_system_sugar, hsqc_spectrum.real, hsqc_pars, ncont=20, delta=(0.05, 1.0, 0.05, 1.0), k=2, ncol=256, m=6,
-    signs="positive", title="HSQC, two isotopomers",
+    spin_system_sugar, hsqc_spectrum.real, hsqc_pars, max_points=128, ncont=20, delta=(0.05, 1.0, 0.05, 1.0), k=2,
+    ncol=256, m=6, signs="positive", title="HSQC, two isotopomers",
 )
 ```
 
