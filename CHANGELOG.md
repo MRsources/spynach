@@ -2,12 +2,32 @@
 
 Releases are tagged `vX.Y.Z` on GitHub; the version is `spynach.__version__`.
 
-## Unreleased
+## 0.2.0 - 2026-10-19
 
-- `ctps`, a separate module beside Spynach: coherence transfer pathway
-  selection (port of CCCP.m and CCCP++) with the J. Chem. Phys. 113, 979
-  (2000) pulse model, a cogwheel search, an interactive pathway explorer and
-  a guide; removable by deleting its paths (`src/ctps/README.md`).
+The Spinach port is unchanged in what it computes; this release adds a
+module beside it and work on the figures and documentation.
+
+- `ctps`, a separate module beside Spynach (`import ctps`, no dependency on
+  `spynach`): coherence transfer pathway selection, a port of CCCP.m and
+  CCCP++. It enumerates the pathways a sequence allows, weighted by phase
+  cycle, gradients, diffusion and pulses, and has the non-ideal pulse model
+  of J. Chem. Phys. 113, 979 (2000), a cogwheel cycle search by exact integer
+  arithmetic (`find_cycle`, `coverage`, `hcl_cycle`), the DOTCOPS crusher
+  objective (`crusher_scheme`) and an interactive pathway explorer. It can be
+  removed by deleting its paths (`src/ctps/README.md`).
+- New guides: `ctps` and `ctps-examples` (double-quantum filter, stimulated
+  echo, HSQC, MQMAS cogwheel), and `beyond-the-port`, which collects what
+  Spynach has and Spinach does not; `coming-from-spinach` points to it.
+- `figure_png` (Matplotlib fallback) draws subplots, shapes, text
+  annotations, dashed lines, markers and opacity, so static copies of
+  multi-panel figures match the interactive ones.
+- Notebooks stay below the 1 MB that nbviewer can fetch: embedded PNG copies
+  at screen resolution (the figures in `docs/figures/` at twice that),
+  `plot_2d` contour data stored as float32, the 2D spectra of the
+  pulse-sequences guide binned with `max_points=128`, and a test that fails
+  when a notebook reaches 1 MB.
+- `playground/` for scratch notebooks (ignored except its README); the
+  landing-page image is `assets/Spynoza.jpg`.
 
 ## 0.1.0 - 2026-10-18
 
